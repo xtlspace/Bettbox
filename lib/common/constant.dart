@@ -47,19 +47,19 @@ const configKey = 'config';
 const customSidebarIconKey = 'custom_sidebar_icon';
 const customDashboardTitleKey = 'custom_dashboard_title';
 const double dialogCommonWidth = 300;
-const repository = 'appshubcc/Bettbox';
+const repository = 'xtlspace/Bettbox';
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;
-const defaultTestUrl = 'https://g.cn/generate_204';
+const defaultTestUrl = 'http://cp.cloudflare.com/generate_204';
 
 // Preset test URLs
 const presetTestUrls = [
-  'https://g.cn/generate_204',
-  'https://www.gstatic.com/generate_204',
-  'https://www.google.com/generate_204',
-  'https://cp.cloudflare.com/generate_204',
-  'https://www.apple.com/library/test/success.html',
+  'http://g.cn/generate_204',
+  'http://www.gstatic.com/generate_204',
+  'http://www.google.com/generate_204',
+  'http://cp.cloudflare.com/generate_204',
+  'http://www.apple.com/library/test/success.html',
 ];
 
 // Preset NTP servers
