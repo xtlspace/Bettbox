@@ -349,6 +349,7 @@ class _TestUrlDialog extends ConsumerWidget {
             child: InkWell(
               onTap: () async {
                 final notifier = ref.read(appSettingProvider.notifier);
+                final overrideTestUrl = ref.read(overrideTestUrlProvider);
                 Navigator.of(context, rootNavigator: true).pop();
                 final customUrl = await globalState.showCommonDialog<String>(
                   child: InputDialog(
@@ -369,7 +370,7 @@ class _TestUrlDialog extends ConsumerWidget {
 
                 if (customUrl != null) {
                   notifier.updateState((state) => state.copyWith(testUrl: customUrl));
-                  if (ref.read(overrideTestUrlProvider)) {
+                  if (overrideTestUrl) {
                     globalState.appController.applyProfileDebounce(silence: true);
                   }
                 }

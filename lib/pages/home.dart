@@ -145,44 +145,60 @@ class _HomePageState extends State<HomePage> {
               final isSelected = index == currentIndex;
               return Focus(
                 focusNode: _getNavFocusNode(index),
-                skipTraversal: !isSelected,
-                child: InkWell(
-                  onTap: () {
-                    globalState.appController.toPage(item.label);
+                skipTraversal: false,
+                child: Builder(
+                  builder: (context) {
+                    final isFocused = Focus.of(context).hasFocus;
+                    return InkWell(
+                      onTap: () {
+                        globalState.appController.toPage(item.label);
+                      },
+                      onFocusChange: (hasFocus) {
+                        if (hasFocus && !isSelected) {
+                          globalState.appController.toPage(item.label);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.colorScheme.secondaryContainer
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isFocused
+                              ? Border.all(
+                                  color: context.colorScheme.primary,
+                                  width: 2,
+                                )
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconTheme(
+                              data: IconThemeData(
+                                color: isSelected
+                                    ? context.colorScheme.onSecondaryContainer
+                                    : context.colorScheme.onSurfaceVariant,
+                                size: 24,
+                              ),
+                              child: item.icon,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _getLocalizedLabel(item.label),
+                              style: TextStyle(
+                                color: isSelected
+                                    ? context.colorScheme.onSecondaryContainer
+                                    : context.colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? context.colorScheme.secondaryContainer
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconTheme(
-                          data: IconThemeData(
-                            color: isSelected
-                                ? context.colorScheme.onSecondaryContainer
-                                : context.colorScheme.onSurfaceVariant,
-                            size: 24,
-                          ),
-                          child: item.icon,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _getLocalizedLabel(item.label),
-                          style: TextStyle(
-                            color: isSelected
-                                ? context.colorScheme.onSecondaryContainer
-                                : context.colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               );
             }).toList(),

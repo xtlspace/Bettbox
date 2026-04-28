@@ -244,12 +244,14 @@ func handleCloseConnections() bool {
 
 func closeConnections() {
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
-		err := c.Close()
-		if err != nil {
-			return false
-		}
+		_ = c.Close()
 		return true
 	})
+	for _, proxy := range tunnel.Proxies() {
+		if adapter, ok := proxy.(constant.ProxyAdapter); ok {
+			_ = adapter.Close()
+		}
+	}
 }
 
 func handleResetConnections() bool {

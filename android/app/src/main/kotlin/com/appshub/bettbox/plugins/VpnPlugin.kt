@@ -244,9 +244,19 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun onUpdateNetwork() {
-        val dns = networks.flatMap { network ->
-            connectivity?.resolveDns(network) ?: emptyList()
-        }.toSet().joinToString(",")
+        val dns = if (networks.isNotEmpty()) {
+            networks.flatMap { network ->
+                connectivity?.resolveDns(network) ?: emptyList()
+            }.toSet().joinToString(",")
+        } else {
+            val cm = connectivity
+            val activeNetwork = cm?.activeNetwork
+            if (activeNetwork != null && cm != null) {
+                cm.resolveDns(activeNetwork).joinToString(",")
+            } else {
+                ""
+            }
+        }
         if (dns == lastDns) return
         lastDns = dns
         invokeDart("dnsChanged", dns)

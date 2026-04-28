@@ -151,6 +151,8 @@ func (f *Fetcher[V]) pullLoop(forceUpdate bool) {
 
 	if forceUpdate {
 		log.Warnln("[Provider] %s not updated for a long time, force refresh", f.Name())
+		// Delay 10 seconds
+		time.Sleep(10 * time.Second)
 		f.updateWithLog()
 	}
 	if attempt := f.backoff.Attempt(); attempt > 0 { // f.Update() was failed, decrease the interval from backoff to achieve fast retry

@@ -80,9 +80,10 @@ fun Service.createBettboxNotificationBuilder(): Deferred<NotificationCompat.Buil
 fun Service.ensureNotificationChannel() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
     val manager = getSystemService(NotificationManager::class.java)
-    if (manager?.getNotificationChannel(GlobalState.NOTIFICATION_CHANNEL) == null) {
+    val channel = manager?.getNotificationChannel(GlobalState.NOTIFICATION_CHANNEL)
+    if (channel == null || channel.importance != NotificationManager.IMPORTANCE_HIGH) {
         manager?.createNotificationChannel(
-            NotificationChannel(GlobalState.NOTIFICATION_CHANNEL, "Bettbox Service", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(GlobalState.NOTIFICATION_CHANNEL, "Bettbox Service", NotificationManager.IMPORTANCE_HIGH)
         )
     }
 }

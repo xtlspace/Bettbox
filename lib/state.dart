@@ -176,7 +176,19 @@ class GlobalState {
 
   Future<void> handleBackground() async {
     if (system.isDesktop) {
+      final isMinimized = await window?.isMinimized ?? false;
+      final isVisible = await window?.isVisible ?? true;
+      if (!isMinimized && isVisible) {
+        return;
+      }
       animationEnabled.value = false;
+      if (!backgroundMode.value) {
+        backgroundMode.value = true;
+        _scheduleBackgroundCleanup();
+      }
+      render?.pause();
+      dashboardRefreshManager.stop();
+      return;
     }
     if (!backgroundMode.value) {
       backgroundMode.value = true;
@@ -996,16 +1008,15 @@ class DetectionState {
     final appState = globalState.appState;
 
     if (!appState.isInit) return;
-    if (appState.pageLabel != PageLabel.dashboard) return;
 
     final isStart = appState.runTime != null;
 
-    if (!isStart && state.value.ipInfo != null && !state.value.isLoading) {
-      return;
-    }
-
     final isStateChanged = _preIsStart != isStart;
     _preIsStart = isStart;
+
+    if (!isStart && state.value.ipInfo != null && !state.value.isLoading && !isStateChanged) {
+      return;
+    }
 
     _cancelPreviousRequest();
     _cancelToken = CancelToken();

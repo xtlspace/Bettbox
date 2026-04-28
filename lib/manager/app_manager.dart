@@ -27,7 +27,12 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     with WidgetsBindingObserver {
   bool _isRefreshActive = false;
   Timer? _dashboardRefreshDebounceTimer;
+  Timer? _missedUpdateCheckTimer;
+  DateTime? _lastMissedUpdateCheck;
   late final VoidCallback _dashboardTickListener;
+
+  static const _missedUpdateCheckDelay = Duration(seconds: 5);
+  static const _missedUpdateCheckThrottle = Duration(seconds: 60);
 
   @override
   void initState() {
@@ -48,7 +53,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       });
     });
     ref.listenManual(checkIpProvider, (prev, next) {
-      if (prev != next && next.b) {
+      if (next.b && (prev?.a != next.a)) {
         detectionState.startCheck();
       }
     });
@@ -85,6 +90,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
   @override
   void dispose() {
     _dashboardRefreshDebounceTimer?.cancel();
+    _missedUpdateCheckTimer?.cancel();
     dashboardRefreshManager.tick1s.removeListener(_dashboardTickListener);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -95,13 +101,15 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     final isForeground =
         lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
     var isVisible = true;
+    var isMinimized = false;
     if (system.isDesktop) {
       final visible = await window?.isVisible;
       if (visible == false) {
         isVisible = false;
       }
+      isMinimized = await window?.isMinimized ?? false;
     }
-    final shouldRun = isForeground && isVisible;
+    final shouldRun = isForeground && isVisible && !isMinimized;
 
     if (!shouldRun) {
       _dashboardRefreshDebounceTimer?.cancel();
@@ -129,6 +137,20 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     );
   }
 
+  bool get _shouldCheckMissedUpdates {
+    if (_lastMissedUpdateCheck == null) return true;
+    return DateTime.now().difference(_lastMissedUpdateCheck!) > _missedUpdateCheckThrottle;
+  }
+
+  void _scheduleMissedUpdateCheck() {
+    if (!_shouldCheckMissedUpdates) return;
+    _missedUpdateCheckTimer?.cancel();
+    _missedUpdateCheckTimer = Timer(_missedUpdateCheckDelay, () {
+      _lastMissedUpdateCheck = DateTime.now();
+      globalState.appController.checkAndUpdateMissedProfiles();
+    });
+  }
+
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     final isBackgroundState = state == AppLifecycleState.paused ||
@@ -136,6 +158,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
         (state == AppLifecycleState.inactive && !system.isDesktop);
 
     if (isBackgroundState) {
+      _missedUpdateCheckTimer?.cancel();
       globalState.appController.savePreferences();
       await globalState.handleBackground();
     } else if (state == AppLifecycleState.resumed) {
@@ -143,18 +166,12 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       render?.active();
       await globalState.resumeForegroundUpdates();
       await globalState.appController.syncWakelockIfNeeded();
+      _scheduleMissedUpdateCheck();
 
       final hasDetection = ref
           .read(dashboardStateProvider)
           .dashboardWidgets
           .contains(DashboardWidget.networkDetection);
-      final externalControllerEnabled = ref.read(patchClashConfigProvider
-              .select((s) => s.externalController)) !=
-          ExternalControllerStatus.close;
-
-      if (globalState.isStart && externalControllerEnabled) {
-        await globalState.appController.updateGroups();
-      }
       if (hasDetection) {
         detectionState.startCheck(immediate: true);
       }

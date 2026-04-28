@@ -89,6 +89,10 @@ class Window {
     return await windowManager.isVisible();
   }
 
+  Future<bool> get isMinimized async {
+    return await windowManager.isMinimized();
+  }
+
   Future<void> close() async {
     try {
       await trayManager.destroy();

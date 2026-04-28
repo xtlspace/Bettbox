@@ -150,7 +150,7 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
   }
 
   void _handleCloseAll() async {
-    clashCore.closeConnections();
+    await clashCore.closeConnections();
     await _updateConnections();
   }
 
