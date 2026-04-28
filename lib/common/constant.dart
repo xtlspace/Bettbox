@@ -108,7 +108,7 @@ const proxiesListStoreKey = PageStorageKey<String>('proxies_list');
 const toolsStoreKey = PageStorageKey<String>('tools');
 const profilesStoreKey = PageStorageKey<String>('profiles');
 
-const defaultPrimaryColor = 0xFF191919;
+const defaultPrimaryColor = 0xFF1976D2;
 
 double getWidgetHeight(num lines) {
   return max(lines * 84 + (lines - 1) * 16, 0).ap;
@@ -123,7 +123,6 @@ final serviceIsolate = 'BettboxServiceIsolate';
 const defaultPrimaryColors = [
   defaultPrimaryColor,
   0xFF00796B,
-  0xFFE91E63,
   0xFF7B1FA2,
 ];
 
