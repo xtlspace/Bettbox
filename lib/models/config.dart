@@ -69,7 +69,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(defaultDashboardWidgets)
     @JsonKey(fromJson: dashboardWidgetsSafeFormJson)
     List<DashboardWidget> dashboardWidgets,
-    @Default(false) bool onlyStatisticsProxy,
+    @Default(true) bool onlyStatisticsProxy,
     @Default(false) bool autoLaunch,
     @Default(false) bool silentLaunch,
     @Default(true) bool smartDelayLaunch,
@@ -80,11 +80,11 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool isAnimateToPage,
     @Default(false) bool enableNavBarHapticFeedback,
     @Default(false) bool enableCrashReport,
-    @Default(true) bool autoCheckUpdate,
+    @Default(false) bool autoCheckUpdate,
     @Default(false) bool showLabel,
     @Default(false) bool disclaimerAccepted,
     @Default(true) bool minimizeOnExit,
-    @Default(false) bool hidden,
+    @Default(true) bool hidden,
     @Default(false) bool developerMode,
     @Default(false) bool enableHighRefreshRate,
     @Default(RecoveryStrategy.compatible) RecoveryStrategy recoveryStrategy,
