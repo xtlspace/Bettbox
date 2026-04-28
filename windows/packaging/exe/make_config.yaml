@@ -12,4 +12,3 @@ locales:
     file: ..\windows\packaging\exe\ChineseSimplified.isl
   - lang: en
 privileges_required: admin
-CREATE_DESKTOP_ICON: true
