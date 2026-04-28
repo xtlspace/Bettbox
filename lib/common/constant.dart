@@ -47,11 +47,11 @@ const configKey = 'config';
 const customSidebarIconKey = 'custom_sidebar_icon';
 const customDashboardTitleKey = 'custom_dashboard_title';
 const double dialogCommonWidth = 300;
-const repository = 'appshubcc/Bettbox';
+const repository = 'xtlspace/Bettbox';
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;
-const defaultTestUrl = 'https://g.cn/generate_204';
+const defaultTestUrl = 'https://cp.cloudflare.com/generate_204';
 
 // Preset test URLs
 const presetTestUrls = [
