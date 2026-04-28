@@ -43,41 +43,6 @@ class AboutView extends StatelessWidget {
             _checkUpdate(context);
           },
         ),
-        ListItem(
-          title: const Text('Github Releases'),
-          onTap: () {
-            globalState.openUrl('https://github.com/appshubcc/Bettbox');
-          },
-          trailing: const Icon(Icons.star),
-        ),
-        ListItem(
-          title: const Text('Telegram Group'),
-          onTap: () {
-            globalState.openUrl('https://t.me/appshub_chat');
-          },
-          trailing: const Icon(Icons.launch),
-        ),
-        ListItem(
-          title: const Text('Telegram Channel'),
-          onTap: () {
-            globalState.openUrl('https://t.me/appshub_channel');
-          },
-          trailing: const Icon(Icons.launch),
-        ),
-        ListItem(
-          title: const Text('FlClash'),
-          onTap: () {
-            globalState.openUrl('https://github.com/chen08209/FlClash');
-          },
-          trailing: const Icon(Icons.launch),
-        ),
-        ListItem(
-          title: const Text('Mihomo'),
-          onTap: () {
-            globalState.openUrl('https://github.com/MetaCubeX/mihomo');
-          },
-          trailing: const Icon(Icons.launch),
-        ),
       ],
     );
   }
