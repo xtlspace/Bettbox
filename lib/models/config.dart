@@ -82,7 +82,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool enableCrashReport,
     @Default(false) bool autoCheckUpdate,
     @Default(false) bool showLabel,
-    @Default(false) bool disclaimerAccepted,
+    @Default(true) bool disclaimerAccepted,
     @Default(true) bool minimizeOnExit,
     @Default(true) bool hidden,
     @Default(false) bool developerMode,
