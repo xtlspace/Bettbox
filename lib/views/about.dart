@@ -46,38 +46,6 @@ class AboutView extends StatelessWidget {
       ],
     );
   }
-
-  List<Widget> _buildContributorsSection() {
-    const contributors = [
-      Contributor(avatar: 'assets/images/avatars/june2.jpg', name: 'June2'),
-      Contributor(avatar: 'assets/images/avatars/arue.jpg', name: 'Arue'),
-      Contributor(avatar: 'assets/images/avatars/dabaozi.jpg', name: '大包子'),
-      Contributor(avatar: 'assets/images/avatars/xiaolou.jpg', name: '小楼'),
-      Contributor(avatar: 'assets/images/avatars/www.jpg', name: 'Www'),
-      Contributor(avatar: 'assets/images/avatars/AIsouler.jpg', name: 'AIsouler'),
-      Contributor(avatar: 'assets/images/avatars/songchenwen.jpg', name: 'songchenwen'),
-      Contributor(avatar: 'assets/images/avatars/EriDeLee.jpg', name: 'EriDeLee'),
-    ];
-    return generateSection(
-      separated: false,
-      title: appLocalizations.otherContributors,
-      items: [
-        ListItem(
-          title: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Wrap(
-              spacing: 24,
-              children: [
-                for (final contributor in contributors)
-                  Avatar(contributor: contributor),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final items = [
@@ -137,7 +105,6 @@ class AboutView extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
-      ..._buildContributorsSection(),
       ..._buildMoreSection(context),
     ];
     return Padding(
