@@ -73,7 +73,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool autoLaunch,
     @Default(false) bool silentLaunch,
     @Default(true) bool smartDelayLaunch,
-    @Default(true) bool autoRun,
+    @Default(false) bool autoRun,
     @Default(true) bool openLogs,
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
