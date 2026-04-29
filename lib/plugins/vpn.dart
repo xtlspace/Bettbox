@@ -20,7 +20,7 @@ class Vpn {
         case 'gc':
           clashCore.requestGc();
         case 'closeConnections':
-          await clashCore.closeConnections();
+          clashCore.closeConnections();
         case 'status':
           return clashLibHandler?.getRunTime() != null;
         case 'dnsChanged':

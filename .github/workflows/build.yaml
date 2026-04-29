@@ -175,7 +175,7 @@ jobs:
 
       - name: Generate release.md
         run: |
-          echo -e "- Fixes and improvements\n- 具体变更参考最新Commits" > release.md
+          echo -e "- Fixes and improvements\n- 具体变更参考最新Commits\n- 注意: 部分小米&Android16+机型在更新APP前,需提前关闭VPN以防止系统问题造成的网络锁死" > release.md
 
       - name: Patch release.md
         run: |

@@ -842,6 +842,10 @@ class DashboardRefreshManager {
       if (visible == false) {
         return false;
       }
+      final minimized = await window?.isMinimized ?? false;
+      if (minimized) {
+        return false;
+      }
     }
     return true;
   }

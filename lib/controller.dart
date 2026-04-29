@@ -604,7 +604,7 @@ class AppController {
       ChangeProxyParams(groupName: groupName, proxyName: proxyName),
     );
     if (_ref.read(appSettingProvider).closeConnections) {
-      await clashCore.closeConnections();
+      clashCore.closeConnections();
     }
     addCheckIp();
   }

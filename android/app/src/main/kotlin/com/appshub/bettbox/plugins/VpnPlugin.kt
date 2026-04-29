@@ -244,22 +244,37 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun onUpdateNetwork() {
-        val dns = if (networks.isNotEmpty()) {
-            networks.flatMap { network ->
-                connectivity?.resolveDns(network) ?: emptyList()
-            }.toSet().joinToString(",")
-        } else {
-            val cm = connectivity
-            val activeNetwork = cm?.activeNetwork
-            if (activeNetwork != null && cm != null) {
-                cm.resolveDns(activeNetwork).joinToString(",")
-            } else {
-                ""
+        val dns = when {
+            networks.isNotEmpty() -> {
+                networks.flatMap { network ->
+                    connectivity?.resolveDns(network) ?: emptyList()
+                }.toSet()
+            }
+            else -> {
+                val cm = connectivity
+                val activeNetwork = cm?.activeNetwork
+                if (activeNetwork != null && cm != null) {
+                    cm.resolveDns(activeNetwork).toSet()
+                } else {
+                    emptySet()
+                }
+            }
+        }.let { dnsSet ->
+            when {
+                dnsSet.isNotEmpty() -> dnsSet.joinToString(",")
+                else -> getAllNetworksDns()
             }
         }
         if (dns == lastDns) return
         lastDns = dns
         invokeDart("dnsChanged", dns)
+    }
+    private fun getAllNetworksDns(): String {
+        return runCatching {
+            connectivity?.allNetworks?.flatMap { network ->
+                connectivity?.resolveDns(network) ?: emptyList()
+            }?.filter { it.isNotBlank() }?.toSet()?.joinToString(",") ?: ""
+        }.getOrElse { "" }
     }
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
@@ -507,6 +522,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 suspendModule?.install()
             }
         }
+        onUpdateNetwork()
     }
 
     private fun protect(fd: Int): Boolean = runCatching {
