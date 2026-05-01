@@ -308,7 +308,7 @@ abstract class Config with _$Config {
     @Default(defaultClashConfig) ClashConfig patchClashConfig,
     @Default(ScriptProps()) ScriptProps scriptProps,
     @Default('') String nodeExcludeFilter,
-    @Default(5000) int healthCheckTimeout,
+    @Default(2000) int healthCheckTimeout,
   }) = _Config;
 
   factory Config.fromJson(Map<String, Object?> json) => _$ConfigFromJson(json);
