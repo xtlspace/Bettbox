@@ -4049,20 +4049,20 @@ class AppLocalizations {
     );
   }
 
-  /// `IP Privacy Protection`
+  /// `Hide IP Display`
   String get ipPrivacyProtection {
     return Intl.message(
-      'IP Privacy Protection',
+      'Hide IP Display',
       name: 'ipPrivacyProtection',
       desc: '',
       args: [],
     );
   }
 
-  /// `Manual Refresh IP`
+  /// `Refresh IP`
   String get manualRefreshIp {
     return Intl.message(
-      'Manual Refresh IP',
+      'Refresh IP',
       name: 'manualRefreshIp',
       desc: '',
       args: [],
@@ -4099,10 +4099,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Switch to Domestic IP`
+  /// `Get Domestic IP`
   String get switchToDomesticIp {
     return Intl.message(
-      'Switch to Domestic IP',
+      'Get Domestic IP',
       name: 'switchToDomesticIp',
       desc: '',
       args: [],

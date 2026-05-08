@@ -144,37 +144,40 @@ class _HomePageState extends State<HomePage> {
               final index = entry.key;
               final item = entry.value;
               final isSelected = index == currentIndex;
+              final focusNode = _getNavFocusNode(index);
               return FocusTraversalOrder(
                 order: NumericFocusOrder(index.toDouble()),
-                child: Focus(
-                  focusNode: _getNavFocusNode(index),
-                  skipTraversal: false,
-                  child: Builder(
-                    builder: (context) {
-                      final isFocused = Focus.of(context).hasFocus;
-                      return InkWell(
-                        onTap: () {
+                child: AnimatedBuilder(
+                  animation: focusNode,
+                  builder: (context, child) {
+                    final isFocused = focusNode.hasFocus;
+                    return InkWell(
+                      focusNode: focusNode,
+                      onTap: () {
+                        globalState.appController.toPage(item.label);
+                      },
+                      onFocusChange: (hasFocus) {
+                        if (hasFocus && !isSelected) {
                           globalState.appController.toPage(item.label);
-                        },
-                        onFocusChange: (hasFocus) {
-                          if (hasFocus && !isSelected) {
-                            globalState.appController.toPage(item.label);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? context.colorScheme.secondaryContainer
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: isFocused
-                                ? Border.all(
-                                    color: context.colorScheme.primary,
-                                    width: 2,
-                                  )
-                                : null,
-                          ),
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.colorScheme.secondaryContainer
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isFocused
+                              ? Border.all(
+                                  color: context.colorScheme.primary,
+                                  width: 2,
+                                )
+                              : Border.all(
+                                  color: Colors.transparent,
+                                  width: 2,
+                                ),
+                        ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -203,7 +206,6 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                ),
               );
             }).toList(),
           ),
@@ -294,6 +296,9 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
     if (index == -1) {
       return;
     }
+    
+    FocusManager.instance.primaryFocus?.unfocus();
+    
     final isAnimateToPage = ref.read(appSettingProvider).isAnimateToPage;
     final isMobile = ref.read(isMobileViewProvider);
     if (isAnimateToPage && isMobile && !ignoreAnimateTo) {

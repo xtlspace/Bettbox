@@ -15,7 +15,7 @@ const browserUa =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36';
 const packageName = 'com.appshub.bettbox';
 final unixSocketPath = '/tmp/BettboxSocket_${Random().nextInt(10000)}.sock';
-const helperPort = 57890;
+const helperPort = 45678;
 const maxTextScale = 1.4;
 const minTextScale = 0.8;
 final baseInfoEdgeInsets = EdgeInsets.symmetric(

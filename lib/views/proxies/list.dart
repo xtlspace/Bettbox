@@ -199,7 +199,7 @@ class _GroupHeader extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Flexible(
                           child: EmojiText(
-                            '• $selectedProxyName',
+                            '•  $selectedProxyName',
                             style: context.textTheme.labelMedium?.toLight,
                             overflow: TextOverflow.ellipsis,
                           ),

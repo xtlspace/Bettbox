@@ -83,10 +83,6 @@ class ApplicationState extends ConsumerState<Application>
           globalState.config.appSetting.enableHighRefreshRate) {
         _restoreHighRefreshRate();
       }
-    } else if (state == AppLifecycleState.detached) {
-      if (!system.isAndroid && !globalState.isExiting) {
-        unawaited(globalState.appController.handleExit());
-      }
     }
   }
 

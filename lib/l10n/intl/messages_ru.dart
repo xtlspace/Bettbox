@@ -61,7 +61,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "action_tun": MessageLookupByLibrary.simpleMessage("Виртуальный адаптер"),
     "action_view": MessageLookupByLibrary.simpleMessage("Показать/Скрыть"),
     "add": MessageLookupByLibrary.simpleMessage("Добавить"),
-    "addProfile": MessageLookupByLibrary.simpleMessage("Добавить конфигурацию"),
+    "addProfile": MessageLookupByLibrary.simpleMessage("Добавить профиль"),
     "addRule": MessageLookupByLibrary.simpleMessage("Добавить правило"),
     "addTunnel": MessageLookupByLibrary.simpleMessage(
       "Добавить перенаправление",
@@ -186,7 +186,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "cancelSelectAll": MessageLookupByLibrary.simpleMessage("Отменить выбор"),
     "checkError": MessageLookupByLibrary.simpleMessage("Ошибка проверки"),
     "checkOrAddProfile": MessageLookupByLibrary.simpleMessage(
-      "Добавьте конфигурацию",
+      "Добавьте профиль",
     ),
     "checkUpdate": MessageLookupByLibrary.simpleMessage("Проверить обновление"),
     "checkUpdateError": MessageLookupByLibrary.simpleMessage(
@@ -523,7 +523,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage(
       "Переключение отображения",
     ),
-    "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("Защита IP"),
+    "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("Скрыть IP"),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/маска"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("Включить поддержку IPv6"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
@@ -563,9 +563,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Инструмент для разблокировки UWP loopback",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Свободный"),
-    "manualRefreshIp": MessageLookupByLibrary.simpleMessage(
-      "Обновить IP вручную",
-    ),
+    "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Обновить IP"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Информация о памяти"),
     "messageTest": MessageLookupByLibrary.simpleMessage("Тест сообщения"),
     "messageTestTip": MessageLookupByLibrary.simpleMessage(
@@ -626,7 +624,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noNetworkApp": MessageLookupByLibrary.simpleMessage("Приложения без сети"),
     "noProxy": MessageLookupByLibrary.simpleMessage("Нет прокси"),
     "noProxyDesc": MessageLookupByLibrary.simpleMessage(
-      "Создайте или добавьте конфигурацию",
+      "Создайте или добавьте профиль",
     ),
     "noResolve": MessageLookupByLibrary.simpleMessage("Не разрешать IP"),
     "noStatusAvailable": MessageLookupByLibrary.simpleMessage(
@@ -656,7 +654,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Включить службу времени NTP",
     ),
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
-      "Нет конфигурации, добавьте её",
+      "Нет профиля, добавьте его",
     ),
     "nullTip": m5,
     "numberTip": m6,
@@ -772,7 +770,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "pressKeyboard": MessageLookupByLibrary.simpleMessage("Нажмите клавиши"),
     "preview": MessageLookupByLibrary.simpleMessage("Предпросмотр"),
-    "profile": MessageLookupByLibrary.simpleMessage("Конфигурация"),
+    "profile": MessageLookupByLibrary.simpleMessage("Профиль"),
     "profileAutoUpdateIntervalInvalidValidationDesc":
         MessageLookupByLibrary.simpleMessage(
           "Введите корректный формат интервала",
@@ -783,21 +781,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "Конфигурация изменена. Отключить автообновление?",
     ),
     "profileNameNullValidationDesc": MessageLookupByLibrary.simpleMessage(
-      "Введите имя конфигурации",
+      "Введите имя профиля",
     ),
     "profileParseErrorDesc": MessageLookupByLibrary.simpleMessage(
-      "Ошибка разбора конфигурации",
+      "Ошибка разбора профиля",
     ),
     "profileUrlInvalidValidationDesc": MessageLookupByLibrary.simpleMessage(
-      "Введите корректный URL конфигурации",
+      "Введите корректный URL профиля",
     ),
     "profileUrlNullValidationDesc": MessageLookupByLibrary.simpleMessage(
-      "Введите URL конфигурации",
+      "Введите URL профиля",
     ),
-    "profiles": MessageLookupByLibrary.simpleMessage("Конфигурации"),
-    "profilesSort": MessageLookupByLibrary.simpleMessage(
-      "Сортировка конфигураций",
-    ),
+    "profiles": MessageLookupByLibrary.simpleMessage("Профили"),
+    "profilesSort": MessageLookupByLibrary.simpleMessage("Сортировка профилей"),
     "progress": MessageLookupByLibrary.simpleMessage("Прогресс"),
     "project": MessageLookupByLibrary.simpleMessage("Проект"),
     "providers": MessageLookupByLibrary.simpleMessage("Провайдеры"),
@@ -818,7 +814,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pureBlackMode": MessageLookupByLibrary.simpleMessage("Чистый чёрный"),
     "qrcode": MessageLookupByLibrary.simpleMessage("QR-код"),
     "qrcodeDesc": MessageLookupByLibrary.simpleMessage(
-      "Сканировать QR для получения конфигурации",
+      "Сканировать QR для получения профиля",
     ),
     "quicGoDisableEcn": MessageLookupByLibrary.simpleMessage(
       "Отключить ECN QUIC",
@@ -842,9 +838,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("Радуга"),
     "recovery": MessageLookupByLibrary.simpleMessage("Восстановить"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("Все данные"),
-    "recoveryProfiles": MessageLookupByLibrary.simpleMessage(
-      "Только конфигурации",
-    ),
+    "recoveryProfiles": MessageLookupByLibrary.simpleMessage("Только профили"),
     "recoveryStrategy": MessageLookupByLibrary.simpleMessage(
       "Стратегия восстановления",
     ),
@@ -981,7 +975,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "stackMode": MessageLookupByLibrary.simpleMessage("Режим стека"),
     "standard": MessageLookupByLibrary.simpleMessage("Стандартный"),
     "start": MessageLookupByLibrary.simpleMessage("Запуск"),
-    "startTest": MessageLookupByLibrary.simpleMessage("Начать тест"),
+    "startTest": MessageLookupByLibrary.simpleMessage("Тест задержки"),
     "startVpn": MessageLookupByLibrary.simpleMessage("Запуск VPN"),
     "status": MessageLookupByLibrary.simpleMessage("Статус"),
     "statusDesc": MessageLookupByLibrary.simpleMessage(
@@ -1005,7 +999,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "success": MessageLookupByLibrary.simpleMessage("Успех"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Переключатель"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
-      "Переключить на локальный IP",
+      "Получить локальный IP",
     ),
     "sync": MessageLookupByLibrary.simpleMessage("Синхронизировать"),
     "syncAll": MessageLookupByLibrary.simpleMessage("Синхронизировать всё"),
@@ -1086,7 +1080,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "twoColumns": MessageLookupByLibrary.simpleMessage("2 колонки"),
     "unableToUpdateCurrentProfileDesc": MessageLookupByLibrary.simpleMessage(
-      "Невозможно обновить текущую конфигурацию",
+      "Невозможно обновить текущий профиль",
     ),
     "undo": MessageLookupByLibrary.simpleMessage("Отменить"),
     "unifiedDelay": MessageLookupByLibrary.simpleMessage(
@@ -1100,9 +1094,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "update": MessageLookupByLibrary.simpleMessage("Обновить"),
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),
     "url": MessageLookupByLibrary.simpleMessage("URL"),
-    "urlDesc": MessageLookupByLibrary.simpleMessage(
-      "Получить конфигурацию по URL",
-    ),
+    "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
     "urlTip": m9,
     "useHosts": MessageLookupByLibrary.simpleMessage("Использовать hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(

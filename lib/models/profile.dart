@@ -99,7 +99,7 @@ extension OverrideDataExt on OverrideData {
 @freezed
 abstract class OverrideRule with _$OverrideRule {
   const factory OverrideRule({
-    @Default(OverrideRuleType.added) OverrideRuleType type,
+    @Default(OverrideRuleType.override) OverrideRuleType type,
     @Default([]) List<Rule> overrideRules,
     @Default([]) List<Rule> addedRules,
   }) = _OverrideRule;

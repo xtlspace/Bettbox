@@ -34,7 +34,6 @@ class _ResourcesViewState extends State<ResourcesView> {
   final isUpdatingAll = ValueNotifier<bool>(false);
 
   static const geoItems = <GeoItem>[
-    GeoItem(label: 'GeoIp', fileName: geoIpFileName, key: 'geoip'),
     GeoItem(label: 'GeoSite', fileName: geoSiteFileName, key: 'geosite'),
     GeoItem(label: 'MMDB', fileName: mmdbFileName, key: 'mmdb'),
     GeoItem(label: 'ASN', fileName: asnFileName, key: 'asn'),

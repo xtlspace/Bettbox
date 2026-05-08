@@ -38,7 +38,6 @@ class AppController {
   int _backgroundLoadVersion = 0;
 
   int _updateGroupsRetryCount = 0;
-  static const int _maxUpdateGroupsRetries = 3;
   bool _isUpdatingGroups = false;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
@@ -259,7 +258,10 @@ class AppController {
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     if (lifecycleState != AppLifecycleState.resumed) return false;
 
-    if (system.isDesktop && await window?.isVisible == false) return false;
+    if (system.isDesktop) {
+      if (await window?.isVisible == false) return false;
+      if (await window?.isMinimized == true) return false;
+    }
 
     return true;
   }
@@ -552,30 +554,43 @@ class AppController {
     _isUpdatingGroups = true;
 
     try {
+      final currentGroups = _ref.read(groupsProvider);
+      final isInitialDesktopLoad = system.isDesktop && currentGroups.isEmpty;
+      final maxAttempts = isInitialDesktopLoad ? 6 : 4;
+
       final newGroups = await retry(
         task: clashCore.getProxiesGroups,
         retryIf: (res) => res.isEmpty,
-        maxAttempts: 3,
+        maxAttempts: maxAttempts,
       );
       _ref.read(groupsProvider.notifier).value = newGroups;
       _updateGroupsRetryCount = 0;
       return;
     } catch (e) {
       final currentGroups = _ref.read(groupsProvider);
+      final isInitialDesktopLoad = system.isDesktop && currentGroups.isEmpty;
+      final maxRetryRounds = isInitialDesktopLoad ? 8 : 4;
+      final retryDelay = isInitialDesktopLoad
+          ? const Duration(seconds: 1)
+          : const Duration(seconds: 2);
       if (currentGroups.isNotEmpty) {
         commonPrint.log('updateGroups error, keeping existing groups: $e');
         return;
       }
 
-      if (_updateGroupsRetryCount >= _maxUpdateGroupsRetries) {
-        commonPrint.log('updateGroups max retries ($_maxUpdateGroupsRetries) reached, giving up');
+      if (_updateGroupsRetryCount >= maxRetryRounds) {
+        commonPrint.log(
+          'updateGroups max retries ($maxRetryRounds) reached, giving up',
+        );
         _updateGroupsRetryCount = 0;
         return;
       }
       _updateGroupsRetryCount++;
 
-      commonPrint.log('updateGroups initial load failed ($_updateGroupsRetryCount/$_maxUpdateGroupsRetries), scheduling retry: $e');
-      Future.delayed(const Duration(seconds: 2), () {
+      commonPrint.log(
+        'updateGroups initial load failed ($_updateGroupsRetryCount/$maxRetryRounds), scheduling retry in ${retryDelay.inSeconds}s: $e',
+      );
+      Future.delayed(retryDelay, () {
         updateGroups();
       });
     } finally {

@@ -105,9 +105,9 @@ class Window {
   }
 
   Future<void> hide() async {
-    await globalState.handleBackground();
     await windowManager.hide();
     await windowManager.setSkipTaskbar(true);
+    await globalState.handleBackground();
   }
 }
 

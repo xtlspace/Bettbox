@@ -187,6 +187,7 @@ class GlobalState {
         _scheduleBackgroundCleanup();
       }
       render?.pause();
+      stopUpdateTasks();
       dashboardRefreshManager.stop();
       return;
     }
@@ -525,6 +526,7 @@ class GlobalState {
         realPatchConfig.tun.disableIcmpForwarding;
     rawConfig['tun']['mtu'] = realPatchConfig.tun.mtu;
     rawConfig['geodata-loader'] = realPatchConfig.geodataLoader.name;
+    rawConfig['geodata-mode'] = false;
     if (rawConfig['sniffer']?['sniff'] != null) {
       for (final value in (rawConfig['sniffer']?['sniff'] as Map).values) {
         if (value['ports'] != null && value['ports'] is List) {
@@ -825,6 +827,7 @@ class DashboardRefreshManager {
   Timer? _timer;
   bool _isRunning = false;
   int _counter = 0;
+  int _tickToken = 0;
 
   final tick1s = ValueNotifier<int>(0);
   final tick2s = ValueNotifier<int>(0);
@@ -850,10 +853,11 @@ class DashboardRefreshManager {
     return true;
   }
 
-  Future<void> _tryTick() async {
+  Future<void> _tryTick(int token) async {
     if (!await _isActive()) {
       return;
     }
+    if (token != _tickToken) return;
     _counter++;
     tick1s.value++;
     if (_counter % 2 == 0) {
@@ -868,12 +872,13 @@ class DashboardRefreshManager {
     if (_isRunning) return;
     _isRunning = true;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _tryTick();
+      _tryTick(_tickToken);
     });
   }
 
   void stop() {
     if (!_isRunning) return;
+    _tickToken++;
     _timer?.cancel();
     _timer = null;
     _isRunning = false;

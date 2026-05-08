@@ -386,16 +386,16 @@ Map<String, dynamic> _$ExperimentalToJson(_Experimental instance) =>
 _GeoXUrl _$GeoXUrlFromJson(Map<String, dynamic> json) => _GeoXUrl(
   mmdb:
       json['mmdb'] as String? ??
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country-only-cn-private.mmdb',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.metadb',
   asn:
       json['asn'] as String? ??
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country-asn.mmdb',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/GeoLite2-ASN.mmdb',
   geoip:
       json['geoip'] as String? ??
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip-only-cn-private.dat',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.dat',
   geosite:
       json['geosite'] as String? ??
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.db',
 );
 
 Map<String, dynamic> _$GeoXUrlToJson(_GeoXUrl instance) => <String, dynamic>{

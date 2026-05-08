@@ -28,11 +28,19 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
         final overrideData = ref.read(
           getProfileOverrideDataProvider(widget.profileId),
         );
+        final newOverrideData = overrideData?.rule.type == OverrideRuleType.override &&
+                overrideData?.rule.overrideRules.isEmpty == true
+            ? overrideData?.copyWith(
+                rule: overrideData.rule.copyWith(
+                  overrideRules: snippet.rule,
+                ),
+              )
+            : overrideData;
         ref
             .read(profileOverrideStateProvider.notifier)
             .updateState(
               (state) =>
-                  state.copyWith(snippet: snippet, overrideData: overrideData),
+                  state.copyWith(snippet: snippet, overrideData: newOverrideData),
             );
       });
     });
@@ -731,11 +739,15 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
                         )
                       : TextFormField(
                           controller: _contentController,
+                          enabled: _ruleAction != RuleAction.MATCH,
                           decoration: InputDecoration(
                             border: const OutlineInputBorder(),
                             labelText: appLocalizations.content,
                           ),
                           validator: (_) {
+                            if (_ruleAction == RuleAction.MATCH) {
+                              return null;
+                            }
                             if (_contentController.text.isEmpty) {
                               return appLocalizations.emptyTip(
                                 appLocalizations.content,

@@ -163,7 +163,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       await globalState.handleBackground();
     } else if (state == AppLifecycleState.resumed) {
       globalState.handleForeground();
-      render?.active();
+      render?.resume();
       await globalState.resumeForegroundUpdates();
       await globalState.appController.syncWakelockIfNeeded();
       _scheduleMissedUpdateCheck();
@@ -179,6 +179,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     if (state == AppLifecycleState.resumed && system.isAndroid) {
       final hidden = ref.read(appSettingProvider.select((s) => s.hidden));
       app.updateExcludeFromRecents(hidden);
+      SystemChrome.setSystemUIOverlayStyle(globalState.appState.systemUiOverlayStyle);
     }
     if (state == AppLifecycleState.inactive) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -196,15 +197,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) {
-        render?.active();
-      },
-      onPointerHover: (_) {
-        render?.active();
-      },
-      child: widget.child,
-    );
+    return widget.child;
   }
 }
 

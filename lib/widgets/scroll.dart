@@ -22,13 +22,14 @@ class CommonScrollBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasController = controller != null;
     return Scrollbar(
       controller: controller,
-      thumbVisibility: thumbVisibility,
-      trackVisibility: trackVisibility,
+      thumbVisibility: hasController ? thumbVisibility : false,
+      trackVisibility: hasController ? trackVisibility : false,
       thickness: 8,
       radius: const Radius.circular(8),
-      interactive: true,
+      interactive: hasController,
       child: child,
     );
   }

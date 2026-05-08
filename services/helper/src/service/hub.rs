@@ -16,7 +16,7 @@ use bytes::Bytes;
 #[allow(unused_imports)]
 use fs2::FileExt;
 
-const LISTEN_PORT: u16 = 57890;
+const LISTEN_PORT: u16 = 45678;
 const TIME_WINDOW_SECS: u64 = 5;
 const MAX_LOG_ENTRIES: usize = 100;
 const HASH_BUFFER_SIZE: usize = 65536;

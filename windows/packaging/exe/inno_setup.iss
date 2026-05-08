@@ -19,6 +19,7 @@ ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 CloseApplications=yes
 CloseApplicationsFilter={{EXECUTABLE_NAME}},BettboxCore.exe,BettboxHelperService.exe
+SetupLogging=yes
 
 [Code]
 var

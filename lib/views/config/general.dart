@@ -774,14 +774,6 @@ class _SecretDialogState extends ConsumerState<_SecretDialog> {
               labelText: appLocalizations.controlSecret,
               hintText: appLocalizations.controlSecretDesc,
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return appLocalizations.emptyTip(
-                  appLocalizations.controlSecret,
-                );
-              }
-              return null;
-            },
           ),
         ),
       ),

@@ -1,7 +1,6 @@
 use crate::service::hub::run_service;
 
 use std::ffi::OsString;
-
 use std::time::Duration;
 
 use tokio::runtime::Runtime;
@@ -25,18 +24,30 @@ pub fn main() -> Result<()> {
 }
 
 pub fn start_service() -> Result<()> {
-    service_dispatcher::start(SERVICE_NAME, serveice)
+    service_dispatcher::start(SERVICE_NAME, service_entry)
 }
 
-define_windows_service!(serveice, service_main);
+define_windows_service!(service_entry, service_main);
 
 pub fn service_main(_arguments: Vec<OsString>) {
     if let Ok(rt) = Runtime::new() {
         rt.block_on(async {
-            let _ = run_windows_service().await;
+            if let Err(e) = run_windows_service().await {
+                let log_path = std::env::temp_dir().join("bettbox_helper_error.log");
+                let ts = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let msg = format!("[{}] service error: {}\n", ts, e);
+                let _ = std::fs::OpenOptions::new()
+                    .create(true).append(true)
+                    .open(log_path)
+                    .map(|mut f| { use std::io::Write; let _ = f.write_all(msg.as_bytes()); });
+            }
         });
     }
 }
+
 async fn run_windows_service() -> anyhow::Result<()> {
     let status_handle = service_control_handler::register(
         SERVICE_NAME,
@@ -51,6 +62,16 @@ async fn run_windows_service() -> anyhow::Result<()> {
 
     status_handle.set_service_status(ServiceStatus {
         service_type: SERVICE_TYPE,
+        current_state: ServiceState::StartPending,
+        controls_accepted: ServiceControlAccept::empty(),
+        exit_code: ServiceExitCode::Win32(0),
+        checkpoint: 0,
+        wait_hint: Duration::from_secs(5),
+        process_id: None,
+    })?;
+
+    status_handle.set_service_status(ServiceStatus {
+        service_type: SERVICE_TYPE,
         current_state: ServiceState::Running,
         controls_accepted: ServiceControlAccept::STOP,
         exit_code: ServiceExitCode::Win32(0),
@@ -59,9 +80,22 @@ async fn run_windows_service() -> anyhow::Result<()> {
         process_id: None,
     })?;
 
-    run_service().await
+    let result = run_service().await;
+
+    let exit_code = if result.is_ok() {
+        ServiceExitCode::Win32(0)
+    } else {
+        ServiceExitCode::ServiceSpecific(1)
+    };
+    let _ = status_handle.set_service_status(ServiceStatus {
+        service_type: SERVICE_TYPE,
+        current_state: ServiceState::Stopped,
+        controls_accepted: ServiceControlAccept::empty(),
+        exit_code,
+        checkpoint: 0,
+        wait_hint: Duration::default(),
+        process_id: None,
+    });
+
+    result
 }
-
-
-
-

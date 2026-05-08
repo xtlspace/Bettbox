@@ -481,19 +481,19 @@ abstract class Experimental with _$Experimental {
 abstract class GeoXUrl with _$GeoXUrl {
   const factory GeoXUrl({
     @Default(
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country-only-cn-private.mmdb',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.metadb',
     )
     String mmdb,
     @Default(
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country-asn.mmdb',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/GeoLite2-ASN.mmdb',
     )
     String asn,
     @Default(
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip-only-cn-private.dat',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.dat',
     )
     String geoip,
     @Default(
-      'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.db',
     )
     String geosite,
   }) = _GeoXUrl;
@@ -566,6 +566,12 @@ abstract class ParsedRule with _$ParsedRule {
 
 extension ParsedRuleExt on ParsedRule {
   String get value {
+    if (ruleAction == RuleAction.MATCH) {
+      return [
+        ruleAction.value,
+        ruleTarget,
+      ].join(',');
+    }
     return [
       ruleAction.value,
       ruleAction == RuleAction.RULE_SET ? ruleProvider : content,

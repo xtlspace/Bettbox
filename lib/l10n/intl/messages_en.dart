@@ -512,7 +512,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ipClickBehavior": MessageLookupByLibrary.simpleMessage("Toggle Display"),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage(
-      "IP Privacy Protection",
+      "Hide IP Display",
     ),
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
@@ -557,9 +557,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "UWP loopback unlocking tool",
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
-    "manualRefreshIp": MessageLookupByLibrary.simpleMessage(
-      "Manual Refresh IP",
-    ),
+    "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Refresh IP"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory Info"),
     "messageTest": MessageLookupByLibrary.simpleMessage("Message Test"),
     "messageTestTip": MessageLookupByLibrary.simpleMessage(
@@ -987,7 +985,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "success": MessageLookupByLibrary.simpleMessage("Success"),
     "switchLabel": MessageLookupByLibrary.simpleMessage("Switch"),
     "switchToDomesticIp": MessageLookupByLibrary.simpleMessage(
-      "Switch to Domestic IP",
+      "Get Domestic IP",
     ),
     "sync": MessageLookupByLibrary.simpleMessage("Sync"),
     "syncAll": MessageLookupByLibrary.simpleMessage("Sync All"),

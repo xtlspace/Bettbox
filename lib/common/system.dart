@@ -255,8 +255,16 @@ class Windows {
     final res = runas('cmd.exe', command);
 
     for (int i = 0; i < 10; i++) {
-      await Future.delayed(Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 200));
       if (await request.quickPingHelper()) return true;
+      if (i > 0 && i % 4 == 0) {
+        final check = await Process.run('sc', ['query', appHelperService]);
+        final out = check.stdout.toString();
+        if (out.contains('STOPPED') || out.contains('FAILED')) {
+          commonPrint.log('Helper service stopped/failed, skipping wait');
+          break;
+        }
+      }
     }
 
     return res;

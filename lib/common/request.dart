@@ -281,6 +281,12 @@ class Request {
   }
 
   Future<bool> startCoreByHelper(String arg) async {
+    final helperAlive = await quickPingHelper();
+    if (!helperAlive) {
+      commonPrint.log('Helper service is not reachable, skipping startCoreByHelper');
+      return false;
+    }
+
     final homeDirPath = await appPath.homeDirPath;
     final body = json.encode({
       'path': appPath.corePath,
@@ -289,8 +295,9 @@ class Request {
     });
     final authHeaders = HelperAuthManager.generateAuthHeaders(body);
 
-    const maxAttempts = 10;
+    const maxAttempts = 4;
     const interval = Duration(milliseconds: 500);
+    const requestTimeout = Duration(seconds: 5);
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -303,7 +310,7 @@ class Request {
                 headers: authHeaders,
               ),
             )
-            .timeout(const Duration(milliseconds: 2000));
+            .timeout(requestTimeout);
         if (response.statusCode == HttpStatus.ok) {
           final data = response.data as String;
           if (data.isEmpty) return true;
