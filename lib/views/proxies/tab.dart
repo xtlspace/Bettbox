@@ -7,6 +7,7 @@ import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/common.dart';
@@ -363,6 +364,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(themeSettingProvider.select((state) => state.textScale));
     final group = widget.group;
     final proxies = group.all;
     final sortedProxies = globalState.appController.getSortProxies(
@@ -380,7 +382,7 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
         child: GridView.builder(
           key: _getPageStorageKey(),
           controller: _controller,
-          cacheExtent: 500,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           padding: const EdgeInsets.only(
             top: 16,
             left: 16,

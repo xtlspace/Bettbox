@@ -11,6 +11,7 @@ import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/l10n/l10n.dart';
 import 'package:bett_box/plugins/app.dart';
 import 'package:bett_box/plugins/service.dart';
+import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/providers/state.dart' as providers_state;
 
 import 'package:bett_box/widgets/dialog.dart';
@@ -44,6 +45,7 @@ class GlobalState {
   late Measure measure;
   late CommonTheme theme;
   late Color accentColor;
+  // ignore: deprecated_member_use
   CorePalette? corePalette;
   DateTime? startTime;
   UpdateTasks tasks = [];
@@ -187,7 +189,12 @@ class GlobalState {
         _scheduleBackgroundCleanup();
       }
       render?.pause();
-      stopUpdateTasks();
+      
+      final networkSpeedNotification = appController.ref.read(vpnSettingProvider).networkSpeedNotification;
+      if (!networkSpeedNotification) {
+        stopUpdateTasks();
+      }
+      
       dashboardRefreshManager.stop();
       return;
     }
@@ -196,7 +203,12 @@ class GlobalState {
       _scheduleBackgroundCleanup();
     }
     render?.pause();
-    stopUpdateTasks();
+    
+    final networkSpeedNotification = appController.ref.read(vpnSettingProvider).networkSpeedNotification;
+    if (!networkSpeedNotification) {
+      stopUpdateTasks();
+    }
+    
     dashboardRefreshManager.stop();
   }
 
@@ -754,11 +766,6 @@ class GlobalState {
     }
 
 
-
-    if (config.vpnProps.fcmOptimization) {
-      final fcmRules = ['DOMAIN,mtalk.google.com,DIRECT'];
-      rules = [...fcmRules, ...rules];
-    }
 
     if (config.vpnProps.disableQuic) {
       final isRussian = config.appSetting.locale?.toLowerCase().startsWith('ru') ?? false;

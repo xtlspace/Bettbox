@@ -13,6 +13,13 @@ use hmac::{Hmac, Mac};
 use std::time::{SystemTime, UNIX_EPOCH};
 use bytes::Bytes;
 
+#[cfg(windows)]
+use windows::Win32::System::Threading::{OpenProcess, SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, PROCESS_SET_INFORMATION};
+#[cfg(windows)]
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
+#[cfg(windows)]
+use std::os::windows::io::RawHandle;
+
 #[allow(unused_imports)]
 use fs2::FileExt;
 
@@ -28,6 +35,12 @@ pub struct StartParams {
     pub path: String,
     pub arg: String,
     pub home_dir: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PriorityParams {
+    pub process_name: String,
+    pub enable: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -237,6 +250,79 @@ fn stop() -> String {
     "".to_string()
 }
 
+#[cfg(windows)]
+fn set_process_priority(process_name: &str, enable: bool) -> String {
+    use windows::Win32::System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS, PROCESSENTRY32W};
+    
+    let priority_class = if enable { ABOVE_NORMAL_PRIORITY_CLASS } else { NORMAL_PRIORITY_CLASS };
+    
+    unsafe {
+        let snapshot = match CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
+            Ok(s) => s,
+            Err(e) => return format!("Failed to create snapshot: {}", e),
+        };
+        
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+        
+        let target_name: Vec<u16> = process_name.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut found = false;
+        
+        if Process32FirstW(snapshot, &mut entry).is_ok() {
+            loop {
+                let exe_name = String::from_utf16_lossy(&entry.szExeFile);
+                let exe_name = exe_name.trim_end_matches('\0');
+                
+                if exe_name.eq_ignore_ascii_case(process_name) {
+                    let process_handle = match OpenProcess(PROCESS_SET_INFORMATION, false, entry.th32ProcessID) {
+                        Ok(h) => h,
+                        Err(e) => {
+                            log_message(format!("Failed to open process {}: {}", entry.th32ProcessID, e));
+                            if Process32NextW(snapshot, &mut entry).is_err() {
+                                break;
+                            }
+                            continue;
+                        }
+                    };
+                    
+                    match SetPriorityClass(process_handle, priority_class) {
+                        Ok(_) => {
+                            found = true;
+                            log_message(format!("Set priority for {} (PID: {}) to {}", 
+                                process_name, entry.th32ProcessID, 
+                                if enable { "above normal" } else { "normal" }));
+                        }
+                        Err(e) => {
+                            log_message(format!("Failed to set priority for {}: {}", process_name, e));
+                        }
+                    }
+                    
+                    let _ = CloseHandle(process_handle);
+                }
+                
+                if Process32NextW(snapshot, &mut entry).is_err() {
+                    break;
+                }
+            }
+        }
+        
+        let _ = CloseHandle(snapshot);
+        
+        if found {
+            "".to_string()
+        } else {
+            format!("Process {} not found", process_name)
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn set_process_priority(_process_name: &str, _enable: bool) -> String {
+    "Not supported on this platform".to_string()
+}
+
 fn log_message(message: String) {
     let mut log_buffer = LOGS.lock().unwrap();
     if log_buffer.len() == MAX_LOG_ENTRIES {
@@ -324,10 +410,43 @@ pub async fn run_service() -> anyhow::Result<()> {
             warp::reply::with_header(log_str, "Content-Type", "text/plain").into_response()
         });
 
+    let api_set_priority = warp::post()
+        .and(warp::path("set_priority"))
+        .and(warp::header::optional::<u64>("X-Timestamp"))
+        .and(warp::header::optional::<String>("X-Signature"))
+        .and(warp::body::bytes())
+        .and_then(|timestamp: Option<u64>, signature: Option<String>, body_bytes: Bytes| async move {
+            if !check_authentication(timestamp, signature, &body_bytes) {
+                return Ok::<_, warp::Rejection>(warp::reply::with_status(
+                    "Unauthorized".to_string(),
+                    warp::http::StatusCode::UNAUTHORIZED
+                ).into_response());
+            }
+
+            let priority_params: PriorityParams = match serde_json::from_slice(&body_bytes) {
+                Ok(p) => p,
+                Err(_) => return Ok(warp::reply::with_status(
+                    "Invalid JSON body".to_string(),
+                    warp::http::StatusCode::BAD_REQUEST
+                ).into_response()),
+            };
+
+            let result = tokio::task::spawn_blocking(move || {
+                set_process_priority(&priority_params.process_name, priority_params.enable)
+            }).await.unwrap_or_else(|e| e.to_string());
+
+            if result.is_empty() {
+                Ok(warp::reply::with_status("OK".to_string(), warp::http::StatusCode::OK).into_response())
+            } else {
+                Ok(warp::reply::with_status(result, warp::http::StatusCode::INTERNAL_SERVER_ERROR).into_response())
+            }
+        });
+
     let routes = api_ping
         .or(api_start)
         .or(api_stop)
-        .or(api_logs);
+        .or(api_logs)
+        .or(api_set_priority);
 
     warp::serve(routes)
         .run(([127, 0, 0, 1], LISTEN_PORT))

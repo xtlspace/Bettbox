@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
@@ -16,6 +17,7 @@ import com.appshub.bettbox.GlobalState
 import com.appshub.bettbox.RunState
 import com.appshub.bettbox.core.Core
 import com.appshub.bettbox.extensions.awaitResult
+import com.appshub.bettbox.extensions.asSocketAddressText
 import com.appshub.bettbox.extensions.resolveDns
 import com.appshub.bettbox.models.StartForegroundParams
 import com.appshub.bettbox.models.VpnOptions
@@ -58,10 +60,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var suspendModule: SuspendModule? = null
 
     private var quickResponseEnabled = false
-    private var disconnectCount = 0
-    private var disconnectWindowStart = 0L
-    private val disconnectWindowMs = 5000L
-    private val maxDisconnectsInWindow = 3
+    private var quickResponseJob: Job? = null
     private var lastNetworkType: Int? = null
     private var lastDns = ""
 
@@ -120,6 +119,23 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         if (isFirstAttach) {
             scope.launch { registerNetworkCallback() }
+        }
+
+        scope.launch {
+            var dns = when {
+                lastDns.isNotBlank() -> lastDns
+                else -> getCurrentDns()
+            }
+            if (dns.isBlank()) {
+                delay(1000)
+                dns = getCurrentDns()
+                if (dns.isNotBlank()) lastDns = dns
+            }
+            withContext(Dispatchers.Main) {
+                runCatching {
+                    channel.invokeMethod("dnsChanged", dns)
+                }
+            }
         }
 
         if (GlobalState.currentRunState == RunState.START && bettBoxService == null) {
@@ -244,31 +260,26 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     fun onUpdateNetwork() {
-        val dns = when {
-            networks.isNotEmpty() -> {
-                networks.flatMap { network ->
-                    connectivity?.resolveDns(network) ?: emptyList()
-                }.toSet()
-            }
-            else -> {
-                val cm = connectivity
-                val activeNetwork = cm?.activeNetwork
-                if (activeNetwork != null && cm != null) {
-                    cm.resolveDns(activeNetwork).toSet()
-                } else {
-                    emptySet()
-                }
-            }
-        }.let { dnsSet ->
-            when {
-                dnsSet.isNotEmpty() -> dnsSet.joinToString(",")
-                else -> getAllNetworksDns()
-            }
-        }
+        val dns = getCurrentDns()
         if (dns == lastDns) return
         lastDns = dns
         invokeDart("dnsChanged", dns)
     }
+    private fun getCurrentDns(): String {
+        val dnsSet = when {
+            networkDnsMap.isNotEmpty() -> networkDnsMap.values.flatMap { it }
+            else -> {
+                val cm = connectivity
+                val activeNetwork = cm?.activeNetwork
+                activeNetwork?.let { cm.resolveDns(it) } ?: emptyList()
+            }
+        }.toSet()
+        return when {
+            dnsSet.isNotEmpty() -> dnsSet.joinToString(",")
+            else -> getAllNetworksDns()
+        }
+    }
+
     private fun getAllNetworksDns(): String {
         return runCatching {
             connectivity?.allNetworks?.flatMap { network ->
@@ -277,23 +288,34 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }.getOrElse { "" }
     }
 
+    private val networkDnsMap = ConcurrentHashMap<Network, List<String>>()
+
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             networks.add(network)
-            onUpdateNetwork()
             handleNetworkChange()
         }
 
         override fun onLost(network: Network) {
             networks.remove(network)
+            networkDnsMap.remove(network)
             onUpdateNetwork()
             handleNetworkChange()
+        }
+
+        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+            val dnsList = linkProperties.dnsServers.map { it.asSocketAddressText(53) }
+            networkDnsMap[network] = dnsList
+            onUpdateNetwork()
         }
     }
 
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
         addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
+        }
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
     }.build()
 
@@ -316,6 +338,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             android.util.Log.e("VpnPlugin", "Failed to unregister network callback: ${it.message}")
         }.also {
             networks.clear()
+            networkDnsMap.clear()
             onUpdateNetwork()
         }
     }
@@ -333,21 +356,14 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             ServicePlugin.notifyNetworkChanged()
             
             if (!quickResponseEnabled) return
-            if (GlobalState.currentRunState != RunState.START) return
 
-            val now = System.currentTimeMillis()
-            
-            if (now - disconnectWindowStart > disconnectWindowMs) {
-                disconnectWindowStart = now
-                disconnectCount = 0
-            }
-            
-            if (disconnectCount < maxDisconnectsInWindow) {
-                disconnectCount++
-                android.util.Log.d("VpnPlugin", "Quick Response: Network changed, closing connections ($disconnectCount/$maxDisconnectsInWindow)")
-                invokeDart("closeConnections")
-            } else {
-                android.util.Log.d("VpnPlugin", "Quick Response: Disconnect limit reached, ignoring")
+            quickResponseJob?.cancel()
+            quickResponseJob = scope.launch {
+                delay(500)
+                if (GlobalState.currentRunState == RunState.START) {
+                    android.util.Log.d("VpnPlugin", "Quick Response: Network changed, closing connections")
+                    invokeDart("closeConnections")
+                }
             }
         }
     }
@@ -372,6 +388,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return when {
             caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> 1
             caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> 2
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> 3
             else -> 0
         }
     }

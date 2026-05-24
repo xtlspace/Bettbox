@@ -18,6 +18,9 @@ import com.appshub.bettbox.models.AccessControlMode
 import com.appshub.bettbox.models.VpnOptions
 import com.appshub.bettbox.plugins.VpnPlugin
 import com.appshub.bettbox.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class BettboxVpnService : VpnService(), BaseServiceInterface {
     companion object {
@@ -92,8 +95,24 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         -1
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
-
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "UPDATE_NOTIFICATION_SPEED") {
+            val profileName = intent.getStringExtra("profileName") ?: ""
+            val speedInfo = intent.getStringExtra("speedInfo") ?: ""
+            if (!GlobalState.isSmartStopped && hasStartedForeground) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    updateNotificationSpeed(profileName, speedInfo)
+                }
+            }
+        } else if (intent?.action == "RESTORE_NOTIFICATION") {
+            if (hasStartedForeground) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    startForeground()
+                }
+            }
+        }
+        return START_STICKY
+    }
     override fun stop() {
         if (isStopped) return
         isStopped = true
@@ -158,7 +177,37 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
             hasStartedForeground = true
         } else {
-            getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
+            runCatching {
+                getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
+            }.onFailure { Log.e(TAG, "startForeground notify error: ${it.message}") }
+        }
+    }
+
+    @SuppressLint("ForegroundServiceType")
+    private suspend fun updateNotificationSpeed(profileName: String, speedInfo: String) {
+        val builder = notificationBuilder()
+        val separator = " ︙ "
+        val combinedText = "$profileName$separator$speedInfo"
+        val spannable = android.text.SpannableString(combinedText)
+        val startIndex = profileName.length + separator.length
+        if (startIndex in 1..combinedText.length) {
+            spannable.setSpan(
+                android.text.style.RelativeSizeSpan(0.80f),
+                startIndex,
+                combinedText.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        val notification = builder.setContentTitle(spannable)
+            .setContentText(null)
+            .setStyle(null)
+            .setTicker(combinedText)
+            .build()
+            
+        if (hasStartedForeground) {
+            runCatching {
+                getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
+            }.onFailure { Log.e(TAG, "updateNotificationSpeed notify error: ${it.message}") }
         }
     }
 

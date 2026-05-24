@@ -332,6 +332,7 @@ class ListInputPage extends StatelessWidget {
                   ),
                 );
               },
+              // ignore: deprecated_member_use
               onReorder: (oldIndex, newIndex) {
                 if (oldIndex < newIndex) {
                   newIndex -= 1;
@@ -473,6 +474,7 @@ class MapInputPage extends StatelessWidget {
                   ),
                 );
               },
+              // ignore: deprecated_member_use
               onReorder: (oldIndex, newIndex) {
                 if (oldIndex < newIndex) {
                   newIndex -= 1;

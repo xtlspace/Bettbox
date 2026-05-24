@@ -161,57 +161,6 @@ class StoreFixItem extends ConsumerWidget {
   }
 }
 
-class FcmOptimizationItem extends ConsumerWidget {
-  const FcmOptimizationItem({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final fcmOptimization = ref.watch(
-      vpnSettingProvider.select((state) => state.fcmOptimization),
-    );
-
-    return ListItem.switchItem(
-      title: Text(appLocalizations.fcmOptimization),
-      subtitle: Text(appLocalizations.fcmOptimizationDesc),
-      delegate: SwitchDelegate(
-        value: fcmOptimization,
-        onChanged: (bool value) async {
-          // Update FCM optimization state
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState(
-                (state) => state.copyWith(
-                  fcmOptimization: value,
-                  // Force disable allowBypass when FCM optimization is on (Android only)
-                  allowBypass: value && system.isAndroid
-                      ? false
-                      : state.allowBypass,
-                ),
-              );
-
-          // Update hosts mapping
-          final currentHosts = Map<String, String>.from(
-            ref.read(patchClashConfigProvider).hosts,
-          );
-
-          if (value) {
-            // Add FCM hosts mapping (comma-separated IPs)
-            currentHosts['mtalk.google.com'] =
-                '142.250.107.188, 108.177.125.188';
-          } else {
-            // Remove FCM hosts mapping
-            currentHosts.remove('mtalk.google.com');
-          }
-
-          ref
-              .read(patchClashConfigProvider.notifier)
-              .updateState((state) => state.copyWith(hosts: currentHosts));
-        },
-      ),
-    );
-  }
-}
-
 class QuickResponseItem extends ConsumerWidget {
   const QuickResponseItem({super.key});
 
@@ -355,6 +304,41 @@ class NetworkFixItem extends ConsumerWidget {
   }
 }
 
+class HighPriorityItem extends ConsumerWidget {
+  const HighPriorityItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enableHighPriority = ref.watch(
+      appSettingProvider.select((state) => state.enableHighPriority),
+    );
+
+    return ListItem.switchItem(
+      title: Text(appLocalizations.highPriority),
+      subtitle: Text(appLocalizations.highPriorityDesc),
+      delegate: SwitchDelegate(
+        value: enableHighPriority,
+        onChanged: (bool value) async {
+          ref
+              .read(appSettingProvider.notifier)
+              .updateState((state) => state.copyWith(enableHighPriority: value));
+
+          if (system.isWindows) {
+            try {
+              await globalState.appController.setProcessPriority(value);
+            } catch (e) {
+              commonPrint.log('Set process priority error: $e');
+              if (context.mounted) {
+                context.showSnackBar('Failed to set process priority: $e');
+              }
+            }
+          }
+        },
+      ),
+    );
+  }
+}
+
 class BatteryOptimizationItem extends ConsumerWidget {
   const BatteryOptimizationItem({super.key});
 
@@ -411,6 +395,56 @@ class DisableQuicItem extends ConsumerWidget {
   }
 }
 
+class NetworkSpeedNotificationItem extends ConsumerWidget {
+  const NetworkSpeedNotificationItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final networkSpeedNotification = ref.watch(
+      vpnSettingProvider.select((state) => state.networkSpeedNotification),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.networkSpeedNotification),
+      subtitle: Text(appLocalizations.networkSpeedNotificationDesc),
+      delegate: SwitchDelegate(
+        value: networkSpeedNotification,
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(networkSpeedNotification: value));
+          if (!value && system.isAndroid) {
+            await service?.restoreNotification();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class TrayEnhancementItem extends ConsumerWidget {
+  const TrayEnhancementItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trayEnhancement = ref.watch(
+      vpnSettingProvider.select((state) => state.trayEnhancement),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.trayEnhancement),
+      subtitle: Text(appLocalizations.trayEnhancementDesc),
+      delegate: SwitchDelegate(
+        value: trayEnhancement,
+        onChanged: (bool value) async {
+            ref
+                .read(vpnSettingProvider.notifier)
+                .updateState((state) => state.copyWith(trayEnhancement: value));
+            await globalState.appController.updateTray();
+          },
+      ),
+    );
+  }
+}
+
 class ExcludeChinaItem extends ConsumerWidget {
   const ExcludeChinaItem({super.key});
 
@@ -454,10 +488,12 @@ class OtherSettingView extends ConsumerWidget {
       if (smartAutoStop) const NetworkMatchItem(),
       if (system.isAndroid) const DozeSuspendItem(),
       if (system.isAndroid) const QuickResponseItem(),
-      const FcmOptimizationItem(),
       const StoreFixItem(),
       const DisableQuicItem(),
+      if (system.isAndroid) const NetworkSpeedNotificationItem(),
+      if (!system.isAndroid) const TrayEnhancementItem(),
       if (disableQuic && !isRussian) const ExcludeChinaItem(),
+      if (system.isWindows) const HighPriorityItem(),
       if (system.isWindows) const NetworkFixItem(),
       if (system.isAndroid) const BatteryOptimizationItem(),
     ];

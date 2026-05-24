@@ -98,6 +98,36 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 GlobalState.destroyServiceEngine()
                 result.success(true)
             }
+            "updateNotificationSpeed" -> {
+                val context = com.appshub.bettbox.BettboxApplication.getAppContext()
+                if (context != null) {
+                    val profileName = call.argument<String>("profileName") ?: ""
+                    val speedInfo = call.argument<String>("speedInfo") ?: ""
+                    val intent = android.content.Intent(
+                        context, 
+                        com.appshub.bettbox.services.BettboxVpnService::class.java
+                    ).apply {
+                        action = "UPDATE_NOTIFICATION_SPEED"
+                        putExtra("profileName", profileName)
+                        putExtra("speedInfo", speedInfo)
+                    }
+                    runCatching { context.startService(intent) }
+                }
+                result.success(true)
+            }
+            "restoreNotification" -> {
+                val context = com.appshub.bettbox.BettboxApplication.getAppContext()
+                if (context != null) {
+                    val intent = android.content.Intent(
+                        context, 
+                        com.appshub.bettbox.services.BettboxVpnService::class.java
+                    ).apply {
+                        action = "RESTORE_NOTIFICATION"
+                    }
+                    runCatching { context.startService(intent) }
+                }
+                result.success(true)
+            }
             else -> result.notImplemented()
         }
     }

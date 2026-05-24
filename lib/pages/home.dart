@@ -19,9 +19,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final Map<int, FocusNode> _navFocusNodes = {};
+  int _currentNavIndex = 0;
 
   FocusNode _getNavFocusNode(int index) {
     return _navFocusNodes.putIfAbsent(index, () => FocusNode());
+  }
+
+  void _requestNavFocus(int index) {
+    if (!globalState.isAndroidTV) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navFocusNodes[index]?.requestFocus();
+    });
   }
 
   @override
@@ -125,6 +133,11 @@ class _HomePageState extends State<HomePage> {
     required List<NavigationItem> navigationItems,
     required int currentIndex,
   }) {
+    if (_currentNavIndex != currentIndex) {
+      _currentNavIndex = currentIndex;
+      _requestNavFocus(currentIndex);
+    }
+    
     return Container(
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainer,
@@ -155,11 +168,6 @@ class _HomePageState extends State<HomePage> {
                       focusNode: focusNode,
                       onTap: () {
                         globalState.appController.toPage(item.label);
-                      },
-                      onFocusChange: (hasFocus) {
-                        if (hasFocus && !isSelected) {
-                          globalState.appController.toPage(item.label);
-                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -297,7 +305,9 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       return;
     }
     
-    FocusManager.instance.primaryFocus?.unfocus();
+    if (!globalState.isAndroidTV) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
     
     final isAnimateToPage = ref.read(appSettingProvider).isAnimateToPage;
     final isMobile = ref.read(isMobileViewProvider);

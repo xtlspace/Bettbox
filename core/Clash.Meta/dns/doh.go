@@ -191,6 +191,10 @@ func (doh *dnsOverHTTPS) ResetConnection() {
 func (doh *dnsOverHTTPS) closeClient(client *http.Client) (err error) {
 	client.CloseIdleConnections()
 
+	if tr, ok := client.Transport.(*http.Transport); ok { // HTTP/2 may leak due to keep-alive connections.
+		tr.CloseHttp2Connections()
+	}
+
 	if isHTTP3(client) { // HTTP/3 may leak due to keep-alive connections.
 		return client.Transport.(io.Closer).Close()
 	}
@@ -728,7 +732,7 @@ func (doh *dnsOverHTTPS) tlsDial(ctx context.Context, network string, config *tl
 
 	err = conn.HandshakeContext(ctx)
 	if err != nil {
-		defer conn.Close()
+		_ = rawConn.Close()
 		return nil, err
 	}
 

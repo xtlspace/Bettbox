@@ -58,14 +58,6 @@ class Window {
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.setPreventClose(true);
     });
-
-    if (props.isLocked) {
-      try {
-        await windowManager.setResizable(false);
-      } catch (e) {
-        commonPrint.log('Failed to apply the locked state: $e');
-      }
-    }
   }
 
   void updateMacOSBrightness(Brightness brightness) {

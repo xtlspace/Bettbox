@@ -90,7 +90,7 @@ func findProcessName(network string, ip netip.Addr, srcPort int) (uint32, string
 	return uid, pp, err
 }
 
-func resolveSocketByNetlink(network string, ip netip.Addr, srcPort int) (uint32, uint32, error) {
+func resolveSocketByNetlink(network string, ip netip.Addr, srcPort int) (uid uint32, inode uint32, err error) {
 	request := &inetDiagRequest{
 		States: 0xffffffff,
 		Cookie: [2]uint32{0xffffffff, 0xffffffff},
@@ -133,6 +133,7 @@ func resolveSocketByNetlink(network string, ip netip.Addr, srcPort int) (uint32,
 		return 0, 0, err
 	}
 
+	err = ErrNotFound
 	for _, msg := range messages {
 		if len(msg.Data) < inetDiagResponseSize {
 			continue
@@ -140,10 +141,37 @@ func resolveSocketByNetlink(network string, ip netip.Addr, srcPort int) (uint32,
 
 		response := (*inetDiagResponse)(unsafe.Pointer(&msg.Data[0]))
 
-		return response.UID, response.INode, nil
+		// always set to allow fallback when check fails
+		uid, inode, err = response.UID, response.INode, nil
+
+		// check src port
+		if binary.BigEndian.Uint16(response.SrcPort[:]) != uint16(srcPort) {
+			continue
+		}
+
+		// check src IP
+		var src netip.Addr
+		switch response.Family {
+		case unix.AF_INET:
+			var a [4]byte
+			copy(a[:], response.Src[:4])
+			src = netip.AddrFrom4(a)
+		case unix.AF_INET6:
+			var a [16]byte
+			copy(a[:], response.Src[:])
+			src = netip.AddrFrom16(a).Unmap()
+		default:
+			continue
+		}
+		if src != ip.Unmap() {
+			continue
+		}
+
+		// this is the one we want
+		break
 	}
 
-	return 0, 0, ErrNotFound
+	return
 }
 
 func resolveProcessNameByProcSearch(inode, uid uint32) (string, error) {
@@ -334,70 +362,123 @@ func searchProcNetFileByPort(path string, targetIP netip.Addr, targetPort uint16
 
 	isV6 := strings.HasSuffix(path, "6")
 	scanner := bufio.NewScanner(f)
-	// skip header
-	scanner.Scan()
+
+	if !scanner.Scan() {
+		return 0, 0, false, ErrNotFound
+	}
+
+	var bestUID, bestInode uint32
+	found := false
 
 	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
 		if len(fields) < 10 {
 			continue
 		}
 
-		localAddr := fields[1]
-		parts := strings.Split(localAddr, ":")
-		if len(parts) != 2 {
+		lineIP, linePort, parseErr := parseHexAddrPort(fields[1], isV6)
+		if parseErr != nil {
+			continue
+		}
+		if linePort != targetPort {
 			continue
 		}
 
-		portHex := parts[1]
-		port, err := strconv.ParseUint(portHex, 16, 16)
-		if err != nil || uint16(port) != targetPort {
+		lineUID, parseErr := strconv.ParseUint(fields[7], 10, 32)
+		if parseErr != nil {
+			continue
+		}
+		lineInode, parseErr := strconv.ParseUint(fields[9], 10, 32)
+		if parseErr != nil {
 			continue
 		}
 
-		inodeStr := fields[9]
-		if inodeStr == "0" {
-			continue // TIME_WAIT entries have inode 0
+		if lineIP == targetIP {
+			return uint32(lineUID), uint32(lineInode), true, nil
 		}
-		inode64, err := strconv.ParseUint(inodeStr, 10, 32)
-		if err != nil {
+
+		if lineInode == 0 {
 			continue
 		}
 
-		uid64, _ := strconv.ParseUint(fields[7], 10, 32)
-
-		addrHex := parts[0]
-		if isV6 {
-			addrBytes, err := hex.DecodeString(addrHex)
-			if err != nil || len(addrBytes) != 16 {
-				continue
-			}
-			// IPv6 addresses in /proc/net/tcp6 are in network byte order (big-endian)
-			var addr [16]byte
-			copy(addr[:], addrBytes)
-			parsedIP := netip.AddrFrom16(addr)
-			if parsedIP == targetIP {
-				return uint32(uid64), uint32(inode64), true, nil
-			}
-		} else {
-			addrBytes, err := hex.DecodeString(addrHex)
-			if err != nil || len(addrBytes) != 4 {
-				continue
-			}
-			// IPv4 addresses in /proc/net/tcp are in little-endian order
-			parsedIP := netip.AddrFrom4([4]byte{addrBytes[3], addrBytes[2], addrBytes[1], addrBytes[0]})
-			if parsedIP == targetIP {
-				return uint32(uid64), uint32(inode64), true, nil
-			}
-		}
-
-		// port matched but IP didn't - save as best effort
-		if !exact {
-			uid = uint32(uid64)
-			inode = uint32(inode64)
-			exact = false
+		if !found || (bestUID == 0 && lineUID != 0) {
+			bestUID = uint32(lineUID)
+			bestInode = uint32(lineInode)
+			found = true
 		}
 	}
 
-	return uid, inode, exact, scanner.Err()
+	if found {
+		return bestUID, bestInode, false, nil
+	}
+	return 0, 0, false, ErrNotFound
 }
+
+func parseHexAddrPort(s string, isV6 bool) (netip.Addr, uint16, error) {
+	colon := strings.IndexByte(s, ':')
+	if colon < 0 {
+		return netip.Addr{}, 0, fmt.Errorf("invalid addr:port: %s", s)
+	}
+
+	port64, err := strconv.ParseUint(s[colon+1:], 16, 16)
+	if err != nil {
+		return netip.Addr{}, 0, err
+	}
+
+	var addr netip.Addr
+	if isV6 {
+		addr, err = parseHexIPv6(s[:colon])
+	} else {
+		addr, err = parseHexIPv4(s[:colon])
+	}
+	return addr, uint16(port64), err
+}
+
+func parseHexIPv4(s string) (netip.Addr, error) {
+	if len(s) != 8 {
+		return netip.Addr{}, fmt.Errorf("invalid ipv4 hex len: %d", len(s))
+	}
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return netip.Addr{}, err
+	}
+	var ip [4]byte
+	if littleEndian {
+		ip[0], ip[1], ip[2], ip[3] = b[3], b[2], b[1], b[0]
+	} else {
+		copy(ip[:], b)
+	}
+	return netip.AddrFrom4(ip), nil
+}
+
+func parseHexIPv6(s string) (netip.Addr, error) {
+	if len(s) != 32 {
+		return netip.Addr{}, fmt.Errorf("invalid ipv6 hex len: %d", len(s))
+	}
+	var ip [16]byte
+	for i := 0; i < 4; i++ {
+		b, err := hex.DecodeString(s[i*8 : (i+1)*8])
+		if err != nil {
+			return netip.Addr{}, err
+		}
+		if littleEndian {
+			ip[i*4+0] = b[3]
+			ip[i*4+1] = b[2]
+			ip[i*4+2] = b[1]
+			ip[i*4+3] = b[0]
+		} else {
+			copy(ip[i*4:(i+1)*4], b)
+		}
+	}
+	return netip.AddrFrom16(ip), nil
+}
+
+var littleEndian = func() bool {
+	x := uint32(0x01020304)
+	return *(*byte)(unsafe.Pointer(&x)) == 0x04
+}()

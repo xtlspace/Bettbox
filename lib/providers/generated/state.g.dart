@@ -131,7 +131,7 @@ final proxyStateProvider = AutoDisposeProvider<ProxyState>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ProxyStateRef = AutoDisposeProviderRef<ProxyState>;
-String _$trayStateHash() => r'c132e2625c51db486c392c1f5c09bac8748509b0';
+String _$trayStateHash() => r'08a611775e36405fa18fd6f047ae423bcb2efe83';
 
 /// See also [trayState].
 @ProviderFor(trayState)
@@ -258,7 +258,7 @@ final profilesSelectorStateProvider =
 // ignore: unused_element
 typedef ProfilesSelectorStateRef =
     AutoDisposeProviderRef<ProfilesSelectorState>;
-String _$filterGroupsStateHash() => r'c50aafbb50f98a66e21fc069d22031351d93a0ab';
+String _$filterGroupsStateHash() => r'31e2e642a456991cc2d103627efacb75d796791c';
 
 /// Copied from Dart SDK
 class _SystemHash {

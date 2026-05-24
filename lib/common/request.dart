@@ -31,7 +31,7 @@ class Request {
     );
   }
 
-  Future<Response> getFileResponseForUrl(String url) async {
+  Future<Response> _getResponseForUrl(String url, ResponseType responseType) async {
     final uri = Uri.parse(url);
     final userInfo = uri.userInfo;
 
@@ -39,7 +39,7 @@ class Request {
     if (userInfo.isNotEmpty) {
       final auth = base64Encode(utf8.encode(userInfo));
       options = Options(
-        responseType: ResponseType.bytes,
+        responseType: responseType,
         headers: {'Authorization': 'Basic $auth'},
       );
       url = uri.replace(userInfo: '').toString();
@@ -47,30 +47,17 @@ class Request {
 
     final response = await _clashDio.get(
       url,
-      options: options ?? Options(responseType: ResponseType.bytes),
+      options: options ?? Options(responseType: responseType),
     );
     return response;
   }
 
+  Future<Response> getFileResponseForUrl(String url) async {
+    return _getResponseForUrl(url, ResponseType.bytes);
+  }
+
   Future<Response> getTextResponseForUrl(String url) async {
-    final uri = Uri.parse(url);
-    final userInfo = uri.userInfo;
-
-    Options? options;
-    if (userInfo.isNotEmpty) {
-      final auth = base64Encode(utf8.encode(userInfo));
-      options = Options(
-        responseType: ResponseType.plain,
-        headers: {'Authorization': 'Basic $auth'},
-      );
-      url = uri.replace(userInfo: '').toString();
-    }
-
-    final response = await _clashDio.get(
-      url,
-      options: options ?? Options(responseType: ResponseType.plain),
-    );
-    return response;
+    return _getResponseForUrl(url, ResponseType.plain);
   }
 
   Future<MemoryImage?> getImage(String url) async {
@@ -108,7 +95,7 @@ class Request {
   }
 
   final List<String> _ipInfoSources = [
-    'https://api.appshub.cc/cdn-cgi/trace',
+    'https://api.cloudflare.com/cdn-cgi/trace',
     'https://cp.cloudflare.com/cdn-cgi/trace',
   ];
 
@@ -117,150 +104,81 @@ class Request {
     'https://www.cloudflare-cn.com/cdn-cgi/trace',
   ];
 
+  Future<Result<IpInfo?>> _checkIpFromSources(
+    List<String> sources,
+    CancelToken? cancelToken,
+    Duration? timeout,
+  ) async {
+    final effectiveTimeout = timeout ?? const Duration(seconds: 5);
+
+    final dio = Dio(
+      BaseOptions(
+        receiveTimeout: effectiveTimeout,
+        connectTimeout: effectiveTimeout,
+      ),
+    );
+
+    final Completer<Result<IpInfo?>> resultCompleter = Completer();
+    int failureCount = 0;
+
+    void handleFailure() {
+      if (resultCompleter.isCompleted) return;
+      failureCount++;
+      if (failureCount == sources.length) {
+        resultCompleter.complete(Result.success(null));
+      }
+    }
+
+    for (final url in sources) {
+      dio.get<String>(
+        url,
+        cancelToken: cancelToken,
+        options: Options(responseType: ResponseType.plain),
+      ).then((res) {
+        if (resultCompleter.isCompleted) return;
+        if (res.statusCode == HttpStatus.ok && res.data != null) {
+          try {
+            resultCompleter.complete(
+              Result.success(IpInfo.fromCloudflareTrace(res.data!)),
+            );
+          } catch (_) {
+            handleFailure();
+          }
+        } else {
+          handleFailure();
+        }
+      }).catchError((e) {
+        if (resultCompleter.isCompleted) return;
+        if (e is DioException && e.type == DioExceptionType.cancel) {
+          resultCompleter.complete(Result.error('cancelled'));
+          return;
+        }
+        handleFailure();
+      });
+    }
+
+    try {
+      return await resultCompleter.future.timeout(
+        effectiveTimeout,
+        onTimeout: () => Result.success(null),
+      );
+    } finally {
+      dio.close(force: true);
+    }
+  }
+
   Future<Result<IpInfo?>> checkIp({
     CancelToken? cancelToken,
     Duration? timeout,
   }) async {
-    final effectiveTimeout = timeout ?? const Duration(seconds: 5);
-    var failureCount = 0;
-    final futures = _ipInfoSources.map((url) async {
-      final Completer<Result<IpInfo?>> completer = Completer();
-      handleFailRes() {
-        if (!completer.isCompleted && failureCount == _ipInfoSources.length) {
-          completer.complete(Result.success(null));
-        }
-      }
-
-      final dio = Dio(
-        BaseOptions(
-          receiveTimeout: effectiveTimeout,
-          connectTimeout: effectiveTimeout,
-        ),
-      );
-
-      final future = dio.get<String>(
-        url,
-        cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.plain),
-      );
-      future
-          .then((res) {
-            if (res.statusCode == HttpStatus.ok && res.data != null) {
-              try {
-                completer.complete(
-                  Result.success(IpInfo.fromCloudflareTrace(res.data!)),
-                );
-              } catch (e) {
-                failureCount++;
-                handleFailRes();
-              }
-            } else {
-              failureCount++;
-              handleFailRes();
-            }
-          })
-          .catchError((e) {
-            failureCount++;
-            if (e is DioException && e.type == DioExceptionType.cancel) {
-              completer.complete(Result.error('cancelled'));
-            }
-            handleFailRes();
-          });
-      return completer.future;
-    });
-
-    try {
-      final res = await Future.any(
-        futures,
-      ).timeout(effectiveTimeout, onTimeout: () => Result.success(null));
-      cancelToken?.cancel();
-      return res;
-    } catch (e) {
-      cancelToken?.cancel();
-      return Result.success(null);
-    }
+    return _checkIpFromSources(_ipInfoSources, cancelToken, timeout);
   }
 
   Future<Result<IpInfo?>> checkIpDomestic({
     CancelToken? cancelToken,
     Duration? timeout,
   }) async {
-    final effectiveTimeout = timeout ?? const Duration(seconds: 5);
-    var failureCount = 0;
-    final futures = _domesticIpSources.map((url) async {
-      final Completer<Result<IpInfo?>> completer = Completer();
-      handleFailRes() {
-        if (!completer.isCompleted &&
-            failureCount == _domesticIpSources.length) {
-          completer.complete(Result.success(null));
-        }
-      }
-
-      final dio = Dio(
-        BaseOptions(
-          receiveTimeout: effectiveTimeout,
-          connectTimeout: effectiveTimeout,
-        ),
-      );
-
-      final future = dio.get<String>(
-        url,
-        cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.plain),
-      );
-      future
-          .then((res) {
-            if (res.statusCode == HttpStatus.ok && res.data != null) {
-              try {
-                completer.complete(
-                  Result.success(IpInfo.fromCloudflareTrace(res.data!)),
-                );
-              } catch (e) {
-                failureCount++;
-                handleFailRes();
-              }
-            } else {
-              failureCount++;
-              handleFailRes();
-            }
-          })
-          .catchError((e) {
-            failureCount++;
-            if (e is DioException && e.type == DioExceptionType.cancel) {
-              completer.complete(Result.error('cancelled'));
-            }
-            handleFailRes();
-          });
-      return completer.future;
-    });
-
-    try {
-      final res = await Future.any(
-        futures,
-      ).timeout(effectiveTimeout, onTimeout: () => Result.success(null));
-      cancelToken?.cancel();
-      return res;
-    } catch (e) {
-      cancelToken?.cancel();
-      return Result.success(null);
-    }
-  }
-
-  Future<bool> pingHelper() async {
-    try {
-      final response = await _dio
-          .get(
-            'http://$localhost:$helperPort/ping',
-            options: Options(responseType: ResponseType.plain),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-      if (response.statusCode != HttpStatus.ok) {
-        return false;
-      }
-      return (response.data as String) == globalState.coreSHA256;
-    } catch (_) {
-      return false;
-    }
+    return _checkIpFromSources(_domesticIpSources, cancelToken, timeout);
   }
 
   Future<bool> quickPingHelper() async {
@@ -345,6 +263,38 @@ class Request {
       return true;
     } catch (e) {
       commonPrint.log('Failed to stop core by helper: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setProcessPriorityByHelper(String processName, bool enable) async {
+    try {
+      final helperAlive = await quickPingHelper();
+      if (!helperAlive) {
+        commonPrint.log('Helper service is not reachable, skipping setProcessPriorityByHelper');
+        return false;
+      }
+
+      final body = json.encode({
+        'process_name': processName,
+        'enable': enable,
+      });
+      final authHeaders = HelperAuthManager.generateAuthHeaders(body);
+
+      final response = await _dio
+          .post(
+            'http://$localhost:$helperPort/set_priority',
+            data: body,
+            options: Options(
+              responseType: ResponseType.plain,
+              headers: authHeaders,
+            ),
+          )
+          .timeout(const Duration(milliseconds: 2000));
+      
+      return response.statusCode == HttpStatus.ok;
+    } catch (e) {
+      commonPrint.log('Failed to set process priority by helper: $e');
       return false;
     }
   }

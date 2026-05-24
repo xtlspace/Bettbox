@@ -296,22 +296,6 @@ final patchClashConfigProvider =
     );
 
 typedef _$PatchClashConfig = AutoDisposeNotifier<ClashConfig>;
-String _$windowLockedHash() => r'3dc075afbc2a00dae7dec528accbed76afc206e4';
-
-/// See also [WindowLocked].
-@ProviderFor(WindowLocked)
-final windowLockedProvider =
-    AutoDisposeNotifierProvider<WindowLocked, bool>.internal(
-      WindowLocked.new,
-      name: r'windowLockedProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$windowLockedHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
-
-typedef _$WindowLocked = AutoDisposeNotifier<bool>;
 String _$nodeExcludeFilterHash() => r'5fc26cba4cd5c9dfdb57fcd4eb4bf59d39abafc3';
 
 /// See also [NodeExcludeFilter].

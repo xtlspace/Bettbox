@@ -83,7 +83,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "advancedSettings": MessageLookupByLibrary.simpleMessage(
       "Расширенные настройки",
     ),
-    "ago": MessageLookupByLibrary.simpleMessage("назад"),
+    "ago": MessageLookupByLibrary.simpleMessage(" назад"),
     "agree": MessageLookupByLibrary.simpleMessage("Согласен"),
     "allApps": MessageLookupByLibrary.simpleMessage("Все приложения"),
     "allowBypass": MessageLookupByLibrary.simpleMessage("Разрешить обход VPN"),
@@ -137,14 +137,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Резервное копирование",
     ),
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
-      "Синхронизация данных через WebDAV или локально",
+      "Синхронизация данных через WebDAV или файл",
     ),
     "backupSuccess": MessageLookupByLibrary.simpleMessage(
       "Резервное копирование успешно",
     ),
-    "basicConfig": MessageLookupByLibrary.simpleMessage(
-      "Базовая конфигурация ядра",
-    ),
+    "basicConfig": MessageLookupByLibrary.simpleMessage("Конфигурация ядра"),
     "basicConfigDesc": MessageLookupByLibrary.simpleMessage(
       "Глобальное изменение конфигурации ядра",
     ),
@@ -224,6 +222,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
       "Просмотр текущих соединений",
     ),
+    "connectionsSort": MessageLookupByLibrary.simpleMessage(
+      "Сортировка соединений",
+    ),
     "connectivity": MessageLookupByLibrary.simpleMessage("Подключение:"),
     "contactMe": MessageLookupByLibrary.simpleMessage("Связаться со мной"),
     "content": MessageLookupByLibrary.simpleMessage("Содержимое"),
@@ -247,6 +248,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "create": MessageLookupByLibrary.simpleMessage("Создать"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Время создания"),
     "custom": MessageLookupByLibrary.simpleMessage("Пользовательский"),
+    "customDashboardTitle": MessageLookupByLibrary.simpleMessage(
+      "Пользовательский заголовок",
+    ),
     "customUrl": MessageLookupByLibrary.simpleMessage("Пользовательский URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Вырезать"),
     "dark": MessageLookupByLibrary.simpleMessage("Тёмная"),
@@ -351,7 +355,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "endpointIndependentNatDesc": MessageLookupByLibrary.simpleMessage(
       "Включить NAT независимый от конечной точки",
     ),
-    "entries": MessageLookupByLibrary.simpleMessage("записей"),
+    "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "exclude": MessageLookupByLibrary.simpleMessage("Скрыть из недавних"),
     "excludeChina": MessageLookupByLibrary.simpleMessage("Исключить Китай"),
     "excludeChinaDesc": MessageLookupByLibrary.simpleMessage(
@@ -394,11 +398,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "fakeipRange": MessageLookupByLibrary.simpleMessage("Диапазон FakeIP"),
     "fakeipRangeV6": MessageLookupByLibrary.simpleMessage("Диапазон FakeIPv6"),
     "fakeipTtl": MessageLookupByLibrary.simpleMessage("Время жизни FakeIP"),
-    "fallback": MessageLookupByLibrary.simpleMessage("Fallback"),
+    "fallback": MessageLookupByLibrary.simpleMessage("Резервный DNS"),
     "fallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Обычно используются зарубежные DNS",
     ),
-    "fallbackFilter": MessageLookupByLibrary.simpleMessage("Фильтр fallback"),
+    "fallbackFilter": MessageLookupByLibrary.simpleMessage(
+      "Фильтр резервного DNS",
+    ),
     "fcmOptimization": MessageLookupByLibrary.simpleMessage("Оптимизация FCM"),
     "fcmOptimizationDesc": MessageLookupByLibrary.simpleMessage(
       "Повышает стабильность FCM при прямом подключении",
@@ -470,6 +476,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthCheckTimeoutDesc": MessageLookupByLibrary.simpleMessage(
       "Таймаут проверки работоспособности узлов",
     ),
+    "highPriority": MessageLookupByLibrary.simpleMessage("Высокий приоритет"),
+    "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
+      "Повысить приоритет основного и основного процессов",
+    ),
     "highRefreshRate": MessageLookupByLibrary.simpleMessage(
       "Высокая частота обновления",
     ),
@@ -493,7 +503,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "httpPortSniffer": MessageLookupByLibrary.simpleMessage(
       "HTTP порты сниффера",
     ),
-    "icmpForwarding": MessageLookupByLibrary.simpleMessage("ICMP forwarding"),
+    "icmpForwarding": MessageLookupByLibrary.simpleMessage("Пересылка ICMP"),
     "icmpForwardingDesc": MessageLookupByLibrary.simpleMessage(
       "Включить поддержку ICMP Ping",
     ),
@@ -524,7 +534,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Переключение отображения",
     ),
     "ipPrivacyProtection": MessageLookupByLibrary.simpleMessage("Скрыть IP"),
-    "ipcidr": MessageLookupByLibrary.simpleMessage("IP/маска"),
+    "ipcidr": MessageLookupByLibrary.simpleMessage("IP/CIDR"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("Включить поддержку IPv6"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
       "Разрешить входящие IPv6",
@@ -538,7 +548,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "language": MessageLookupByLibrary.simpleMessage("Язык"),
     "layout": MessageLookupByLibrary.simpleMessage("Макет"),
     "light": MessageLookupByLibrary.simpleMessage("Светлая"),
-    "lightIcon": MessageLookupByLibrary.simpleMessage("Лёгкая иконка"),
+    "lightIcon": MessageLookupByLibrary.simpleMessage("Светлая иконка"),
     "lightIconDesc": MessageLookupByLibrary.simpleMessage(
       "Переключить на светлый стиль рабочего стола вручную",
     ),
@@ -610,6 +620,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Введите IP или CIDR, максимум 2, через запятую",
     ),
     "networkSpeed": MessageLookupByLibrary.simpleMessage("Скорость сети"),
+    "networkSpeedNotification": MessageLookupByLibrary.simpleMessage(
+      "Скорость в уведомлениях",
+    ),
+    "networkSpeedNotificationDesc": MessageLookupByLibrary.simpleMessage(
+      "Показывать текущую скорость в панели уведомлений",
+    ),
     "networkType": MessageLookupByLibrary.simpleMessage("Тип сети"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("Нейтральный"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("По умолчанию"),
@@ -836,6 +852,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Активно отключать соединения при изменении сети",
     ),
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("Радуга"),
+    "realTimeSpeed": MessageLookupByLibrary.simpleMessage(
+      "Скорость в реальном времени",
+    ),
     "recovery": MessageLookupByLibrary.simpleMessage("Восстановить"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("Все данные"),
     "recoveryProfiles": MessageLookupByLibrary.simpleMessage("Только профили"),
@@ -881,13 +900,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "resetTip": MessageLookupByLibrary.simpleMessage("Сбросить настройки?"),
     "resources": MessageLookupByLibrary.simpleMessage("Ресурсы"),
     "resourcesDesc": MessageLookupByLibrary.simpleMessage(
-      "Информация о внешних ресурсах",
+      "Управление внешними ресурсами",
     ),
     "respectRules": MessageLookupByLibrary.simpleMessage("Следовать правилам"),
     "respectRulesDesc": MessageLookupByLibrary.simpleMessage(
       "DNS-соединения следуют правилам",
     ),
     "restart": MessageLookupByLibrary.simpleMessage("Перезапуск"),
+    "restartApp": MessageLookupByLibrary.simpleMessage("Перезапустить"),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "Перезапустить ядро вручную?",
     ),
@@ -1014,7 +1034,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab": MessageLookupByLibrary.simpleMessage("Вкладки"),
     "tabAnimation": MessageLookupByLibrary.simpleMessage("Анимация вкладок"),
     "tabAnimationDesc": MessageLookupByLibrary.simpleMessage(
-      "Только для некоторых мобильных представлений",
+      "Работает только в мобильном режиме",
     ),
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP параллельно"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
@@ -1034,15 +1054,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("Компактный"),
     "time": MessageLookupByLibrary.simpleMessage("Время"),
     "tip": MessageLookupByLibrary.simpleMessage("Подсказка"),
+    "titleTooLong": MessageLookupByLibrary.simpleMessage(
+      "Слишком длинный, максимум 20 символов",
+    ),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage(
       "TLS порты сниффера",
     ),
     "toggle": MessageLookupByLibrary.simpleMessage("Переключить"),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("Тональный акцент"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("Максимум 2 правила"),
-    "tools": MessageLookupByLibrary.simpleMessage("Дополнительно"),
+    "tools": MessageLookupByLibrary.simpleMessage("Настройки"),
+    "totalTraffic": MessageLookupByLibrary.simpleMessage("Общий трафик"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Порт Tproxy"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Трафик"),
+    "trayEnhancement": MessageLookupByLibrary.simpleMessage("Улучшение трея"),
+    "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
+      "Управление группами прокси в контекстном меню трея",
+    ),
     "tryManualRefresh": MessageLookupByLibrary.simpleMessage(
       "Попробуйте обновить вручную",
     ),

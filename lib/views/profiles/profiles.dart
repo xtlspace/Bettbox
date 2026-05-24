@@ -629,6 +629,7 @@ class _ReorderableProfilesSheetState extends State<ReorderableProfilesSheet> {
           buildDefaultDragHandles: false,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           proxyDecorator: proxyDecorator,
+          // ignore: deprecated_member_use
           onReorder: (oldIndex, newIndex) {
             setState(() {
               if (oldIndex < newIndex) {

@@ -208,6 +208,7 @@ class _CacheItemExtentSliverReorderableListState
         widget.keyBuilder(index),
         () => widget.itemExtentBuilder(index),
       ),
+      // ignore: deprecated_member_use
       onReorder: widget.onReorder,
       proxyDecorator: widget.proxyDecorator,
     );

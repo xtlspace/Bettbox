@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/widgets/transparent_macos_sidebar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:window_manager/window_manager.dart';
 
 class AppStateManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -351,9 +350,6 @@ class AppSidebarContainer extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    if (window != null) const WindowLockButton(),
-                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -367,36 +363,3 @@ class AppSidebarContainer extends ConsumerWidget {
   }
 }
 
-class WindowLockButton extends ConsumerWidget {
-  const WindowLockButton({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLocked = ref.watch(
-      windowSettingProvider.select((state) => state.isLocked),
-    );
-
-    return IconButton(
-      onPressed: () async {
-        try {
-          final currentLocked = ref.read(
-            windowSettingProvider.select((state) => state.isLocked),
-          );
-          final newLocked = !currentLocked;
-
-          await windowManager.setResizable(!newLocked);
-
-          ref
-              .read(windowSettingProvider.notifier)
-              .updateState((state) => state.copyWith(isLocked: newLocked));
-        } catch (e) {
-          commonPrint.log('Window Lock Failed: $e');
-        }
-      },
-      icon: Icon(
-        isLocked ? Icons.lock : Icons.lock_open,
-        color: context.colorScheme.onSurfaceVariant,
-      ),
-    );
-  }
-}

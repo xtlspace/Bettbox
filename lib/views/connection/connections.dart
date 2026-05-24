@@ -122,7 +122,21 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
       _timer = null;
       return;
     }
-    ref.read(connectionsProvider.notifier).state = connections;
+    final oldConnections = ref.read(connectionsProvider);
+    final oldMap = {for (final e in oldConnections) e.id: e};
+    final newConnections = connections.map((item) {
+      final oldItem = oldMap[item.id];
+      if (oldItem != null) {
+        final upSpeed = item.upload - oldItem.upload;
+        final downSpeed = item.download - oldItem.download;
+        return item.copyWith(
+          uploadSpeed: upSpeed > 0 ? upSpeed : 0,
+          downloadSpeed: downSpeed > 0 ? downSpeed : 0,
+        );
+      }
+      return item.copyWith(uploadSpeed: 0, downloadSpeed: 0);
+    }).toList();
+    ref.read(connectionsProvider.notifier).state = newConnections;
   }
 
   void _handleBackgroundModeChanged() {
@@ -172,6 +186,30 @@ class _ConnectionsViewState extends ConsumerState<ConnectionsView>
         IconButton(
           onPressed: _handleCloseAll,
           icon: const Icon(Icons.delete_sweep_outlined),
+        ),
+        IconButton(
+          onPressed: () async {
+            final currentSortType = ref.read(connectionsSortProvider);
+            final selectedSortType = await globalState.showCommonDialog<ConnectionsSortType>(
+              child: OptionsDialog<ConnectionsSortType>(
+                title: appLocalizations.connectionsSort,
+                options: ConnectionsSortType.values,
+                value: currentSortType,
+                textBuilder: (sortType) {
+                  return switch (sortType) {
+                    ConnectionsSortType.defaultSort => appLocalizations.defaultSort,
+                    ConnectionsSortType.realTimeSpeed => appLocalizations.realTimeSpeed,
+                    ConnectionsSortType.totalTraffic => appLocalizations.totalTraffic,
+                    ConnectionsSortType.creationTime => appLocalizations.creationTime,
+                  };
+                },
+              ),
+            );
+            if (selectedSortType != null && selectedSortType != currentSortType) {
+              ref.read(connectionsSortProvider.notifier).state = selectedSortType;
+            }
+          },
+          icon: const Icon(Icons.sort),
         ),
       ],
       body: Consumer(

@@ -92,23 +92,31 @@ class ClashCore {
     if (proxies.isEmpty) return [];
 
     return Isolate.run<List<Group>>(() {
+      final globalProxy = proxies[UsedProxy.GLOBAL.name];
+      if (globalProxy == null) return [];
+
+      final allList = globalProxy['all'] as List?;
+      if (allList == null) return [];
+
       final groupNames = [
         UsedProxy.GLOBAL.name,
-        ...(proxies[UsedProxy.GLOBAL.name]['all'] as List).where((e) {
+        ...allList.where((e) {
           final proxy = proxies[e] as Map<String, dynamic>?;
           return GroupTypeExtension.valueList.contains(proxy?['type']);
         }),
       ];
       final groupsRaw = groupNames.map((groupName) {
+        final proxyData = proxies[groupName] as Map?;
+        if (proxyData == null) return null;
         final group = Map<String, dynamic>.from(
-          (proxies[groupName] as Map).cast<String, dynamic>(),
+          proxyData.cast<String, dynamic>(),
         );
         group['all'] = ((group['all'] ?? []) as List)
             .map((name) => proxies[name])
             .whereType<Map<String, dynamic>>()
             .toList();
         return group;
-      }).toList();
+      }).whereType<Map<String, dynamic>>().toList();
       return groupsRaw.map((e) => Group.fromJson(e)).toList();
     });
   }

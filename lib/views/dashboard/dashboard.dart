@@ -370,8 +370,8 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
       len += value.codeUnitAt(i) > 127 ? 2 : 1;
     }
     setState(() {
-      if (len > 12) {
-        _errorText = 'Too long (Max 6 Chinese or 12 English)';
+      if (len > 20) {
+        _errorText = appLocalizations.titleTooLong;
       } else {
         _errorText = null;
       }
@@ -381,7 +381,7 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
   @override
   Widget build(BuildContext context) {
     return CommonDialog(
-      title: '^_^',
+      title: appLocalizations.customDashboardTitle,
       actions: [
         TextButton(
           onPressed: () {

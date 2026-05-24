@@ -224,6 +224,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
       "View active connections",
     ),
+    "connectionsSort": MessageLookupByLibrary.simpleMessage("Connections Sort"),
     "connectivity": MessageLookupByLibrary.simpleMessage("Connectivity:"),
     "contactMe": MessageLookupByLibrary.simpleMessage("Contact Me"),
     "content": MessageLookupByLibrary.simpleMessage("Content"),
@@ -247,6 +248,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "create": MessageLookupByLibrary.simpleMessage("Create"),
     "creationTime": MessageLookupByLibrary.simpleMessage("Creation Time"),
     "custom": MessageLookupByLibrary.simpleMessage("Custom"),
+    "customDashboardTitle": MessageLookupByLibrary.simpleMessage(
+      "Custom Dashboard Title",
+    ),
     "customUrl": MessageLookupByLibrary.simpleMessage("Custom URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Cut"),
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
@@ -462,6 +466,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "healthCheckTimeoutDesc": MessageLookupByLibrary.simpleMessage(
       "Node health check timeout",
     ),
+    "highPriority": MessageLookupByLibrary.simpleMessage("High Priority"),
+    "highPriorityDesc": MessageLookupByLibrary.simpleMessage(
+      "Increase priority of main process and core process",
+    ),
     "highRefreshRate": MessageLookupByLibrary.simpleMessage(
       "High Refresh Rate",
     ),
@@ -608,6 +616,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Max 2 IPs/CIDRs, comma-separated",
     ),
     "networkSpeed": MessageLookupByLibrary.simpleMessage("Network Speed"),
+    "networkSpeedNotification": MessageLookupByLibrary.simpleMessage(
+      "Speed in Notification",
+    ),
+    "networkSpeedNotificationDesc": MessageLookupByLibrary.simpleMessage(
+      "Show current speed in the notification bar",
+    ),
     "networkType": MessageLookupByLibrary.simpleMessage("Network Type"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("Neutral"),
     "noAnimation": MessageLookupByLibrary.simpleMessage("Default"),
@@ -822,6 +836,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Disconnect on network change (WiFi/Mobile)",
     ),
     "rainbowScheme": MessageLookupByLibrary.simpleMessage("Rainbow"),
+    "realTimeSpeed": MessageLookupByLibrary.simpleMessage("Real-time Speed"),
     "recovery": MessageLookupByLibrary.simpleMessage("Restore"),
     "recoveryAll": MessageLookupByLibrary.simpleMessage("Restore All Data"),
     "recoveryProfiles": MessageLookupByLibrary.simpleMessage(
@@ -876,6 +891,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "DNS connections follow Rules",
     ),
     "restart": MessageLookupByLibrary.simpleMessage("Restart"),
+    "restartApp": MessageLookupByLibrary.simpleMessage("Restart App"),
     "restartCoreDesc": MessageLookupByLibrary.simpleMessage(
       "Manually restart the core?",
     ),
@@ -1018,13 +1034,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "tight": MessageLookupByLibrary.simpleMessage("Compact"),
     "time": MessageLookupByLibrary.simpleMessage("Time"),
     "tip": MessageLookupByLibrary.simpleMessage("Tip"),
+    "titleTooLong": MessageLookupByLibrary.simpleMessage(
+      "Title is too long, maximum 20 characters supported",
+    ),
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS Port Sniffing"),
     "toggle": MessageLookupByLibrary.simpleMessage("Toggle"),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("Tonal Spot"),
     "tooManyRules": MessageLookupByLibrary.simpleMessage("Max 2 rules allowed"),
     "tools": MessageLookupByLibrary.simpleMessage("Tools"),
+    "totalTraffic": MessageLookupByLibrary.simpleMessage("Total Traffic"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy Port"),
     "trafficUsage": MessageLookupByLibrary.simpleMessage("Traffic Usage"),
+    "trayEnhancement": MessageLookupByLibrary.simpleMessage("Tray Enhancement"),
+    "trayEnhancementDesc": MessageLookupByLibrary.simpleMessage(
+      "Control proxy groups in the system tray context menu",
+    ),
     "tryManualRefresh": MessageLookupByLibrary.simpleMessage(
       "Please try manual refresh",
     ),

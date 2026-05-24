@@ -157,6 +157,7 @@ TrayState trayState(Ref ref) {
   final appSetting = ref.watch(appSettingProvider);
   final groups = ref.watch(currentGroupsStateProvider).value;
   final brightness = ref.watch(systemBrightnessProvider);
+  final vpnProps = ref.watch(vpnSettingProvider);
 
   final selectedMap = ref.watch(selectedMapProvider);
 
@@ -174,6 +175,7 @@ TrayState trayState(Ref ref) {
     groups: groups,
     selectedMap: selectedMap,
     wakelockEnabled: wakelockEnabled,
+    trayEnhancement: vpnProps.trayEnhancement,
   );
 }
 
@@ -266,6 +268,10 @@ GroupsState filterGroupsState(Ref ref, String query) {
   final lowQuery = query.toLowerCase();
   final groups = currentGroups.value
       .map((group) {
+        final groupNameMatch = group.name.toLowerCase().contains(lowQuery);
+        if (groupNameMatch) {
+          return group;
+        }
         return group.copyWith(
           all: group.all
               .where((proxy) => proxy.name.toLowerCase().contains(lowQuery))

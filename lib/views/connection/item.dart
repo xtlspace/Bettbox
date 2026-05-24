@@ -4,11 +4,11 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/plugins/app.dart';
-import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bett_box/providers/providers.dart';
 
 final _iconCache = <String, Uint8List?>{};
 final _iconCacheKeys = <String>[];
@@ -159,7 +159,7 @@ class TrackerInfoItem extends ConsumerWidget {
           builder: (_, type) {
             return AdaptiveSheetScaffold(
               type: type,
-              body: TrackerInfoDetailView(trackerInfo: trackerInfo),
+              body: TrackerInfoDetailView(trackerInfo: trackerInfo, detailTitle: detailTitle),
               title: detailTitle,
             );
           },
@@ -286,60 +286,61 @@ class _ProcessIconState extends State<_ProcessIcon> {
   }
 }
 
-class TrackerInfoDetailView extends StatelessWidget {
+class TrackerInfoDetailView extends ConsumerWidget {
   final TrackerInfo trackerInfo;
+  final String detailTitle;
 
-  const TrackerInfoDetailView({super.key, required this.trackerInfo});
+  const TrackerInfoDetailView({super.key, required this.trackerInfo, required this.detailTitle});
 
-  String _getRuleText() {
-    final rule = trackerInfo.rule;
-    final rulePayload = trackerInfo.rulePayload;
+  String _getRuleText(TrackerInfo info) {
+    final rule = info.rule;
+    final rulePayload = info.rulePayload;
     if (rulePayload.isNotEmpty) {
       return '$rule($rulePayload)';
     }
     return rule;
   }
 
-  String _getProgressText() {
-    final process = trackerInfo.metadata.process;
-    final uid = trackerInfo.metadata.uid;
+  String _getProgressText(TrackerInfo info) {
+    final process = info.metadata.process;
+    final uid = info.metadata.uid;
     if (uid != 0) {
       return '$process($uid)';
     }
     return process;
   }
 
-  String _getSourceText() {
-    final sourceIP = trackerInfo.metadata.sourceIP;
+  String _getSourceText(TrackerInfo info) {
+    final sourceIP = info.metadata.sourceIP;
     if (sourceIP.isEmpty) {
       return '';
     }
-    final sourcePort = trackerInfo.metadata.sourcePort;
+    final sourcePort = info.metadata.sourcePort;
     if (sourcePort.isNotEmpty) {
       return '$sourceIP:$sourcePort';
     }
     return sourceIP;
   }
 
-  String _getDestinationText() {
-    final destinationIP = trackerInfo.metadata.destinationIP;
+  String _getDestinationText(TrackerInfo info) {
+    final destinationIP = info.metadata.destinationIP;
     if (destinationIP.isEmpty) {
       return '';
     }
-    final destinationPort = trackerInfo.metadata.destinationPort;
+    final destinationPort = info.metadata.destinationPort;
     if (destinationPort.isNotEmpty) {
       return '$destinationIP:$destinationPort';
     }
     return destinationIP;
   }
 
-  Widget _buildChains() {
+  Widget _buildChains(TrackerInfo info) {
     final chains = Wrap(
       spacing: 8,
       runSpacing: 8,
       alignment: WrapAlignment.end,
       children: [
-        for (final chain in trackerInfo.chains)
+        for (final chain in info.chains)
           CommonChip(label: chain, onPressed: () {}),
       ],
     );
@@ -389,70 +390,81 @@ class TrackerInfoDetailView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connections = ref.watch(connectionsProvider);
+    final info = connections.firstWhere(
+      (e) => e.id == trackerInfo.id,
+      orElse: () => trackerInfo,
+    );
+
     final items = [
       _buildItem(
         title: appLocalizations.creationTime,
-        desc: trackerInfo.start.showFull,
+        desc: info.start.showFull,
       ),
-      if (_getProgressText().isNotEmpty)
-        _buildItem(title: appLocalizations.progress, desc: _getProgressText()),
+      if (_getProgressText(info).isNotEmpty)
+        _buildItem(title: appLocalizations.progress, desc: _getProgressText(info)),
       _buildItem(
         title: appLocalizations.networkType,
-        desc: trackerInfo.metadata.network,
+        desc: info.metadata.network,
       ),
-      _buildItem(title: appLocalizations.rule, desc: _getRuleText()),
-      if (trackerInfo.metadata.host.isNotEmpty)
+      _buildItem(title: appLocalizations.rule, desc: _getRuleText(info)),
+      if (info.metadata.host.isNotEmpty)
         _buildItem(
           title: appLocalizations.host,
-          desc: trackerInfo.metadata.host,
+          desc: info.metadata.host,
         ),
-      if (_getSourceText().isNotEmpty)
-        _buildItem(title: appLocalizations.source, desc: _getSourceText()),
-      if (_getDestinationText().isNotEmpty)
+      if (_getSourceText(info).isNotEmpty)
+        _buildItem(title: appLocalizations.source, desc: _getSourceText(info)),
+      if (_getDestinationText(info).isNotEmpty)
         _buildItem(
           title: appLocalizations.destination,
-          desc: _getDestinationText(),
+          desc: _getDestinationText(info),
         ),
       _buildItem(
         title: appLocalizations.upload,
-        desc: TrafficValue(value: trackerInfo.upload).show,
+        desc: TrafficValue(value: info.upload).show,
       ),
       _buildItem(
         title: appLocalizations.download,
-        desc: TrafficValue(value: trackerInfo.download).show,
+        desc: TrafficValue(value: info.download).show,
       ),
-      if (trackerInfo.metadata.destinationGeoIP.isNotEmpty)
+      if (detailTitle.contains(appLocalizations.connection))
+        _buildItem(
+          title: appLocalizations.realTimeSpeed,
+          desc: Traffic(up: info.uploadSpeed, down: info.downloadSpeed).toString(),
+        ),
+      if (info.metadata.destinationGeoIP.isNotEmpty)
         _buildItem(
           title: appLocalizations.destinationGeoIP,
-          desc: trackerInfo.metadata.destinationGeoIP.join(' '),
+          desc: info.metadata.destinationGeoIP.join(' '),
         ),
-      if (trackerInfo.metadata.destinationIPASN.isNotEmpty)
+      if (info.metadata.destinationIPASN.isNotEmpty)
         _buildItem(
           title: appLocalizations.destinationIPASN,
-          desc: trackerInfo.metadata.destinationIPASN,
+          desc: info.metadata.destinationIPASN,
         ),
-      if (trackerInfo.metadata.dnsMode != null)
+      if (info.metadata.dnsMode != null)
         _buildItem(
           title: appLocalizations.dnsMode,
-          desc: trackerInfo.metadata.dnsMode!.name,
+          desc: info.metadata.dnsMode!.name,
         ),
-      if (trackerInfo.metadata.specialProxy.isNotEmpty)
+      if (info.metadata.specialProxy.isNotEmpty)
         _buildItem(
           title: appLocalizations.specialProxy,
-          desc: trackerInfo.metadata.specialProxy,
+          desc: info.metadata.specialProxy,
         ),
-      if (trackerInfo.metadata.specialRules.isNotEmpty)
+      if (info.metadata.specialRules.isNotEmpty)
         _buildItem(
           title: appLocalizations.specialRules,
-          desc: trackerInfo.metadata.specialRules,
+          desc: info.metadata.specialRules,
         ),
-      if (trackerInfo.metadata.remoteDestination.isNotEmpty)
+      if (info.metadata.remoteDestination.isNotEmpty)
         _buildItem(
           title: appLocalizations.remoteDestination,
-          desc: trackerInfo.metadata.remoteDestination,
+          desc: info.metadata.remoteDestination,
         ),
-      _buildChains(),
+      _buildChains(info),
     ];
     return SelectionArea(
       child: ListView.builder(

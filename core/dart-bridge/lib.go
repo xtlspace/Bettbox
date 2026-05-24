@@ -28,15 +28,19 @@ func InitDartApi(api unsafe.Pointer) {
 }
 
 func SendToPort(port int64, msg string) bool {
-	var obj C.Dart_CObject
-	obj._type = C.Dart_CObject_kString
 	msgString := C.CString(msg)
 	defer C.free(unsafe.Pointer(msgString))
-	ptr := unsafe.Pointer(&obj.value[0])
-	*(**C.char)(ptr) = msgString
-	isSuccess := C.GoDart_PostCObject(C.Dart_Port_DL(port), &obj)
-	if !isSuccess {
+
+	objSize := unsafe.Sizeof(C.Dart_CObject{})
+	cObj := (*C.Dart_CObject)(C.malloc(C.size_t(objSize)))
+	if cObj == nil {
 		return false
 	}
-	return true
+	defer C.free(unsafe.Pointer(cObj))
+
+	cObj._type = C.Dart_CObject_kString
+	ptr := unsafe.Pointer(&cObj.value[0])
+	*(**C.char)(ptr) = msgString
+	isSuccess := C.GoDart_PostCObject(C.Dart_Port_DL(port), cObj)
+	return bool(isSuccess)
 }

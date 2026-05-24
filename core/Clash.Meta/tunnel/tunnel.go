@@ -18,6 +18,7 @@ import (
 	"github.com/metacubex/mihomo/component/loopback"
 	"github.com/metacubex/mihomo/component/nat"
 	"github.com/metacubex/mihomo/component/process"
+	"github.com/metacubex/mihomo/component/proxydialer"
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/component/slowdown"
 	"github.com/metacubex/mihomo/component/sniffer"
@@ -72,6 +73,7 @@ type tunnel struct{}
 var Tunnel = tunnel{}
 var _ C.Tunnel = Tunnel
 var _ P.Tunnel = Tunnel
+var _ proxydialer.Tunnel = Tunnel
 
 func (t tunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 	connCtx := icontext.NewConnContext(conn, metadata)
@@ -110,6 +112,10 @@ func (t tunnel) HandleUDPPacket(packet C.UDPPacket, metadata *C.Metadata) {
 
 func (t tunnel) NatTable() C.NatTable {
 	return natTable
+}
+
+func (t tunnel) Proxies() map[string]C.Proxy {
+	return proxies
 }
 
 func (t tunnel) Providers() map[string]P.ProxyProvider {
@@ -359,7 +365,7 @@ func resolveMetadata(metadata *C.Metadata) (proxy C.Proxy, rule C.Rule, err erro
 			if attemptProcessLookup {
 				attemptProcessLookup = false
 				if !features.Android {
-				// normal check for process
+					// normal check for process
 					uid, path, err := process.FindProcessName(metadata.NetWork.String(), metadata.SrcIP, int(metadata.SrcPort))
 					if err != nil {
 						log.Debugln("[Process] find process error for %s: %v", metadata.String(), err)
@@ -576,13 +582,14 @@ func handleTCPConn(connCtx C.ConnContext) {
 
 		if N.NeedHandshake(remoteConn) {
 			defer func() {
-				for _, chain := range remoteConn.Chains() {
-					if chain == "REJECT" {
-						err = nil
-						return
-					}
-				}
 				if err != nil {
+					_ = remoteConn.Close()
+					for _, chain := range remoteConn.Chains() {
+						if chain == "REJECT" {
+							err = nil
+							return
+						}
+					}
 					remoteConn = nil
 				}
 			}()

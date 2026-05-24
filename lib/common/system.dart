@@ -112,6 +112,32 @@ class System {
     if (system.isAndroid) await SystemNavigator.pop();
     await window?.close();
   }
+
+  Future<void> setProcessPriority(String processName, bool enable) async {
+    if (!isWindows) return;
+    
+    if (processName == 'Bettbox.exe') {
+      try {
+        windows?.setCurrentProcessPriority(enable);
+        return;
+      } catch (e) {
+        commonPrint.log('Failed to set current process priority: $e');
+      }
+    }
+    
+    final result = await Process.run('wmic', [
+      'process',
+      'where',
+      'name="$processName"',
+      'call',
+      'setpriority',
+      enable ? 'above normal' : 'normal',
+    ]);
+    
+    if (result.exitCode != 0) {
+      throw Exception('Failed to set process priority: ${result.stderr}');
+    }
+  }
 }
 
 final system = System();
@@ -127,6 +153,31 @@ class Windows {
   factory Windows() {
     _instance ??= Windows._internal();
     return _instance!;
+  }
+
+  void setCurrentProcessPriority(bool enable) {
+    final kernel32 = DynamicLibrary.open('kernel32.dll');
+    
+    final getCurrentProcess = kernel32.lookupFunction<
+      IntPtr Function(),
+      int Function()
+    >('GetCurrentProcess');
+    
+    final setPriorityClass = kernel32.lookupFunction<
+      Int32 Function(IntPtr hProcess, Int32 dwPriorityClass),
+      int Function(int hProcess, int dwPriorityClass)
+    >('SetPriorityClass');
+    
+    final priorityClass = enable ? 0x00008000 : 0x00000020;
+    
+    final hProcess = getCurrentProcess();
+    final result = setPriorityClass(hProcess, priorityClass);
+    
+    if (result == 0) {
+      throw Exception('SetPriorityClass failed');
+    }
+    
+    commonPrint.log('Set current process priority to ${enable ? "above normal" : "normal"}');
   }
 
   bool runas(String command, String arguments, {bool showWindow = false}) {

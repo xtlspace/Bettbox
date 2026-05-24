@@ -43,7 +43,9 @@ class NetworkSpeed extends ConsumerWidget {
     return SizedBox(
       height: getWidgetHeight(2),
       child: CommonCard(
-        onPressed: () {},
+        onPressed: () {
+          globalState.openUrl('https://ptclspeed.speedtestcustom.com');
+        },
         info: Info(
           label: appLocalizations.networkSpeed,
           iconData: Icons.speed_sharp,

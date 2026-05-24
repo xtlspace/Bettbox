@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/common/singledo"
+	"github.com/metacubex/mihomo/component/iface/anet"
 
 	"github.com/metacubex/bart"
 )
@@ -67,7 +68,7 @@ func ShouldLogIfaceError() bool {
 
 func getCache() (*ifaceCache, error) {
 	value, err, _ := caches.Do(func() (*ifaceCache, error) {
-		ifaces, err := net.Interfaces()
+		ifaces, err := anet.Interfaces()
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +79,7 @@ func getCache() (*ifaceCache, error) {
 		}
 
 		for _, iface := range ifaces {
-			addrs, err := iface.Addrs()
+			addrs, err := anet.InterfaceAddrsByInterface(&iface)
 			if err != nil {
 				continue
 			}

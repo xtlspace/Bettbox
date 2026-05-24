@@ -10,7 +10,6 @@ import 'package:bett_box/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'application.dart';
 import 'clash/core.dart';
@@ -18,70 +17,8 @@ import 'clash/lib.dart';
 import 'common/common.dart';
 import 'models/models.dart';
 
-const String _sentryDsn = String.fromEnvironment('SENTRY_DSN');
-
 ReceivePort? _serviceReceiverPort;
 ReceivePort? _messageReceiverPort;
-
-Future<void> _initSentryAndRun(Future<void> Function() runner) async {
-  assert(
-    _sentryDsn.isNotEmpty,
-    'SENTRY_DSN is not set. Build with --dart-define=SENTRY_DSN=<your-dsn>',
-  );
-
-  final enableAdvancedAnalytics =
-      globalState.config.appSetting.enableCrashReport;
-
-  if (!enableAdvancedAnalytics) {
-    await runner();
-    return;
-  }
-
-  await SentryFlutter.init((options) {
-    options.dsn = _sentryDsn;
-    options.sendDefaultPii = false;
-    options.environment = 'production';
-    options.release =
-        'bettbox@${globalState.packageInfo.version}+${globalState.packageInfo.buildNumber}';
-
-    options.enableAutoSessionTracking = true;
-    options.attachStacktrace = true;
-
-    options.tracesSampleRate = 0.2;
-
-    options.beforeSend = (event, hint) {
-      if (system.isMacOS) {
-        final hasFontDeadlock =
-            event.threads?.any(
-              (thread) =>
-                  thread.stacktrace?.frames.any(
-                    (frame) =>
-                        frame.function?.contains('XTCopyPropertiesForFont') ==
-                            true ||
-                        frame.function?.contains('TGlobalFontRegistryImp') ==
-                            true ||
-                        frame.function?.contains(
-                              '__NSXPCCONNECTION_IS_WAITING_FOR_A_SYNCHRONOUS_REPLY__',
-                            ) ==
-                            true,
-                  ) ??
-                  false,
-            ) ??
-            false;
-
-        if (hasFontDeadlock) {
-          event.level = SentryLevel.warning;
-          event.tags = {
-            ...?event.tags,
-            'known_issue': 'macos_font_deadlock',
-            'system_issue': 'fontd_service',
-          };
-        }
-      }
-      return event;
-    };
-  }, appRunner: runner);
-}
 
 Future<void> main() async {
   globalState.isService = false;
@@ -99,11 +36,11 @@ Future<void> main() async {
     commonPrint.log('Failed to initialize UI: $e');
   }
 
-  await _initSentryAndRun(() => _runApp(version));
+  await _runApp(version);
 }
 
 Future<void> _runApp(int version) async {
-  if (system.isAndroid && globalState.config.appSetting.enableHighRefreshRate) {
+  if (system.isAndroid) {
     try {
       await FlutterDisplayMode.setHighRefreshRate();
     } catch (e) {
@@ -123,7 +60,7 @@ Future<void> _service(List<String> flags) async {
   WidgetsFlutterBinding.ensureInitialized();
   await globalState.init();
 
-  await _initSentryAndRun(() async {
+  {
     final quickStart = flags.contains('quick');
     final bootStart = flags.contains('boot');
     final clashLibHandler = ClashLibHandler();
@@ -203,13 +140,12 @@ Future<void> _service(List<String> flags) async {
         }
 
         clashLibHandler.startListener();
-      } catch (e, stackTrace) {
+      } catch (e) {
         commonPrint.log('Fatal error during service background start: $e');
-        Sentry.captureException(e, stackTrace: stackTrace);
         await vpn?.stop();
       }
     });
-  });
+  }
 }
 
 void _handleMainIpc(ClashLibHandler clashLibHandler) {

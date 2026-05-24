@@ -103,6 +103,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
             controller: _controller,
             child: CustomScrollView(
               controller: _controller,
+              // ignore: deprecated_member_use
               cacheExtent: 500,
               slivers: [
                 SliverToBoxAdapter(child: SizedBox(height: 8)),

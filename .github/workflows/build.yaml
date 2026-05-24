@@ -76,27 +76,9 @@ jobs:
         with:
           targets: ${{ matrix.arch == 'arm64' && 'aarch64-pc-windows-msvc' || 'x86_64-pc-windows-msvc' }}
 
-      - name: Setup llvm-mingw (Windows arm64)
-        if: matrix.platform == 'windows' && matrix.arch == 'arm64'
-        shell: pwsh
-        run: |
-          git config --global core.longpaths true
-          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/20251202/llvm-mingw-20251202-ucrt-aarch64.zip"
-          $zip = "$env:RUNNER_TEMP\llvm.zip"
-          $extract = "$env:RUNNER_TEMP\extract"
-          $target = "C:\clangarm64"
-          curl -L $url -o $zip
-          rm -r -fo $extract,$target -ea Ignore
-          mkdir $extract | Out-Null
-          tar -xf $zip -C $extract
-          mv (Get-ChildItem $extract)[0].FullName $target
-          $b = "$target\bin"
-          "CC=$b\clang.exe"        >> $env:GITHUB_ENV
-          "CXX=$b\clang++.exe"     >> $env:GITHUB_ENV
-          "CLANGARM64_BIN=$b"       >> $env:GITHUB_ENV
-          "CGO_ENABLED=1"           >> $env:GITHUB_ENV
-          "CLANGARM64_ROOT=$target" >> $env:GITHUB_ENV
-          $b >> $env:GITHUB_PATH
+      - name: Enable Git long paths (Windows)
+        if: matrix.platform == 'windows'
+        run: git config --global core.longpaths true
 
       - name: Setup Keystore (Android)
         if: matrix.platform == 'android'
@@ -132,7 +114,15 @@ jobs:
           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: ${{ contains(matrix.os, 'arm') && '1c6c6f4' || '3.35.7' }}
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.0' }}
+
+      - name: Use prebuilt QuickJS bridge (Windows arm64)
+        if: matrix.platform == 'windows' && matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          $dll = "windows\overrides\flutter_js\arm64\quickjs_c_bridge.dll"
+          if (-not (Test-Path $dll)) { throw "Missing prebuilt QuickJS bridge: $dll" }
+          Get-Item $dll | Select-Object FullName, Length, LastWriteTime
 
       - name: Clean Gradle (Android)
         if: matrix.platform == 'android'

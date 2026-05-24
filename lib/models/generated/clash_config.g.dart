@@ -395,7 +395,7 @@ _GeoXUrl _$GeoXUrlFromJson(Map<String, dynamic> json) => _GeoXUrl(
       'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.dat',
   geosite:
       json['geosite'] as String? ??
-      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.db',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.dat',
 );
 
 Map<String, dynamic> _$GeoXUrlToJson(_GeoXUrl instance) => <String, dynamic>{

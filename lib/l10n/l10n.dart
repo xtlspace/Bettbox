@@ -74,6 +74,26 @@ class AppLocalizations {
     return Intl.message('Dashboard', name: 'dashboard', desc: '', args: []);
   }
 
+  /// `Custom Dashboard Title`
+  String get customDashboardTitle {
+    return Intl.message(
+      'Custom Dashboard Title',
+      name: 'customDashboardTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Title is too long, maximum 20 characters supported`
+  String get titleTooLong {
+    return Intl.message(
+      'Title is too long, maximum 20 characters supported',
+      name: 'titleTooLong',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Proxies`
   String get proxies {
     return Intl.message('Proxies', name: 'proxies', desc: '', args: []);
@@ -167,6 +187,41 @@ class AppLocalizations {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Real-time Speed`
+  String get realTimeSpeed {
+    return Intl.message(
+      'Real-time Speed',
+      name: 'realTimeSpeed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connections Sort`
+  String get connectionsSort {
+    return Intl.message(
+      'Connections Sort',
+      name: 'connectionsSort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Total Traffic`
+  String get totalTraffic {
+    return Intl.message(
+      'Total Traffic',
+      name: 'totalTraffic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Restart App`
+  String get restartApp {
+    return Intl.message('Restart App', name: 'restartApp', desc: '', args: []);
   }
 
   /// `Outbound Mode`
@@ -414,6 +469,46 @@ class AppLocalizations {
     );
   }
 
+  /// `Speed in Notification`
+  String get networkSpeedNotification {
+    return Intl.message(
+      'Speed in Notification',
+      name: 'networkSpeedNotification',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show current speed in the notification bar`
+  String get networkSpeedNotificationDesc {
+    return Intl.message(
+      'Show current speed in the notification bar',
+      name: 'networkSpeedNotificationDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tray Enhancement`
+  String get trayEnhancement {
+    return Intl.message(
+      'Tray Enhancement',
+      name: 'trayEnhancement',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Control proxy groups in the system tray context menu`
+  String get trayEnhancementDesc {
+    return Intl.message(
+      'Control proxy groups in the system tray context menu',
+      name: 'trayEnhancementDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Exclude China`
   String get excludeChina {
     return Intl.message(
@@ -484,6 +579,26 @@ class AppLocalizations {
     return Intl.message(
       'Fix Windows network globe icon issue',
       name: 'networkFixDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `High Priority`
+  String get highPriority {
+    return Intl.message(
+      'High Priority',
+      name: 'highPriority',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Increase priority of main process and core process`
+  String get highPriorityDesc {
+    return Intl.message(
+      'Increase priority of main process and core process',
+      name: 'highPriorityDesc',
       desc: '',
       args: [],
     );

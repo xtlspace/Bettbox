@@ -38,7 +38,11 @@ bool _isNonTestableProxy(String proxyName) {
   return name == 'REJECT' || name == 'REJECT-DROP' || name == 'PASS';
 }
 
-Future<void> delayTest(List<Proxy> proxies, [String? testUrl]) async {
+Future<void> delayTest(
+  List<Proxy> proxies, [
+  String? testUrl,
+  Future<void> Function()? onDelayUpdated,
+]) async {
   final appController = globalState.appController;
   final proxyNames = proxies
       .map((proxy) => proxy.name)
@@ -55,13 +59,14 @@ Future<void> delayTest(List<Proxy> proxies, [String? testUrl]) async {
         state.testUrl.getSafeValue(testUrl ?? ''),
       );
       final name = state.proxyName;
-      if (name.isEmpty) {
+      if (name.isEmpty || _isNonTestableProxy(name)) {
         return;
       }
       // Set testing state
       appController.setDelay(Delay(url: url, name: name, value: 0));
       // Get and set delay
       appController.setDelay(await clashCore.getDelay(url, name));
+      await onDelayUpdated?.call();
     };
   }).toList();
 

@@ -452,13 +452,14 @@ class IsSmartStopped extends _$IsSmartStopped {
 final connectionsProvider = StateProvider<List<TrackerInfo>>((ref) => []);
 final connectionsSearchProvider = StateProvider<String>((ref) => '');
 final connectionsKeywordsProvider = StateProvider<List<String>>((ref) => []);
+final connectionsSortProvider = StateProvider<ConnectionsSortType>((ref) => ConnectionsSortType.defaultSort);
 
 final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
   final connections = ref.watch(connectionsProvider);
   final query = ref.watch(connectionsSearchProvider).toLowerCase().trim();
   final keywords = ref.watch(connectionsKeywordsProvider);
 
-  return connections.where((item) {
+  final filtered = connections.where((item) {
     if (query.isNotEmpty) {
       final networkText = item.metadata.network.toLowerCase();
       final hostText = item.metadata.host.toLowerCase();
@@ -480,4 +481,28 @@ final filteredConnectionsProvider = Provider<List<TrackerInfo>>((ref) {
     }
     return true;
   }).toList();
+
+  final sortType = ref.watch(connectionsSortProvider);
+  switch (sortType) {
+    case ConnectionsSortType.realTimeSpeed:
+      filtered.sort((a, b) {
+        final aSpeed = (a.uploadSpeed ?? 0) + (a.downloadSpeed ?? 0);
+        final bSpeed = (b.uploadSpeed ?? 0) + (b.downloadSpeed ?? 0);
+        return bSpeed.compareTo(aSpeed);
+      });
+      break;
+    case ConnectionsSortType.totalTraffic:
+      filtered.sort((a, b) {
+        final aTraffic = a.upload + a.download;
+        final bTraffic = b.upload + b.download;
+        return bTraffic.compareTo(aTraffic);
+      });
+      break;
+    case ConnectionsSortType.creationTime:
+      filtered.sort((a, b) => b.start.compareTo(a.start));
+      break;
+    case ConnectionsSortType.defaultSort:
+      break;
+  }
+  return filtered;
 });

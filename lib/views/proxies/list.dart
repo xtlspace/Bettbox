@@ -1,11 +1,11 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
-import 'package:bett_box/providers/config.dart';
-import 'package:bett_box/providers/state.dart';
+import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
@@ -34,7 +34,7 @@ class ProxiesListView extends ConsumerWidget {
   }
 }
 
-class _ProxyGroupsList extends StatelessWidget {
+class _ProxyGroupsList extends StatefulWidget {
   final List<Group> groups;
   final int columns;
   final ProxyCardType cardType;
@@ -49,8 +49,15 @@ class _ProxyGroupsList extends StatelessWidget {
     required this.currentUnfoldSet,
   });
 
+  @override
+  State<_ProxyGroupsList> createState() => _ProxyGroupsListState();
+}
+
+class _ProxyGroupsListState extends State<_ProxyGroupsList> {
+  final ScrollController _scrollController = ScrollController();
+
   void _handleToggle(String groupName) {
-    final tempUnfoldSet = Set<String>.from(currentUnfoldSet);
+    final tempUnfoldSet = Set<String>.from(widget.currentUnfoldSet);
     if (tempUnfoldSet.contains(groupName)) {
       tempUnfoldSet.remove(groupName);
     } else {
@@ -60,27 +67,34 @@ class _ProxyGroupsList extends StatelessWidget {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CommonScrollBar(
-      controller: null,
+      controller: _scrollController,
       thumbVisibility: true,
       trackVisibility: true,
       child: CustomScrollView(
-        cacheExtent: 500,
+        controller: _scrollController,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(500),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList.builder(
-              itemCount: groups.length,
+              itemCount: widget.groups.length,
               itemBuilder: (context, index) {
-                final group = groups[index];
-                final isExpand = currentUnfoldSet.contains(group.name);
+                final group = widget.groups[index];
+                final isExpand = widget.currentUnfoldSet.contains(group.name);
                 return _GroupSection(
                   key: ValueKey(group.name),
                   group: group,
-                  columns: columns,
-                  cardType: cardType,
-                  sortType: sortType,
+                  columns: widget.columns,
+                  cardType: widget.cardType,
+                  sortType: widget.sortType,
                   isExpand: isExpand,
                   onToggle: () => _handleToggle(group.name),
                 );
@@ -170,6 +184,13 @@ class _GroupHeader extends ConsumerWidget {
       getSelectedProxyNameProvider(group.name),
     ).getSafeValue('');
 
+    final selectedProxyIcon = ref.watch(
+      groupsProvider.select((groups) {
+        if (selectedProxyName.isEmpty) return '';
+        return groups.getGroup(selectedProxyName)?.icon ?? '';
+      }),
+    );
+
     return CommonCard(
       radius: 16,
       type: CommonCardType.filled,
@@ -196,10 +217,20 @@ class _GroupHeader extends ConsumerWidget {
                         style: context.textTheme.labelMedium?.toLight,
                       ),
                       if (selectedProxyName.isNotEmpty) ...[
-                        const SizedBox(width: 8),
+                        Text(
+                          '  •  ',
+                          style: context.textTheme.labelMedium?.toLight,
+                        ),
+                        if (selectedProxyIcon.isNotEmpty) ...[
+                          CommonTargetIcon(
+                            src: selectedProxyIcon,
+                            size: globalState.measure.labelMediumHeight,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         Flexible(
                           child: EmojiText(
-                            '•  $selectedProxyName',
+                            selectedProxyName,
                             style: context.textTheme.labelMedium?.toLight,
                             overflow: TextOverflow.ellipsis,
                           ),

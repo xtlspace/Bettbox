@@ -79,7 +79,6 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(defaultTestUrl) String testUrl,
     @Default(true) bool isAnimateToPage,
     @Default(false) bool enableNavBarHapticFeedback,
-    @Default(false) bool enableCrashReport,
     @Default(false) bool autoCheckUpdate,
     @Default(false) bool showLabel,
     @Default(true) bool disclaimerAccepted,
@@ -88,6 +87,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(false) bool developerMode,
     @Default(false) bool enableHighRefreshRate,
     @Default(RecoveryStrategy.compatible) RecoveryStrategy recoveryStrategy,
+    @Default(false) bool enableHighPriority,
   }) = _AppSettingProps;
 
   factory AppSettingProps.fromJson(Map<String, Object?> json) =>
@@ -135,7 +135,6 @@ abstract class WindowProps with _$WindowProps {
     @Default(600) double height,
     double? top,
     double? left,
-    @Default(false) bool isLocked,
   }) = _WindowProps;
 
   factory WindowProps.fromJson(Map<String, Object?>? json) =>
@@ -155,8 +154,9 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool storeFix,
     @Default(false) bool networkFix,
     @Default(false) bool disableQuic,
+    @Default(false) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
-    @Default(false) bool fcmOptimization,
+    @Default(true) bool trayEnhancement,
     @Default(true) bool quickResponse,
     @Default(defaultAccessControl) AccessControl accessControl,
   }) = _VpnProps;
@@ -170,10 +170,6 @@ abstract class VpnProps with _$VpnProps {
 
     if (system.isAndroid) {
       safeProps = safeProps.copyWith(systemProxy: false);
-    }
-
-    if (safeProps.fcmOptimization && system.isAndroid) {
-      safeProps = safeProps.copyWith(allowBypass: false);
     }
 
     if (safeProps.smartAutoStop && safeProps.quickResponse) {

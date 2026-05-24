@@ -118,8 +118,8 @@ class ClashService extends ClashHandlerInterface {
   }
 
   Future<void> _waitForCoreReady() async {
-    const maxAttempts = 10;
-    const interval = Duration(milliseconds: 500);
+    const maxAttempts = 5;
+    const interval = Duration(milliseconds: 1000);
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       if (socketCompleter.isCompleted) return;

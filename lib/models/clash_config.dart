@@ -493,7 +493,7 @@ abstract class GeoXUrl with _$GeoXUrl {
     )
     String geoip,
     @Default(
-      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.db',
+      'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.dat',
     )
     String geosite,
   }) = _GeoXUrl;

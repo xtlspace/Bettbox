@@ -119,6 +119,8 @@ enum AccessSortType { none, name, time }
 
 enum ProfileType { file, url }
 
+enum ConnectionsSortType { defaultSort, realTimeSpeed, totalTraffic, creationTime }
+
 enum ResultType {
   @JsonValue(0)
   success,

@@ -23,7 +23,6 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
       isAnimateToPage: json['isAnimateToPage'] as bool? ?? true,
       enableNavBarHapticFeedback:
           json['enableNavBarHapticFeedback'] as bool? ?? false,
-      enableCrashReport: json['enableCrashReport'] as bool? ?? false,
       autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
       showLabel: json['showLabel'] as bool? ?? false,
       disclaimerAccepted: json['disclaimerAccepted'] as bool? ?? false,
@@ -37,6 +36,7 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
             json['recoveryStrategy'],
           ) ??
           RecoveryStrategy.compatible,
+      enableHighPriority: json['enableHighPriority'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
@@ -55,7 +55,6 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'testUrl': instance.testUrl,
       'isAnimateToPage': instance.isAnimateToPage,
       'enableNavBarHapticFeedback': instance.enableNavBarHapticFeedback,
-      'enableCrashReport': instance.enableCrashReport,
       'autoCheckUpdate': instance.autoCheckUpdate,
       'showLabel': instance.showLabel,
       'disclaimerAccepted': instance.disclaimerAccepted,
@@ -64,6 +63,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'developerMode': instance.developerMode,
       'enableHighRefreshRate': instance.enableHighRefreshRate,
       'recoveryStrategy': _$RecoveryStrategyEnumMap[instance.recoveryStrategy]!,
+      'enableHighPriority': instance.enableHighPriority,
     };
 
 const _$RecoveryStrategyEnumMap = {
@@ -145,7 +145,6 @@ _WindowProps _$WindowPropsFromJson(Map<String, dynamic> json) => _WindowProps(
   height: (json['height'] as num?)?.toDouble() ?? 600,
   top: (json['top'] as num?)?.toDouble(),
   left: (json['left'] as num?)?.toDouble(),
-  isLocked: json['isLocked'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$WindowPropsToJson(_WindowProps instance) =>
@@ -154,7 +153,6 @@ Map<String, dynamic> _$WindowPropsToJson(_WindowProps instance) =>
       'height': instance.height,
       'top': instance.top,
       'left': instance.left,
-      'isLocked': instance.isLocked,
     };
 
 _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
@@ -168,9 +166,10 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   storeFix: json['storeFix'] as bool? ?? false,
   networkFix: json['networkFix'] as bool? ?? false,
   disableQuic: json['disableQuic'] as bool? ?? false,
+  networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
-  fcmOptimization: json['fcmOptimization'] as bool? ?? false,
-  quickResponse: json['quickResponse'] as bool? ?? false,
+  trayEnhancement: json['trayEnhancement'] as bool? ?? true,
+  quickResponse: json['quickResponse'] as bool? ?? true,
   accessControl: json['accessControl'] == null
       ? defaultAccessControl
       : AccessControl.fromJson(json['accessControl'] as Map<String, dynamic>),
@@ -187,8 +186,9 @@ Map<String, dynamic> _$VpnPropsToJson(_VpnProps instance) => <String, dynamic>{
   'storeFix': instance.storeFix,
   'networkFix': instance.networkFix,
   'disableQuic': instance.disableQuic,
+  'networkSpeedNotification': instance.networkSpeedNotification,
   'excludeChina': instance.excludeChina,
-  'fcmOptimization': instance.fcmOptimization,
+  'trayEnhancement': instance.trayEnhancement,
   'quickResponse': instance.quickResponse,
   'accessControl': instance.accessControl,
 };

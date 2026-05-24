@@ -39,7 +39,7 @@ class NetworkSpeedSmall extends ConsumerWidget {
         height: getWidgetHeight(1),
         child: CommonCard(
           onPressed: () {
-            globalState.openUrl('https://ispeedtest.appshub.cc');
+            globalState.openUrl('https://ptclspeed.speedtestcustom.com');
           },
           info: Info(
             label: appLocalizations.networkSpeed,

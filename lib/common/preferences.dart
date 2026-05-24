@@ -36,11 +36,20 @@ class Preferences {
     final configString = preferences?.getString(configKey);
     if (configString == null) return null;
     final configMap = json.decode(configString);
-    return Config.compatibleFromJson(configMap);
+    final config = Config.compatibleFromJson(configMap);
+    
+    if (preferences?.getBool('autoLaunch') != config.appSetting.autoLaunch) {
+      await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
+    }
+    
+    return config;
   }
 
   Future<bool> saveConfig(Config config) async {
     final preferences = await sharedPreferencesCompleter.future;
+    
+    await preferences?.setBool('autoLaunch', config.appSetting.autoLaunch);
+    
     return await preferences?.setString(configKey, json.encode(config)) ??
         false;
   }

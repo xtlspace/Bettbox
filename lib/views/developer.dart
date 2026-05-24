@@ -35,42 +35,6 @@ class DeveloperView extends ConsumerWidget {
           },
         ),
         ListItem(
-          title: Text(appLocalizations.crashTest),
-          onTap: () async {
-            // Show confirmation dialog
-            final confirm = await globalState.showCommonDialog<bool>(
-              child: CommonDialog(
-                title: appLocalizations.crashTest,
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                    child: Text(appLocalizations.cancel),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                    child: Text(appLocalizations.confirm),
-                  ),
-                ],
-                child: Text(
-                  'This will trigger a crash to test Sentry integration. Continue?',
-                ),
-              ),
-            );
-
-            if (confirm == true) {
-              // Delay to let dialog close first
-              await Future.delayed(Duration(milliseconds: 500));
-
-              // Trigger Dart crash (captured by Sentry)
-              throw Exception('Test crash from developer mode');
-            }
-          },
-        ),
-        ListItem(
           title: Text(appLocalizations.clearData),
           onTap: () async {
             await globalState.appController.handleClear();
