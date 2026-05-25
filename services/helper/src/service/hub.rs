@@ -16,9 +16,7 @@ use bytes::Bytes;
 #[cfg(windows)]
 use windows::Win32::System::Threading::{OpenProcess, SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, PROCESS_SET_INFORMATION};
 #[cfg(windows)]
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
-#[cfg(windows)]
-use std::os::windows::io::RawHandle;
+use windows::Win32::Foundation::CloseHandle;
 
 #[allow(unused_imports)]
 use fs2::FileExt;
@@ -125,22 +123,22 @@ fn verify_request(timestamp: u64, signature: &str, body: &str) -> bool {
             Some(k) => k.clone(),
             None => {
                 log_message("Auth key not initialized, skipping verification".to_string());
-                return true; // Backward compatible: allow if no key
+                return true;
             }
         },
         Err(_) => return false,
     };
-    
+
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     if now.abs_diff(timestamp) > TIME_WINDOW_SECS {
         log_message(format!("Request timestamp out of window: {} vs {}", timestamp, now));
         return false;
     }
-    
+
     let message = format!("{}:{}", timestamp, body);
     let mut mac = match HmacSha256::new_from_slice(&key) {
         Ok(m) => m,
@@ -148,15 +146,14 @@ fn verify_request(timestamp: u64, signature: &str, body: &str) -> bool {
     };
     mac.update(message.as_bytes());
     let expected_signature = hex::encode(mac.finalize().into_bytes());
-    
+
     signature == expected_signature
 }
 
 fn start(start_params: StartParams) -> String {
-    // Open file and add shared lock
     let file = match OpenOptions::new()
         .read(true)
-        .open(&start_params.path) 
+        .open(&start_params.path)
     {
         Ok(f) => f,
         Err(e) => {
@@ -165,15 +162,13 @@ fn start(start_params: StartParams) -> String {
             return msg;
         }
     };
-    
-    // Lock (prevent other processes from modifying)
+
     if let Err(e) = file.lock_shared() {
         let msg = format!("Failed to lock file: {}", e);
         log_message(msg.clone());
         return msg;
     }
-    
-    // Calculate SHA256 while holding lock
+
     let sha256 = match sha256_file_with_lock(&file, &start_params.path) {
         Ok(hash) => hash,
         Err(e) => {
@@ -183,35 +178,31 @@ fn start(start_params: StartParams) -> String {
             return msg;
         }
     };
-    
-    // Verify hash
+
     if sha256 != env!("TOKEN") {
         let _ = file.unlock();
         let msg = format!("The SHA256 hash of the program requesting execution is: {}. The helper program only allows execution of applications with the SHA256 hash: {}.", sha256, env!("TOKEN"));
         log_message(msg.clone());
         return msg;
     }
-    
 
     let _ = file.unlock();
     drop(file);
-    
-    // Start process after lock is released
+
     stop();
     let mut process = PROCESS.lock().unwrap();
-    
+
     let mut command = Command::new(&start_params.path);
     command.stderr(Stdio::piped()).arg(&start_params.arg);
-    
+
     if let Some(home_dir) = &start_params.home_dir {
         command.env("SAFE_PATHS", home_dir);
     }
-    
+
     let result = match command.spawn() {
         Ok(child) => {
             *process = Some(child);
-            
-            // Start log collection thread
+
             if let Some(ref mut child) = *process {
                 if let Some(stderr) = child.stderr.take() {
                     let reader = io::BufReader::new(stderr);
@@ -236,7 +227,7 @@ fn start(start_params: StartParams) -> String {
             e.to_string()
         }
     };
-    
+
     result
 }
 
@@ -253,28 +244,27 @@ fn stop() -> String {
 #[cfg(windows)]
 fn set_process_priority(process_name: &str, enable: bool) -> String {
     use windows::Win32::System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS, PROCESSENTRY32W};
-    
+
     let priority_class = if enable { ABOVE_NORMAL_PRIORITY_CLASS } else { NORMAL_PRIORITY_CLASS };
-    
+
     unsafe {
         let snapshot = match CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
             Ok(s) => s,
             Err(e) => return format!("Failed to create snapshot: {}", e),
         };
-        
+
         let mut entry = PROCESSENTRY32W {
             dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
             ..Default::default()
         };
-        
-        let target_name: Vec<u16> = process_name.encode_utf16().chain(std::iter::once(0)).collect();
+
         let mut found = false;
-        
+
         if Process32FirstW(snapshot, &mut entry).is_ok() {
             loop {
                 let exe_name = String::from_utf16_lossy(&entry.szExeFile);
                 let exe_name = exe_name.trim_end_matches('\0');
-                
+
                 if exe_name.eq_ignore_ascii_case(process_name) {
                     let process_handle = match OpenProcess(PROCESS_SET_INFORMATION, false, entry.th32ProcessID) {
                         Ok(h) => h,
@@ -286,30 +276,30 @@ fn set_process_priority(process_name: &str, enable: bool) -> String {
                             continue;
                         }
                     };
-                    
+
                     match SetPriorityClass(process_handle, priority_class) {
                         Ok(_) => {
                             found = true;
-                            log_message(format!("Set priority for {} (PID: {}) to {}", 
-                                process_name, entry.th32ProcessID, 
+                            log_message(format!("Set priority for {} (PID: {}) to {}",
+                                process_name, entry.th32ProcessID,
                                 if enable { "above normal" } else { "normal" }));
                         }
                         Err(e) => {
                             log_message(format!("Failed to set priority for {}: {}", process_name, e));
                         }
                     }
-                    
+
                     let _ = CloseHandle(process_handle);
                 }
-                
+
                 if Process32NextW(snapshot, &mut entry).is_err() {
                     break;
                 }
             }
         }
-        
+
         let _ = CloseHandle(snapshot);
-        
+
         if found {
             "".to_string()
         } else {
@@ -331,7 +321,6 @@ fn log_message(message: String) {
     log_buffer.push_back(message);
 }
 
-
 fn check_authentication(timestamp: Option<u64>, signature: Option<String>, body: &[u8]) -> bool {
     let auth_enabled = AUTH_KEY.lock().unwrap().is_some();
     if !auth_enabled {
@@ -350,7 +339,7 @@ fn check_authentication(timestamp: Option<u64>, signature: Option<String>, body:
 
 pub async fn run_service() -> anyhow::Result<()> {
     init_auth_key();
-    
+
     let api_ping = warp::get().and(warp::path("ping")).map(|| env!("TOKEN"));
 
     let api_start = warp::post()
@@ -400,13 +389,13 @@ pub async fn run_service() -> anyhow::Result<()> {
             if !check_authentication(timestamp, signature, b"") {
                 return warp::reply::with_status("Unauthorized".to_string(), warp::http::StatusCode::UNAUTHORIZED).into_response();
             }
-            
+
             let log_str = LOGS.lock().unwrap()
                 .iter()
                 .cloned()
                 .collect::<Vec<String>>()
                 .join("\n");
-                
+
             warp::reply::with_header(log_str, "Content-Type", "text/plain").into_response()
         });
 

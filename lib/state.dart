@@ -486,7 +486,7 @@ class GlobalState {
     }
     final profileId = profile.id;
     final configMap = await getProfileConfig(profileId);
-    final rawConfig = await handleEvaluate(configMap);
+    final rawConfig = await handleEvaluate(configMap, profile: profile);
     final originalProxyGroups = rawConfig['proxy-groups'];
 
     final realPatchConfig = patchConfig.copyWith(
@@ -794,11 +794,15 @@ class GlobalState {
   }
 
   Future<Map<String, dynamic>> handleEvaluate(
-    Map<String, dynamic> config,
-  ) async {
+    Map<String, dynamic> config, {
+    Profile? profile,
+  }) async {
     return _scriptEvaluateLock.synchronized(() async {
       final currentScript = globalState.config.scriptProps.currentScript;
       if (currentScript == null) return config;
+
+      // 如果指定了 profile 且该 profile 禁用了脚本覆写，则跳过
+      if (profile != null && !profile.useScriptOverride) return config;
 
       config['proxy-providers'] ??= {};
       final configJs = json.encode(config);

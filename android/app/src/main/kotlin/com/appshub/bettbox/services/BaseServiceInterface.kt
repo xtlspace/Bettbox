@@ -81,9 +81,9 @@ fun Service.ensureNotificationChannel() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
     val manager = getSystemService(NotificationManager::class.java)
     val channel = manager?.getNotificationChannel(GlobalState.NOTIFICATION_CHANNEL)
-    if (channel == null || channel.importance != NotificationManager.IMPORTANCE_DEFAULT) {
+    if (channel == null || channel.importance != NotificationManager.IMPORTANCE_LOW) {
         manager?.createNotificationChannel(
-            NotificationChannel(GlobalState.NOTIFICATION_CHANNEL, "Bettbox Service", NotificationManager.IMPORTANCE_DEFAULT)
+            NotificationChannel(GlobalState.NOTIFICATION_CHANNEL, "Bettbox Service", NotificationManager.IMPORTANCE_LOW)
         )
     }
 }

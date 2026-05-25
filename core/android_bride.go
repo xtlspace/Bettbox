@@ -21,7 +21,7 @@ static const char* resolve_process(resolve_process_func fn, void *tun_interface,
     if (fn) {
         return fn(tun_interface, protocol, source, target, uid);
     }
-    return NULL;
+    return "";
 }
 
 static void release_object(release_object_func fn, void *obj) {
@@ -58,11 +58,8 @@ func ResolveProcess(callback unsafe.Pointer, protocol int, source, target string
 	t := C.CString(target)
 	defer C.free(unsafe.Pointer(t))
 	res := C.resolve_process(globalCallbacks.resolveProcessFunc, callback, C.int(protocol), s, t, C.int(uid))
-	if res != nil {
-		defer C.free(unsafe.Pointer(res))
-		return C.GoString(res)
-	}
-	return ""
+	defer C.free(unsafe.Pointer(res))
+	return C.GoString(res)
 }
 
 func releaseObject(callback unsafe.Pointer) {

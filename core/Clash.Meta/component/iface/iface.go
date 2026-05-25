@@ -13,6 +13,13 @@ import (
 	"github.com/metacubex/bart"
 )
 
+var (
+	ifaceLogMu         sync.Mutex
+	ifaceLogLastTime   time.Time
+	ifaceLogCount      int
+	ifaceLogSuppressed bool
+)
+
 type Interface struct {
 	Index        int
 	MTU          int
@@ -25,13 +32,6 @@ type Interface struct {
 var (
 	ErrIfaceNotFound = errors.New("interface not found")
 	ErrAddrNotFound  = errors.New("addr not found")
-)
-
-var (
-	ifaceLogMu         sync.Mutex
-	ifaceLogLastTime   time.Time
-	ifaceLogCount      int
-	ifaceLogSuppressed bool
 )
 
 type ifaceCache struct {
@@ -166,7 +166,6 @@ func ResolveInterfaceByAddr(addr netip.Addr) (*Interface, error) {
 	}
 	iface, ok := cache.ifTable.Lookup(addr)
 	if !ok {
-		// 始终返回错误，但只在需要时记录日志
 		if ShouldLogIfaceError() {
 			return nil, ErrIfaceNotFound
 		}

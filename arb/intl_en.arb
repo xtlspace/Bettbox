@@ -626,5 +626,6 @@
   "restartCoreTitle": "Restart Core",
   "restartCoreDesc": "Manually restart the core?",
   "highRefreshRate": "High Refresh Rate",
-  "highRefreshRateDesc": "Enable highest refresh rate support"
+  "highRefreshRateDesc": "Enable highest refresh rate support",
+  "useGlobalScriptOverride": "Use Global Script Override"
 }

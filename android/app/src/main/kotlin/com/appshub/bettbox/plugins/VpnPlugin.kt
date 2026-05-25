@@ -349,20 +349,20 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             lastNetworkType = currentNetworkType
             return
         }
-        
+
         if (currentNetworkType != lastNetworkType) {
             lastNetworkType = currentNetworkType
-            
+
             ServicePlugin.notifyNetworkChanged()
-            
+
             if (!quickResponseEnabled) return
 
             quickResponseJob?.cancel()
             quickResponseJob = scope.launch {
                 delay(500)
                 if (GlobalState.currentRunState == RunState.START) {
-                    android.util.Log.d("VpnPlugin", "Quick Response: Network changed, closing connections")
-                    invokeDart("closeConnections")
+                    android.util.Log.d("VpnPlugin", "Quick Response: Network changed, notifying Dart")
+                    ServicePlugin.notifyQuickResponse()
                 }
             }
         }

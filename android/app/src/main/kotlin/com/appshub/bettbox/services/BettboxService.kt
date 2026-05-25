@@ -30,10 +30,21 @@ class BettboxService : Service(), BaseServiceInterface {
 
     override fun stop() {
         hasStartedForeground = false
+
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                stopForeground(true)
+            }
+        }.onFailure { android.util.Log.e("BettboxService", "Failed to stop foreground: ${it.message}") }
+
+        runCatching {
+            getSystemService(android.app.NotificationManager::class.java)
+                ?.cancel(GlobalState.NOTIFICATION_ID)
+        }.onFailure { android.util.Log.e("BettboxService", "Failed to cancel notification: ${it.message}") }
+
         stopSelf()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        }
     }
 
     fun resetNotificationBuilder() {

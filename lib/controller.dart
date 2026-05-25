@@ -1855,8 +1855,15 @@ class AppController {
 
       // 7. VPN settings
       if (system.isAndroid) {
-        // Android: restore VPN settings
-        _ref.read(vpnSettingProvider.notifier).value = config.vpnProps;
+        final currentVpnProps = _ref.read(vpnSettingProvider);
+        final hasBackupAccessControl = config.vpnProps.accessControl.enable ||
+            config.vpnProps.accessControl.acceptList.isNotEmpty ||
+            config.vpnProps.accessControl.rejectList.isNotEmpty;
+        _ref.read(vpnSettingProvider.notifier).value = config.vpnProps.copyWith(
+          accessControl: hasBackupAccessControl
+              ? config.vpnProps.accessControl
+              : currentVpnProps.accessControl,
+        );
       } else if (system.isDesktop) {
         // Desktop: restore network settings, preserve TUN state
         final currentVpnProps = _ref.read(vpnSettingProvider);

@@ -365,7 +365,7 @@ func resolveMetadata(metadata *C.Metadata) (proxy C.Proxy, rule C.Rule, err erro
 			if attemptProcessLookup {
 				attemptProcessLookup = false
 				if !features.Android {
-					// normal check for process
+				// normal check for process
 					uid, path, err := process.FindProcessName(metadata.NetWork.String(), metadata.SrcIP, int(metadata.SrcPort))
 					if err != nil {
 						log.Debugln("[Process] find process error for %s: %v", metadata.String(), err)

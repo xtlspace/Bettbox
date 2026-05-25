@@ -629,5 +629,6 @@
   "highRefreshRateDesc": "Включить поддержку максимальной частоты обновления устройства",
   "onlinePanel": "Онлайн-панель",
   "openDashboard": "Открыть Zashboard",
-  "tolerance": "Допуск"
+  "tolerance": "Допуск",
+  "useGlobalScriptOverride": "Глобальное переопределение"
 }

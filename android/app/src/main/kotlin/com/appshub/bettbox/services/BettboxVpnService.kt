@@ -118,10 +118,19 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         isStopped = true
         hasStartedForeground = false
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runCatching { stopForeground(STOP_FOREGROUND_REMOVE) }
-                .onFailure { Log.e(TAG, "Failed to stop foreground: ${it.message}") }
-        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                stopForeground(true)
+            }
+        }.onFailure { Log.e(TAG, "Failed to stop foreground: ${it.message}") }
+
+        runCatching {
+            getSystemService(android.app.NotificationManager::class.java)
+                ?.cancel(GlobalState.NOTIFICATION_ID)
+        }.onFailure { Log.e(TAG, "Failed to cancel notification: ${it.message}") }
+
         stopSelf()
     }
 
@@ -242,7 +251,11 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     }
 
     override fun onRevoke() {
-        runCatching { VpnPlugin.handleStop() }
+        runCatching {
+            VpnPlugin.handleStop()
+            getSystemService(android.app.NotificationManager::class.java)
+                ?.cancel(GlobalState.NOTIFICATION_ID)
+        }.onFailure { Log.e(TAG, "onRevoke error: ${it.message}") }
         super.onRevoke()
     }
 

@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:bett_box/clash/interface.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/models/core.dart';
 import 'package:bett_box/state.dart';
+import 'package:bett_box/utils/frame_codec.dart';
+import 'package:bett_box/utils/platform_check.dart';
+import 'package:path/path.dart' as p;
 
 class ClashService extends ClashHandlerInterface {
   static ClashService? _instance;
@@ -19,12 +23,32 @@ class ClashService extends ClashHandlerInterface {
 
   Process? process;
 
+  TransportType _transportType = TransportType.unixSocket;
+  String? _socketPath;
+  int? _tcpPort;
+
   factory ClashService() {
     _instance ??= ClashService._internal();
     return _instance!;
   }
 
   ClashService._internal() {
+    _initTransport();
+  }
+
+  Future<void> _initTransport() async {
+    _transportType = await PlatformChecker.getRecommendedTransport();
+
+    if (_transportType == TransportType.unixSocket) {
+      final random = Random().nextInt(10000);
+      final tempDir = Directory.systemTemp.path;
+      _socketPath = p.join(tempDir, 'Bettbox_$random.sock');
+      commonPrint.log('Using Unix Domain Socket: $_socketPath');
+    } else {
+      _tcpPort = PlatformChecker.getRandomPort();
+      commonPrint.log('Using TCP Socket on port: $_tcpPort');
+    }
+
     _initServer();
     reStart();
   }
@@ -32,22 +56,39 @@ class ClashService extends ClashHandlerInterface {
   Future<void> _initServer() async {
     runZonedGuarded(
       () async {
-        final address = !system.isWindows
-            ? InternetAddress(unixSocketPath, type: InternetAddressType.unix)
-            : InternetAddress(localhost, type: InternetAddressType.IPv4);
-        await _deleteSocketFile();
-        final server = await ServerSocket.bind(address, 0, shared: true);
+        late final ServerSocket server;
+
+        if (_transportType == TransportType.unixSocket) {
+          final address = InternetAddress(
+            _socketPath!,
+            type: InternetAddressType.unix,
+          );
+          await _deleteSocketFile();
+          server = await ServerSocket.bind(address, 0, shared: true);
+        } else {
+          server = await ServerSocket.bind(
+            InternetAddress.loopbackIPv4,
+            0,
+          );
+          _tcpPort = server.port;
+          commonPrint.log('TCP Server bound to port: $_tcpPort');
+        }
+
         serverCompleter.complete(server);
         await for (final socket in server) {
           await _destroySocket();
           socketCompleter.complete(socket);
+
           socket
-              .transform(uint8ListToListIntConverter)
-              .transform(utf8.decoder)
-              .transform(LineSplitter())
-              .listen((data) {
-                handleResult(ActionResult.fromJson(json.decode(data.trim())));
-              });
+              .transform(FrameDecoderTransformer())
+              .listen(
+                (data) {
+                  handleResult(ActionResult.fromJson(json.decode(data)));
+                },
+                onError: (error) {
+                  commonPrint.log('Frame decode error: $error');
+                },
+              );
         }
       },
       (error, stack) {
@@ -56,7 +97,6 @@ class ClashService extends ClashHandlerInterface {
             !_isDestroying &&
             !globalState.isExiting) {
           globalState.showNotifier(error.toString());
-          // globalState.appController.restartCore();
         }
       },
     );
@@ -85,25 +125,30 @@ class ClashService extends ClashHandlerInterface {
     socketCompleter = Completer();
 
     final serverSocket = await serverCompleter.future;
-    final arg = system.isWindows
-        ? '${serverSocket.port}'
-        : serverSocket.address.address;
 
-    if (system.isWindows) {
-      final serviceOk = await windows?.registerService() ?? false;
-      if (serviceOk) {
-        final isSuccess = await request.startCoreByHelper(arg);
-        if (isSuccess) {
-          await _waitForCoreReady();
-          isStarting = false;
-          return;
-        }
-      }
+    final String arg;
+    if (_transportType == TransportType.unixSocket) {
+      arg = _socketPath!;
+    } else {
+      arg = '${serverSocket.port}';
     }
 
     final homeDirPath = await appPath.homeDirPath;
     final environment = Map<String, String>.from(Platform.environment);
     environment['SAFE_PATHS'] = homeDirPath;
+
+    if (system.isWindows) {
+      final serviceOk = await windows?.registerService() ?? false;
+      if (serviceOk) {
+        final started = await request.startCoreByHelper(arg);
+        if (started) {
+          await _waitForCoreReady();
+          isStarting = false;
+          return;
+        }
+        commonPrint.log('Helper start core failed, falling back to normal mode');
+      }
+    }
 
     process = await Process.start(appPath.corePath, [
       arg,
@@ -146,7 +191,8 @@ class ClashService extends ClashHandlerInterface {
     }
     final socket = await socketCompleter.future;
     try {
-      socket.writeln(message);
+      final frame = FrameCodec.encode(message);
+      socket.add(frame);
     } on SocketException catch (e) {
       if (_isDestroying || globalState.isExiting) {
         commonPrint.log('Ignore socket error during shutdown: $e');
@@ -157,8 +203,8 @@ class ClashService extends ClashHandlerInterface {
   }
 
   Future<void> _deleteSocketFile() async {
-    if (!system.isWindows) {
-      final file = File(unixSocketPath);
+    if (_transportType == TransportType.unixSocket && _socketPath != null) {
+      final file = File(_socketPath!);
       if (await file.exists()) {
         await file.delete();
       }

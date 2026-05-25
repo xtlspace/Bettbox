@@ -1,6 +1,7 @@
 package main
 
 import (
+	b "bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -87,11 +88,17 @@ func sideUpdateExternalProvider(p cp.Provider, bytes []byte) error {
 	case *provider.ProxySetProvider:
 		psp := p.(*provider.ProxySetProvider)
 		_, _, err := psp.SideUpdate(bytes)
-		return err
-	case *rp.RuleSetProvider:
+		if err == nil {
+			return err
+		}
+		return nil
+	case rp.RuleSetProvider:
 		rsp := p.(*rp.RuleSetProvider)
 		_, _, err := rsp.SideUpdate(bytes)
-		return err
+		if err == nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.New("not external provider")
 	}
@@ -243,6 +250,10 @@ func setupConfig(params *SetupParams) error {
 		for _, group := range params.Config.ProxyGroup {
 			if elm, ok := group["tolerance"]; ok {
 				switch v := elm.(type) {
+				case json.Number:
+					if i, err := v.Int64(); err == nil {
+						group["tolerance"] = int(i)
+					}
 				case float64:
 					group["tolerance"] = int(v)
 				case float32:
@@ -273,6 +284,8 @@ func setupConfig(params *SetupParams) error {
 }
 
 func UnmarshalJson(data []byte, v any) error {
-	err := json.Unmarshal(data, v)
+	decoder := json.NewDecoder(b.NewReader(data))
+	decoder.UseNumber()
+	err := decoder.Decode(v)
 	return err
 }

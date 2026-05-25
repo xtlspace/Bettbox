@@ -36,11 +36,6 @@ func (result ActionResult) error(data interface{}) {
 }
 
 func handleAction(action *Action, result ActionResult) {
-	defer func() {
-		if err := recover(); err != nil {
-			result.error(err)
-		}
-	}()
 	switch action.Method {
 	case initClashMethod:
 		paramsString := action.Data.(string)

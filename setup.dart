@@ -128,7 +128,7 @@ class Build {
   }
 
   static String getTags(BuildItem buildItem) {
-    final baseTags = 'with_gvisor,no_fake_tcp';
+    final baseTags = 'with_gvisor';
     if (buildItem.target == Target.android &&
         buildItem.archName == 'armeabi-v7a') {
       return '$baseTags,with_low_memory';

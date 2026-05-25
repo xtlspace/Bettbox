@@ -5098,6 +5098,16 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `Use Global Script Override`
+  String get useGlobalScriptOverride {
+    return Intl.message(
+      'Use Global Script Override',
+      name: 'useGlobalScriptOverride',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

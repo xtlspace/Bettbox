@@ -99,8 +99,8 @@ func handleGetProxies() map[string]constant.Proxy {
 }
 
 func handleChangeProxy(data string, fn func(string string)) {
+	runLock.Lock()
 	go func() {
-		runLock.Lock()
 		defer runLock.Unlock()
 		var params = &ChangeProxyParams{}
 		err := json.Unmarshal([]byte(data), params)
@@ -343,9 +343,7 @@ func handleUpdateGeoData(geoType string, geoName string, fn func(value string)) 
 
 func handleUpdateExternalProvider(providerName string, fn func(value string)) {
 	go func() {
-		runLock.Lock()
 		externalProvider, exist := externalProviders[providerName]
-		runLock.Unlock()
 		if !exist {
 			fn("external provider is not exist")
 			return

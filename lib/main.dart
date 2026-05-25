@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:bett_box/plugins/app.dart';
+import 'package:bett_box/plugins/service.dart' as vpn_service;
 import 'package:bett_box/plugins/tile.dart';
 import 'package:bett_box/plugins/vpn.dart';
 import 'package:bett_box/state.dart';
@@ -132,6 +133,14 @@ Future<void> _service(List<String> flags) async {
           return;
         }
         await vpn?.start(clashLibHandler.getAndroidVpnOptions());
+
+        if (globalState.config.vpnProps.networkSpeedNotification) {
+          final profile = globalState.config.profiles
+              .where((e) => e.id == profileId)
+              .firstOrNull;
+          final profileName = profile?.label ?? 'Bettbox';
+          await vpn_service.service?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
+        }
 
         if (globalState.config.appSetting.openLogs) {
           await clashLibHandler.invokeAction('{"id": "quickStartLog", "method": "startLog"}');

@@ -1124,6 +1124,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "urlDesc": MessageLookupByLibrary.simpleMessage("Получить профиль по URL"),
     "urlTip": m9,
+    "useGlobalScriptOverride": MessageLookupByLibrary.simpleMessage(
+      "Глобальное переопределение",
+    ),
     "useHosts": MessageLookupByLibrary.simpleMessage("Использовать hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage(
       "Использовать системные hosts",

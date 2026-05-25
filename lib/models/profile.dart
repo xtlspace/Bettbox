@@ -61,6 +61,7 @@ abstract class Profile with _$Profile {
     @JsonKey(includeToJson: false, includeFromJson: false)
     @Default(false)
     bool isUpdating,
+    @Default(true) bool useScriptOverride,
   }) = _Profile;
 
   factory Profile.fromJson(Map<String, Object?> json) =>

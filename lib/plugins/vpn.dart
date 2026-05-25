@@ -19,14 +19,17 @@ class Vpn {
       switch (call.method) {
         case 'gc':
           clashCore.requestGc();
+          break;
         case 'closeConnections':
           clashCore.closeConnections();
+          break;
         case 'status':
           return clashLibHandler?.getRunTime() != null;
         case 'dnsChanged':
           for (final listener in _listeners) {
             listener.onDnsChanged(call.arguments as String);
           }
+          break;
         default:
       }
     });

@@ -14,6 +14,7 @@ import 'package:bett_box/widgets/null_status.dart';
 import 'package:bett_box/widgets/popup.dart';
 import 'package:bett_box/widgets/scaffold.dart';
 import 'package:bett_box/widgets/scroll.dart';
+import 'package:bett_box/widgets/sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,6 +48,15 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
     );
   }
 
+  void _handleShowScriptSettings() {
+    showSheet(
+      context: context,
+      builder: (_, type) {
+        return _ScriptSettingsSheet(type: type);
+      },
+    );
+  }
+
   Widget _buildContent() {
     return Consumer(
       builder: (_, ref, _) {
@@ -68,63 +78,66 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
             padding: kMaterialListPadding.copyWith(bottom: 16 + 64),
             itemCount: scripts.length,
             itemBuilder: (_, index) {
-            final script = scripts[index];
-            return Container(
-              padding: kTabLabelPadding,
-              margin: EdgeInsets.symmetric(vertical: 6),
-              child: CommonCard(
-                type: CommonCardType.filled,
-                radius: 16,
-                child: ListItem.radio(
-                  padding: const EdgeInsets.only(left: 12, right: 12),
-                  title: Text(script.label),
-                  delegate: RadioDelegate(
-                    value: script.id,
-                    groupValue: currentId,
-                    onChanged: (_) {
-                      ref.read(scriptStateProvider.notifier).setId(script.id);
-                    },
-                  ),
-                  trailing: CommonPopupBox(
-                    targetBuilder: (open) {
-                      return IconButton(
-                        onPressed: () {
-                          open();
-                        },
-                        icon: Icon(Icons.more_vert),
-                      );
-                    },
-                    popup: CommonPopupMenu(
-                      items: [
-                        PopupMenuItemData(
-                          icon: Icons.edit,
-                          label: appLocalizations.edit,
+              final script = scripts[index];
+              final isSelected = script.id == currentId;
+              return Container(
+                padding: kTabLabelPadding,
+                margin: EdgeInsets.symmetric(vertical: 6),
+                child: CommonCard(
+                  type: CommonCardType.filled,
+                  radius: 16,
+                  child: ListItem(
+                    padding: const EdgeInsets.only(left: 12, right: 12),
+                    title: Text(script.label),
+                    leading: Switch(
+                      value: isSelected,
+                      onChanged: (value) {
+                        if (value) {
+                          ref.read(scriptStateProvider.notifier).setId(script.id);
+                        } else if (isSelected) {
+                          ref.read(scriptStateProvider.notifier).setId(script.id);
+                        }
+                      },
+                    ),
+                    trailing: CommonPopupBox(
+                      targetBuilder: (open) {
+                        return IconButton(
                           onPressed: () {
-                            _handleToEditor(script: script);
+                            open();
                           },
-                        ),
-                        // URL 导入的脚本才显示同步按鈕
-                        if (script.url != null && script.url!.isNotEmpty)
+                          icon: Icon(Icons.more_vert),
+                        );
+                      },
+                      popup: CommonPopupMenu(
+                        items: [
                           PopupMenuItemData(
-                            icon: Icons.sync,
-                            label: appLocalizations.sync,
+                            icon: Icons.edit,
+                            label: appLocalizations.edit,
                             onPressed: () {
-                              _handleSyncScript(script.id);
+                              _handleToEditor(script: script);
                             },
                           ),
-                        PopupMenuItemData(
-                          icon: Icons.delete,
-                          label: appLocalizations.delete,
-                          onPressed: () {
-                            _handleDelScript(script.label);
-                          },
-                        ),
-                      ],
+                          if (script.url != null && script.url!.isNotEmpty)
+                            PopupMenuItemData(
+                              icon: Icons.sync,
+                              label: appLocalizations.sync,
+                              onPressed: () {
+                                _handleSyncScript(script.id);
+                              },
+                            ),
+                          PopupMenuItemData(
+                            icon: Icons.delete,
+                            label: appLocalizations.delete,
+                            onPressed: () {
+                              _handleDelScript(script.label);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
+              );
             },
           ),
         );
@@ -312,8 +325,64 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
         },
         child: Icon(Icons.add),
       ),
+      actions: [
+        IconButton(
+          onPressed: _handleShowScriptSettings,
+          icon: Icon(Icons.settings),
+        ),
+      ],
       body: _buildContent(),
       title: appLocalizations.script,
+    );
+  }
+}
+
+class _ScriptSettingsSheet extends ConsumerWidget {
+  final SheetType type;
+
+  const _ScriptSettingsSheet({
+    required this.type,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profiles = ref.watch(profilesProvider);
+    final currentProfileId = ref.watch(currentProfileIdProvider);
+    return AdaptiveSheetScaffold(
+      type: type,
+      body: profiles.isEmpty
+          ? NullStatus(label: appLocalizations.nullProfileDesc)
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              itemCount: profiles.length,
+              itemBuilder: (_, index) {
+                final profile = profiles[index];
+                final isCurrentProfile = profile.id == currentProfileId;
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: CommonCard(
+                    type: CommonCardType.filled,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.only(left: 16, right: 16),
+                      title: Text(profile.label ?? profile.id),
+                      trailing: Switch(
+                        value: profile.useScriptOverride,
+                        onChanged: (value) async {
+                          ref.read(profilesProvider.notifier).updateProfile(
+                            profile.id,
+                            (p) => p.copyWith(useScriptOverride: value),
+                          );
+                          if (isCurrentProfile) {
+                            await globalState.appController.applyProfile(silence: true);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+      title: appLocalizations.useGlobalScriptOverride,
     );
   }
 }

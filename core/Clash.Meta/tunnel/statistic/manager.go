@@ -3,6 +3,7 @@ package statistic
 import (
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/metacubex/mihomo/common/atomic"
@@ -74,7 +75,7 @@ func (m *Manager) Range(f func(c Tracker) bool) {
 }
 
 func (m *Manager) PushUploaded(lastChain string, size int64) {
-	if lastChain != "DIRECT" {
+	if strings.ToUpper(lastChain) != "DIRECT" {
 		m.proxyUploadTemp.Add(size)
 		m.proxyUploadTotal.Add(size)
 	}
@@ -83,7 +84,7 @@ func (m *Manager) PushUploaded(lastChain string, size int64) {
 }
 
 func (m *Manager) PushDownloaded(lastChain string, size int64) {
-	if lastChain != "DIRECT" {
+	if strings.ToUpper(lastChain) != "DIRECT" {
 		m.proxyDownloadTemp.Add(size)
 		m.proxyDownloadTotal.Add(size)
 	}

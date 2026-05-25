@@ -627,5 +627,6 @@
   "restartCoreTitle": "重启内核",
   "restartCoreDesc": "是否手动重启内核？",
   "highRefreshRate": "高刷新率",
-  "highRefreshRateDesc": "启用设备最高刷新率支持"
+  "highRefreshRateDesc": "启用设备最高刷新率支持",
+  "useGlobalScriptOverride": "使用全局脚本覆写"
 }
