@@ -561,10 +561,10 @@
   "clearData": "清除資料",
   "zoom": "縮放",
   "textScale": "文字縮放",
-  "lightIcon": "丹青留白",
+  "lightIcon": "浅色图标",
   "lightIconDesc": "手動切換淺色系桌面應用程式圖示",
-  "harmonyFont": "鴻蒙字體",
-  "harmonyFontDesc": "使用最佳化的 HarmonyOS Sans",
+  "harmonyFont": "字體修復",
+  "harmonyFontDesc": "使用內建字體解決顯示異常問題",
   "internet": "網際網路",
   "systemApp": "系統應用程式",
   "noNetworkApp": "無網路應用程式",
@@ -628,5 +628,6 @@
   "restartCoreDesc": "是否手動重啟內核？",
   "highRefreshRate": "高重新整理率",
   "highRefreshRateDesc": "啟用裝置最高重新整理率支援",
-  "useGlobalScriptOverride": "使用全域指令碼覆寫"
+  "useGlobalScriptOverride": "使用全域指令碼覆寫",
+  "profileImportFailed": "配置導入失敗，請檢查網路問題並嘗試重置訂閱連結(HTTP錯誤代碼: {statusCode})"
 }

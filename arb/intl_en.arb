@@ -562,8 +562,8 @@
   "textScale": "Text Scaling",
   "lightIcon": "Light Icon",
   "lightIconDesc": "Manually switch light desktop app icon",
-  "harmonyFont": "HarmonyOS Font",
-  "harmonyFontDesc": "Use optimized HarmonyOS Sans font",
+  "harmonyFont": "Font Fix",
+  "harmonyFontDesc": "Use built-in font to fix display issues",
   "internet": "Internet",
   "systemApp": "System App",
   "noNetworkApp": "No Network App",
@@ -627,5 +627,6 @@
   "restartCoreDesc": "Manually restart the core?",
   "highRefreshRate": "High Refresh Rate",
   "highRefreshRateDesc": "Enable highest refresh rate support",
-  "useGlobalScriptOverride": "Use Global Script Override"
+  "useGlobalScriptOverride": "Use Global Script Override",
+  "profileImportFailed": "Failed to import profile. Please check your network and try resetting the subscription link (HTTP error code: {statusCode})"
 }

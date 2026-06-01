@@ -561,10 +561,10 @@
   "clearData": "清除数据",
   "zoom": "缩放",
   "textScale": "文本缩放",
-  "lightIcon": "丹青留白",
-  "lightIconDesc": "手动切换浅色系桌面应用图标",
-  "harmonyFont": "鸿蒙字体",
-  "harmonyFontDesc": "使用优化的HarmonyOS Sans",
+  "lightIcon": "浅色图标",
+  "lightIconDesc": "手动切换浅色系桌面APP图标",
+  "harmonyFont": "字体修复",
+  "harmonyFontDesc": "使用内置字体解决显示异常问题",
   "internet": "互联网",
   "systemApp": "系统应用",
   "noNetworkApp": "无网络应用",
@@ -628,5 +628,6 @@
   "restartCoreDesc": "是否手动重启内核？",
   "highRefreshRate": "高刷新率",
   "highRefreshRateDesc": "启用设备最高刷新率支持",
-  "useGlobalScriptOverride": "使用全局脚本覆写"
+  "useGlobalScriptOverride": "使用全局脚本覆写",
+  "profileImportFailed": "配置导入失败，请检查网络问题并尝试重置订阅链接(HTTP错误代码: {statusCode})"
 }
