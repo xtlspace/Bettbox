@@ -741,7 +741,7 @@ class AppController {
     final forceCheck =
         (now - lastCheckTime) > const Duration(days: 28).inMilliseconds;
 
-    if (!isAutoCheck && !forceCheck) return;
+    if (!isAutoCheck) return;
 
     final res = await request.checkForUpdate();
     if (res != null) {
