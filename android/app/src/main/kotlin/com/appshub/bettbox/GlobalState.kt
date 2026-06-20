@@ -184,20 +184,28 @@ object GlobalState {
     fun initServiceEngine(flags: List<String>? = null) {
         runLock.withLock {
             if (serviceEngine != null) return
-            serviceEngine = FlutterEngine(BettboxApplication.getAppContext()).apply {
-                plugins.add(VpnPlugin)
-                plugins.add(AppPlugin())
-                plugins.add(TilePlugin())
-                plugins.add(ServicePlugin())
-                GeneratedPluginRegistrant.registerWith(this)
-            }
+            
+            val defaultArgs = if (flutterEngine == null && !isCurrentlyStopping()) listOf("quick") else null
+            val args = flags ?: defaultArgs
+            
+            val app = BettboxApplication.getAppContext() as BettboxApplication
             val vpnService = DartExecutor.DartEntrypoint(
                 FlutterInjector.instance().flutterLoader().findAppBundlePath(),
                 "_service"
             )
-            val defaultArgs = if (flutterEngine == null && !isCurrentlyStopping()) listOf("quick") else null
-            val args = flags ?: defaultArgs
-            serviceEngine?.dartExecutor?.executeDartEntrypoint(vpnService, args)
+            val options = io.flutter.embedding.engine.FlutterEngineGroup.Options(app).apply {
+                dartEntrypoint = vpnService
+                dartEntrypointArgs = args
+            }
+            
+            serviceEngine = app.engineGroup.createAndRunEngine(options).apply {
+                GeneratedPluginRegistrant.registerWith(this)
+                listOf(VpnPlugin, AppPlugin(), TilePlugin(), ServicePlugin()).forEach { plugin ->
+                    if (plugins.get(plugin.javaClass) == null) {
+                        plugins.add(plugin)
+                    }
+                }
+            }
         }
     }
 
