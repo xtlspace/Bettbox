@@ -14,13 +14,20 @@ class SmartAutoStopItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final smartAutoStop = ref.watch(vpnSettingProvider.select((s) => s.smartAutoStop));
+    final smartAutoStop = ref.watch(
+      vpnSettingProvider.select((state) => state.smartAutoStop),
+    );
+
     return ListItem.switchItem(
       title: Text(appLocalizations.smartAutoStop),
       subtitle: Text(appLocalizations.smartAutoStopDesc),
       delegate: SwitchDelegate(
         value: smartAutoStop,
-        onChanged: (value) => ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(smartAutoStop: value)),
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(smartAutoStop: value));
+        },
       ),
     );
   }
@@ -31,20 +38,30 @@ class NetworkMatchItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final smartAutoStopNetworks = ref.watch(vpnSettingProvider.select((s) => s.smartAutoStopNetworks));
+    final smartAutoStopNetworks = ref.watch(
+      vpnSettingProvider.select((state) => state.smartAutoStopNetworks),
+    );
 
     return ListItem.input(
       title: Text(appLocalizations.networkMatch),
-      subtitle: Text(smartAutoStopNetworks.isEmpty ? appLocalizations.networkMatchHint : smartAutoStopNetworks),
+      subtitle: Text(
+        smartAutoStopNetworks.isEmpty
+            ? appLocalizations.networkMatchHint
+            : smartAutoStopNetworks,
+      ),
       delegate: InputDelegate(
         title: appLocalizations.networkMatch,
         value: smartAutoStopNetworks,
-        onChanged: (value) {
+        onChanged: (String? value) {
           if (value != null) {
-            ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(smartAutoStopNetworks: value));
+            ref
+                .read(vpnSettingProvider.notifier)
+                .updateState(
+                  (state) => state.copyWith(smartAutoStopNetworks: value),
+                );
           }
         },
-        validator: (value) {
+        validator: (String? value) {
           if (value == null || value.isEmpty) return null;
           return NetworkMatcher.getValidationError(
             value,
@@ -62,13 +79,19 @@ class DozeSuspendItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dozeSuspend = ref.watch(vpnSettingProvider.select((s) => s.dozeSuspend));
+    final dozeSuspend = ref.watch(
+      vpnSettingProvider.select((state) => state.dozeSuspend),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.dozeSuspend),
       subtitle: Text(appLocalizations.dozeSuspendDesc),
       delegate: SwitchDelegate(
         value: dozeSuspend,
-        onChanged: (value) => ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(dozeSuspend: value)),
+        onChanged: (bool value) {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(dozeSuspend: value));
+        },
       ),
     );
   }
@@ -79,23 +102,35 @@ class StoreFixItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final storeFix = ref.watch(vpnSettingProvider.select((s) => s.storeFix));
+    final storeFix = ref.watch(
+      vpnSettingProvider.select((state) => state.storeFix),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.storeFix),
       subtitle: Text(appLocalizations.storeFixDesc),
       delegate: SwitchDelegate(
         value: storeFix,
-        onChanged: (value) {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(storeFix: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(storeFix: value));
 
           // Update hosts mapping
-          final currentHosts = Map<String, String>.from(ref.read(patchClashConfigProvider).hosts);
+          final currentHosts = Map<String, String>.from(
+            ref.read(patchClashConfigProvider).hosts,
+          );
+
           if (value) {
+            // Add the hosts mapping
             currentHosts['service.googleapis.cn'] = 'service.googleapis.com';
           } else {
+            // Remove the hosts mapping
             currentHosts.remove('service.googleapis.cn');
           }
-          ref.read(patchClashConfigProvider.notifier).updateState((s) => s.copyWith(hosts: currentHosts));
+
+          ref
+              .read(patchClashConfigProvider.notifier)
+              .updateState((state) => state.copyWith(hosts: currentHosts));
         },
       ),
     );
@@ -107,14 +142,20 @@ class QuickResponseItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final quickResponse = ref.watch(vpnSettingProvider.select((s) => s.quickResponse));
+    final quickResponse = ref.watch(
+      vpnSettingProvider.select((state) => state.quickResponse),
+    );
+
     return ListItem.switchItem(
       title: Text(appLocalizations.quickResponse),
       subtitle: Text(appLocalizations.quickResponseDesc),
       delegate: SwitchDelegate(
         value: quickResponse,
-        onChanged: (value) async {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(quickResponse: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(quickResponse: value));
+
           if (system.isAndroid) {
             await service?.setQuickResponse(value);
           }
@@ -129,34 +170,70 @@ class NetworkFixItem extends ConsumerWidget {
 
   Future<void> _applyNetworkFix(bool enable) async {
     try {
-      const regPath = r'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet';
-      final webProbeContent = enable ? '' : 'Microsoft NCSI';
-      final webProbeHost = enable ? 'dns.alidns.com' : 'www.msftncsi.com';
-      final webProbeHostV6 = enable ? 'dns.alidns.com' : 'ipv6.msftncsi.com';
-      final webProbePath = enable ? 'dns-query' : 'ncsi.txt';
+      // Registry path
+      const regPath =
+          r'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet';
 
-      final commands = [
-        'reg add "$regPath" /v ActiveDnsProbeContent /t REG_SZ /d "131.107.255.255" /f',
-        'reg add "$regPath" /v ActiveDnsProbeContentV6 /t REG_SZ /d "fd3e:4f5a:5b81::1" /f',
-        'reg add "$regPath" /v ActiveDnsProbeHost /t REG_SZ /d "dns.msftncsi.com" /f',
-        'reg add "$regPath" /v ActiveDnsProbeHostV6 /t REG_SZ /d "dns.msftncsi.com" /f',
-        'reg add "$regPath" /v ActiveWebProbeContent /t REG_SZ /d "$webProbeContent" /f',
-        'reg add "$regPath" /v ActiveWebProbeContentV6 /t REG_SZ /d "$webProbeContent" /f',
-        'reg add "$regPath" /v ActiveWebProbeHost /t REG_SZ /d "$webProbeHost" /f',
-        'reg add "$regPath" /v ActiveWebProbeHostV6 /t REG_SZ /d "$webProbeHostV6" /f',
-        'reg add "$regPath" /v ActiveWebProbePath /t REG_SZ /d "$webProbePath" /f',
-        'reg add "$regPath" /v ActiveWebProbePathV6 /t REG_SZ /d "$webProbePath" /f',
-        'reg add "$regPath" /v CaptivePortalTimer /t REG_DWORD /d 0x00000000 /f',
-        'reg add "$regPath" /v CaptivePortalTimerBackOffIncrementsInSeconds /t REG_DWORD /d 0x00000001 /f',
-        'reg add "$regPath" /v CaptivePortalTimerMaxInSeconds /t REG_DWORD /d 0x0000001e /f',
-        'reg add "$regPath" /v EnableActiveProbing /t REG_DWORD /d 0x00000001 /f',
-        'reg add "$regPath" /v PassivePollPeriod /t REG_DWORD /d 0x0000000f /f',
-        'reg add "$regPath" /v StaleThreshold /t REG_DWORD /d 0x0000001e /f',
-        'reg add "$regPath" /v WebTimeout /t REG_DWORD /d 0x00000023 /f',
-      ];
+      if (enable) {
+        // Apply NETFIX config
+        final commands = [
+          // DNS probe config
+          'reg add "$regPath" /v ActiveDnsProbeContent /t REG_SZ /d "131.107.255.255" /f',
+          'reg add "$regPath" /v ActiveDnsProbeContentV6 /t REG_SZ /d "fd3e:4f5a:5b81::1" /f',
+          'reg add "$regPath" /v ActiveDnsProbeHost /t REG_SZ /d "dns.msftncsi.com" /f',
+          'reg add "$regPath" /v ActiveDnsProbeHostV6 /t REG_SZ /d "dns.msftncsi.com" /f',
 
-      for (final cmd in commands) {
-        windows?.runas(cmd, '', showWindow: false);
+          // Web probe config
+          'reg add "$regPath" /v ActiveWebProbeContent /t REG_SZ /d "" /f',
+          'reg add "$regPath" /v ActiveWebProbeContentV6 /t REG_SZ /d "" /f',
+          'reg add "$regPath" /v ActiveWebProbeHost /t REG_SZ /d "dns.alidns.com" /f',
+          'reg add "$regPath" /v ActiveWebProbeHostV6 /t REG_SZ /d "dns.alidns.com" /f',
+          'reg add "$regPath" /v ActiveWebProbePath /t REG_SZ /d "dns-query" /f',
+          'reg add "$regPath" /v ActiveWebProbePathV6 /t REG_SZ /d "dns-query" /f',
+
+          // Other config
+          'reg add "$regPath" /v CaptivePortalTimer /t REG_DWORD /d 0x00000000 /f',
+          'reg add "$regPath" /v CaptivePortalTimerBackOffIncrementsInSeconds /t REG_DWORD /d 0x00000001 /f',
+          'reg add "$regPath" /v CaptivePortalTimerMaxInSeconds /t REG_DWORD /d 0x0000001e /f',
+          'reg add "$regPath" /v EnableActiveProbing /t REG_DWORD /d 0x00000001 /f',
+          'reg add "$regPath" /v PassivePollPeriod /t REG_DWORD /d 0x0000000f /f',
+          'reg add "$regPath" /v StaleThreshold /t REG_DWORD /d 0x0000001e /f',
+          'reg add "$regPath" /v WebTimeout /t REG_DWORD /d 0x00000023 /f',
+        ];
+
+        for (final cmd in commands) {
+          windows?.runas(cmd, '', showWindow: false);
+        }
+      } else {
+        // Restore WinNET default config
+        final commands = [
+          // DNS probe config
+          'reg add "$regPath" /v ActiveDnsProbeContent /t REG_SZ /d "131.107.255.255" /f',
+          'reg add "$regPath" /v ActiveDnsProbeContentV6 /t REG_SZ /d "fd3e:4f5a:5b81::1" /f',
+          'reg add "$regPath" /v ActiveDnsProbeHost /t REG_SZ /d "dns.msftncsi.com" /f',
+          'reg add "$regPath" /v ActiveDnsProbeHostV6 /t REG_SZ /d "dns.msftncsi.com" /f',
+
+          // Web probe config - restore to Microsoft NCSI
+          'reg add "$regPath" /v ActiveWebProbeContent /t REG_SZ /d "Microsoft NCSI" /f',
+          'reg add "$regPath" /v ActiveWebProbeContentV6 /t REG_SZ /d "Microsoft NCSI" /f',
+          'reg add "$regPath" /v ActiveWebProbeHost /t REG_SZ /d "www.msftncsi.com" /f',
+          'reg add "$regPath" /v ActiveWebProbeHostV6 /t REG_SZ /d "ipv6.msftncsi.com" /f',
+          'reg add "$regPath" /v ActiveWebProbePath /t REG_SZ /d "ncsi.txt" /f',
+          'reg add "$regPath" /v ActiveWebProbePathV6 /t REG_SZ /d "ncsi.txt" /f',
+
+          // Other config
+          'reg add "$regPath" /v CaptivePortalTimer /t REG_DWORD /d 0x00000000 /f',
+          'reg add "$regPath" /v CaptivePortalTimerBackOffIncrementsInSeconds /t REG_DWORD /d 0x00000001 /f',
+          'reg add "$regPath" /v CaptivePortalTimerMaxInSeconds /t REG_DWORD /d 0x0000001e /f',
+          'reg add "$regPath" /v EnableActiveProbing /t REG_DWORD /d 0x00000001 /f',
+          'reg add "$regPath" /v PassivePollPeriod /t REG_DWORD /d 0x0000000f /f',
+          'reg add "$regPath" /v StaleThreshold /t REG_DWORD /d 0x0000001e /f',
+          'reg add "$regPath" /v WebTimeout /t REG_DWORD /d 0x00000023 /f',
+        ];
+
+        for (final cmd in commands) {
+          windows?.runas(cmd, '', showWindow: false);
+        }
       }
     } catch (e) {
       commonPrint.log('Network fix error: $e');
@@ -166,17 +243,23 @@ class NetworkFixItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final networkFix = ref.watch(vpnSettingProvider.select((s) => s.networkFix));
+    final networkFix = ref.watch(
+      vpnSettingProvider.select((state) => state.networkFix),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.networkFix),
       subtitle: Text(appLocalizations.networkFixDesc),
       delegate: SwitchDelegate(
         value: networkFix,
-        onChanged: (value) async {
+        onChanged: (bool value) async {
           try {
             await _applyNetworkFix(value);
-            ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(networkFix: value));
+
+            ref
+                .read(vpnSettingProvider.notifier)
+                .updateState((state) => state.copyWith(networkFix: value));
           } catch (e) {
+            // Show error if failed
             if (context.mounted) {
               context.showSnackBar('Network fix failed: $e');
             }
@@ -192,15 +275,22 @@ class HighPriorityItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final enableHighPriority = ref.watch(appSettingProvider.select((s) => s.enableHighPriority));
+    final enableHighPriority = ref.watch(
+      appSettingProvider.select((state) => state.enableHighPriority),
+    );
 
     return ListItem.switchItem(
       title: Text(appLocalizations.highPriority),
       subtitle: Text(appLocalizations.highPriorityDesc),
       delegate: SwitchDelegate(
         value: enableHighPriority,
-        onChanged: (value) async {
-          ref.read(appSettingProvider.notifier).updateState((s) => s.copyWith(enableHighPriority: value));
+        onChanged: (bool value) async {
+          ref
+              .read(appSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(enableHighPriority: value),
+              );
+
           if (system.isWindows) {
             try {
               await globalState.appController.setProcessPriority(value);
@@ -217,78 +307,34 @@ class HighPriorityItem extends ConsumerWidget {
   }
 }
 
-class BatteryOptimizationItem extends ConsumerStatefulWidget {
+class BatteryOptimizationItem extends ConsumerWidget {
   const BatteryOptimizationItem({super.key});
 
-  @override
-  ConsumerState<BatteryOptimizationItem> createState() => _BatteryOptimizationItemState();
-}
-
-class _BatteryOptimizationItemState extends ConsumerState<BatteryOptimizationItem>
-    with WidgetsBindingObserver {
-  bool? _isIgnoring;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _checkStatus();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkStatus();
-    }
-  }
-
-  Future<void> _checkStatus() async {
+  Future<void> _handleTap(BuildContext context) async {
     try {
+      // Check if already in whitelist
       final isIgnoring = await app.isIgnoringBatteryOptimizations();
-      if (mounted) {
-        setState(() => _isIgnoring = isIgnoring);
+
+      if (isIgnoring) {
+        // Already in whitelist
+        if (context.mounted) {
+          context.showSnackBar(appLocalizations.alreadyInWhitelist);
+        }
+      } else {
+        // Request to add to whitelist
+        await app.requestIgnoreBatteryOptimizations();
       }
     } catch (e) {
-      commonPrint.log('Battery optimization check error: $e');
-    }
-  }
-
-  Future<void> _handleSwitchChanged(BuildContext context, bool value) async {
-    final isIgnoring = _isIgnoring;
-    if (isIgnoring == null) return;
-
-    if (isIgnoring) {
-      if (context.mounted) {
-        context.showSnackBar(appLocalizations.alreadyInWhitelist);
-      }
-      setState(() {});
-    } else {
-      try {
-        await app.requestIgnoreBatteryOptimizations();
-        await _checkStatus();
-      } catch (e) {
-        commonPrint.log('Battery optimization error: $e');
-      }
+      commonPrint.log('Battery optimization error: $e');
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final isIgnoring = _isIgnoring;
-
-    return ListItem.switchItem(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListItem(
       title: Text(appLocalizations.batteryOptimization),
       subtitle: Text(appLocalizations.batteryOptimizationDesc),
-      delegate: SwitchDelegate(
-        value: isIgnoring ?? false,
-        onChanged: (value) => _handleSwitchChanged(context, value),
-      ),
+      onTap: () => _handleTap(context),
     );
   }
 }
@@ -298,14 +344,18 @@ class DisableQuicItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final disableQuic = ref.watch(vpnSettingProvider.select((s) => s.disableQuic));
+    final disableQuic = ref.watch(
+      vpnSettingProvider.select((state) => state.disableQuic),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.disableQuic),
       subtitle: Text(appLocalizations.disableQuicDesc),
       delegate: SwitchDelegate(
         value: disableQuic,
-        onChanged: (value) {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(disableQuic: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(disableQuic: value));
           globalState.appController.setupClashConfigDebounce();
         },
       ),
@@ -318,14 +368,20 @@ class NetworkSpeedNotificationItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final networkSpeedNotification = ref.watch(vpnSettingProvider.select((s) => s.networkSpeedNotification));
+    final networkSpeedNotification = ref.watch(
+      vpnSettingProvider.select((state) => state.networkSpeedNotification),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.networkSpeedNotification),
       subtitle: Text(appLocalizations.networkSpeedNotificationDesc),
       delegate: SwitchDelegate(
         value: networkSpeedNotification,
-        onChanged: (value) async {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(networkSpeedNotification: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(networkSpeedNotification: value),
+              );
           if (!value && system.isAndroid) {
             await service?.restoreNotification();
           }
@@ -340,13 +396,19 @@ class AlwaysShowTitleBarItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final alwaysShowTitleBar = ref.watch(vpnSettingProvider.select((s) => s.alwaysShowTitleBar));
+    final alwaysShowTitleBar = ref.watch(
+      vpnSettingProvider.select((state) => state.alwaysShowTitleBar),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.alwaysShowTitleBar),
       subtitle: Text(appLocalizations.alwaysShowTitleBarDesc),
       delegate: SwitchDelegate(
         value: alwaysShowTitleBar,
-        onChanged: (value) => ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(alwaysShowTitleBar: value)),
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(alwaysShowTitleBar: value));
+        },
       ),
     );
   }
@@ -357,14 +419,18 @@ class TrayEnhancementItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trayEnhancement = ref.watch(vpnSettingProvider.select((s) => s.trayEnhancement));
+    final trayEnhancement = ref.watch(
+      vpnSettingProvider.select((state) => state.trayEnhancement),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.trayEnhancement),
       subtitle: Text(appLocalizations.trayEnhancementDesc),
       delegate: SwitchDelegate(
         value: trayEnhancement,
-        onChanged: (value) async {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(trayEnhancement: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(trayEnhancement: value));
           await globalState.appController.updateTray();
         },
       ),
@@ -377,14 +443,18 @@ class ExcludeChinaItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final excludeChina = ref.watch(vpnSettingProvider.select((s) => s.excludeChina));
+    final excludeChina = ref.watch(
+      vpnSettingProvider.select((state) => state.excludeChina),
+    );
     return ListItem.switchItem(
       title: Text(appLocalizations.excludeChina),
       subtitle: Text(appLocalizations.excludeChinaDesc),
       delegate: SwitchDelegate(
         value: excludeChina,
-        onChanged: (value) {
-          ref.read(vpnSettingProvider.notifier).updateState((s) => s.copyWith(excludeChina: value));
+        onChanged: (bool value) async {
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState((state) => state.copyWith(excludeChina: value));
           globalState.appController.setupClashConfigDebounce();
         },
       ),
@@ -397,28 +467,30 @@ class OtherSettingView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final smartAutoStop = ref.watch(vpnSettingProvider.select((s) => s.smartAutoStop));
-    final disableQuic = ref.watch(vpnSettingProvider.select((s) => s.disableQuic));
-    final locale = ref.watch(appSettingProvider.select((s) => s.locale));
+    final smartAutoStop = ref.watch(
+      vpnSettingProvider.select((state) => state.smartAutoStop),
+    );
+    final disableQuic = ref.watch(
+      vpnSettingProvider.select((state) => state.disableQuic),
+    );
+    final locale = ref.watch(
+      appSettingProvider.select((state) => state.locale),
+    );
     final isRussian = locale?.toLowerCase().startsWith('ru') ?? false;
 
-    final items = [
+    List<Widget> items = [
       const SmartAutoStopItem(),
       if (smartAutoStop) const NetworkMatchItem(),
-      if (system.isAndroid) ...[
-        const DozeSuspendItem(),
-        const QuickResponseItem(),
-      ],
+      if (system.isAndroid) const DozeSuspendItem(),
+      if (system.isAndroid) const QuickResponseItem(),
       const StoreFixItem(),
       const DisableQuicItem(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),
       if (system.isWindows || system.isLinux) const AlwaysShowTitleBarItem(),
       if (!system.isAndroid) const TrayEnhancementItem(),
       if (disableQuic && !isRussian) const ExcludeChinaItem(),
-      if (system.isWindows) ...[
-        const HighPriorityItem(),
-        const NetworkFixItem(),
-      ],
+      if (system.isWindows) const HighPriorityItem(),
+      if (system.isWindows) const NetworkFixItem(),
       if (system.isAndroid) const BatteryOptimizationItem(),
     ];
 
@@ -427,8 +499,13 @@ class OtherSettingView extends ConsumerWidget {
     }
 
     return ListView.separated(
-      itemBuilder: (_, index) => items[index],
-      separatorBuilder: (_, index) => const Divider(height: 0),
+      itemBuilder: (_, index) {
+        final item = items[index];
+        return item;
+      },
+      separatorBuilder: (_, _) {
+        return const Divider(height: 0);
+      },
       itemCount: items.length,
     );
   }
