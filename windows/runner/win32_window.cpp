@@ -288,7 +288,7 @@ Win32Window::MessageHandler(HWND hwnd,
     return 0;
 
   case WM_POWERBROADCAST:
-    if (wparam == PBT_APMRESUMESUSPEND || wparam == PBT_APMRESUMEAUTOMATIC)
+    if (wparam == PBT_APMRESUMESUSPEND || wparam == PBT_APMRESUMEAUTOMATIC || wparam == PBT_APMRESUMECRITICAL)
     {
       SetTimer(hwnd, kResumeTimerId, 500, nullptr);
     }
@@ -302,7 +302,7 @@ Win32Window::MessageHandler(HWND hwnd,
     if (wparam == kResumeTimerId)
     {
       KillTimer(hwnd, kResumeTimerId);
-      if (IsWindowVisible(hwnd))
+      if (IsWindowVisible(hwnd) && !IsIconic(hwnd))
       {
         RECT rect = GetClientArea();
         PostMessage(hwnd, WM_SIZE, SIZE_RESTORED,
