@@ -276,7 +276,7 @@ class AppSidebarContainer extends ConsumerWidget {
             _buildBackground(
               context: context,
               child: SafeArea(
-                left: !system.isAndroid,
+                left: true,
                 top: true,
                 right: false,
                 bottom: false,
@@ -288,61 +288,74 @@ class AppSidebarContainer extends ConsumerWidget {
                     Expanded(
                       child: ScrollConfiguration(
                         behavior: HiddenBarScrollBehavior(),
-                        child: CallbackShortcuts(
-                          bindings: <ShortcutActivator, VoidCallback>{
-                            const SingleActivator(LogicalKeyboardKey.arrowUp): () {
-                              if (currentIndex > 0) {
-                                globalState.appController.toPage(
-                                  navigationItems[currentIndex - 1].label,
-                                );
-                              }
-                            },
-                            const SingleActivator(LogicalKeyboardKey.arrowDown): () {
-                              if (currentIndex < navigationItems.length - 1) {
-                                globalState.appController.toPage(
-                                  navigationItems[currentIndex + 1].label,
-                                );
-                              }
-                            },
-                            const SingleActivator(LogicalKeyboardKey.select): () {},
-                            const SingleActivator(LogicalKeyboardKey.enter): () {},
-                          },
-                          child: Focus(
-                            autofocus: true,
-                            child: NavigationRail(
-                              backgroundColor: Colors.transparent,
-                              selectedLabelTextStyle: context
-                                  .textTheme
-                                  .labelLarge!
-                                  .copyWith(
-                                    color: context.colorScheme.onSurface,
-                                  ),
-                              unselectedLabelTextStyle: context
-                                  .textTheme
-                                  .labelLarge!
-                                  .copyWith(
-                                    color: context.colorScheme.onSurface,
-                                  ),
-                              destinations: navigationItems
-                                  .map(
-                                    (e) => NavigationRailDestination(
-                                      icon: e.icon,
-                                      label: Text(Intl.message(e.label.name)),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight,
+                                ),
+                                child: IntrinsicHeight(
+                                  child: CallbackShortcuts(
+                                    bindings: <ShortcutActivator, VoidCallback>{
+                                      const SingleActivator(LogicalKeyboardKey.arrowUp): () {
+                                        if (currentIndex > 0) {
+                                          globalState.appController.toPage(
+                                            navigationItems[currentIndex - 1].label,
+                                          );
+                                        }
+                                      },
+                                      const SingleActivator(LogicalKeyboardKey.arrowDown): () {
+                                        if (currentIndex < navigationItems.length - 1) {
+                                          globalState.appController.toPage(
+                                            navigationItems[currentIndex + 1].label,
+                                          );
+                                        }
+                                      },
+                                      const SingleActivator(LogicalKeyboardKey.select): () {},
+                                      const SingleActivator(LogicalKeyboardKey.enter): () {},
+                                    },
+                                    child: Focus(
+                                      autofocus: true,
+                                      child: NavigationRail(
+                                        backgroundColor: Colors.transparent,
+                                        selectedLabelTextStyle: context
+                                            .textTheme
+                                            .labelLarge!
+                                            .copyWith(
+                                              color: context.colorScheme.onSurface,
+                                            ),
+                                        unselectedLabelTextStyle: context
+                                            .textTheme
+                                            .labelLarge!
+                                            .copyWith(
+                                              color: context.colorScheme.onSurface,
+                                            ),
+                                        destinations: navigationItems
+                                            .map(
+                                              (e) => NavigationRailDestination(
+                                                icon: e.icon,
+                                                label: Text(Intl.message(e.label.name)),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onDestinationSelected: (index) {
+                                          globalState.appController.toPage(
+                                            navigationItems[index].label,
+                                          );
+                                        },
+                                        extended: showLabel,
+                                        selectedIndex: currentIndex,
+                                        labelType: showLabel
+                                            ? NavigationRailLabelType.none
+                                            : NavigationRailLabelType.all,
+                                      ),
                                     ),
-                                  )
-                                  .toList(),
-                              onDestinationSelected: (index) {
-                                globalState.appController.toPage(
-                                  navigationItems[index].label,
-                                );
-                              },
-                              extended: showLabel,
-                              selectedIndex: currentIndex,
-                              labelType: showLabel
-                                  ? NavigationRailLabelType.none
-                                  : NavigationRailLabelType.all,
-                            ),
-                          ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -353,7 +366,16 @@ class AppSidebarContainer extends ConsumerWidget {
             _buildLoading(),
           ],
         ),
-        Expanded(flex: 1, child: ClipRect(child: child)),
+        Expanded(
+          flex: 1,
+          child: ClipRect(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeLeft: true,
+              child: child,
+            ),
+          ),
+        ),
       ],
     );
   }
