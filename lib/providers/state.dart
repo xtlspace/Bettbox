@@ -20,6 +20,11 @@ Config configState(Ref ref) {
   final profiles = ref.watch(profilesProvider);
   final currentProfileId = ref.watch(currentProfileIdProvider);
   final overrideDns = ref.watch(overrideDnsProvider);
+  final overrideNtp = ref.watch(overrideNtpProvider);
+  final overrideSniffer = ref.watch(overrideSnifferProvider);
+  final overrideTunnel = ref.watch(overrideTunnelProvider);
+  final overrideExperimental = ref.watch(overrideExperimentalProvider);
+  final overrideTestUrl = ref.watch(overrideTestUrlProvider);
   final networkProps = ref.watch(networkSettingProvider);
   final vpnProps = ref.watch(vpnSettingProvider);
   final proxiesStyle = ref.watch(proxiesStyleSettingProvider);
@@ -36,6 +41,11 @@ Config configState(Ref ref) {
     vpnProps: vpnProps,
     networkProps: networkProps,
     overrideDns: overrideDns,
+    overrideNtp: overrideNtp,
+    overrideSniffer: overrideSniffer,
+    overrideTunnel: overrideTunnel,
+    overrideExperimental: overrideExperimental,
+    overrideTestUrl: overrideTestUrl,
     currentProfileId: currentProfileId,
     profiles: profiles,
     appSetting: appSetting,
