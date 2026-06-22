@@ -307,34 +307,96 @@ class HighPriorityItem extends ConsumerWidget {
   }
 }
 
-class BatteryOptimizationItem extends ConsumerWidget {
+class BatteryOptimizationItem extends ConsumerStatefulWidget {
   const BatteryOptimizationItem({super.key});
 
-  Future<void> _handleTap(BuildContext context) async {
-    try {
-      // Check if already in whitelist
-      final isIgnoring = await app.isIgnoringBatteryOptimizations();
+  @override
+  ConsumerState<BatteryOptimizationItem> createState() =>
+      _BatteryOptimizationItemState();
+}
 
-      if (isIgnoring) {
-        // Already in whitelist
-        if (context.mounted) {
-          context.showSnackBar(appLocalizations.alreadyInWhitelist);
+class _BatteryOptimizationItemState extends ConsumerState<BatteryOptimizationItem>
+    with WidgetsBindingObserver {
+  bool? _isIgnoring;
+  bool _isWaitingForSettings = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkStatus(maxRetries: _isWaitingForSettings ? 3 : 1);
+    }
+  }
+
+  Future<void> _checkStatus({int maxRetries = 1}) async {
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        final isIgnoring = await app.isIgnoringBatteryOptimizations();
+        if (mounted) {
+          setState(() {
+            _isIgnoring = isIgnoring;
+            if (isIgnoring) {
+              _isWaitingForSettings = false;
+            }
+          });
         }
-      } else {
-        // Request to add to whitelist
-        await app.requestIgnoreBatteryOptimizations();
+        if (isIgnoring || attempt >= maxRetries - 1) {
+          break;
+        }
+        await Future.delayed(const Duration(milliseconds: 666));
+      } catch (e) {
+        commonPrint.log('Battery optimization check error: $e');
+        break;
       }
-    } catch (e) {
-      commonPrint.log('Battery optimization error: $e');
+    }
+    if (mounted && _isWaitingForSettings) {
+      setState(() => _isWaitingForSettings = false);
+    }
+  }
+
+  Future<void> _handleSwitchChanged(BuildContext context, bool value) async {
+    final isIgnoring = _isIgnoring;
+    if (isIgnoring == null) return;
+
+    if (isIgnoring) {
+      if (context.mounted) {
+        context.showSnackBar(appLocalizations.alreadyInWhitelist);
+      }
+      setState(() {});
+    } else {
+      try {
+        setState(() => _isWaitingForSettings = true);
+        await app.requestIgnoreBatteryOptimizations();
+      } catch (e) {
+        commonPrint.log('Battery optimization error: $e');
+        setState(() => _isWaitingForSettings = false);
+      }
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListItem(
+  Widget build(BuildContext context) {
+    final isIgnoring = _isIgnoring;
+
+    return ListItem.switchItem(
       title: Text(appLocalizations.batteryOptimization),
       subtitle: Text(appLocalizations.batteryOptimizationDesc),
-      onTap: () => _handleTap(context),
+      delegate: SwitchDelegate(
+        value: isIgnoring ?? false,
+        onChanged: (value) => _handleSwitchChanged(context, value),
+      ),
     );
   }
 }
