@@ -62,14 +62,16 @@ Future<T> retry<T>({
   Duration delay = Duration.zero,
 }) async {
   int attempts = 0;
-  while (attempts < maxAttempts) {
+  while (true) {
     final res = await task();
-    if (!retryIf(res) || attempts >= maxAttempts) {
+    if (!retryIf(res) || attempts >= maxAttempts - 1) {
       return res;
     }
     attempts++;
+    if (delay > Duration.zero) {
+      await Future.delayed(delay);
+    }
   }
-  throw 'unknown error';
 }
 
 final debouncer = Debouncer();

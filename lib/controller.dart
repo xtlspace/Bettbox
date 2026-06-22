@@ -569,14 +569,17 @@ class AppController {
 
     try {
       final currentGroups = _ref.read(groupsProvider);
-      final isInitialDesktopLoad = system.isDesktop && currentGroups.isEmpty;
-      final maxAttempts = isInitialDesktopLoad ? 6 : 4;
 
       final newGroups = await retry(
         task: clashCore.getProxiesGroups,
         retryIf: (res) => res.isEmpty,
-        maxAttempts: maxAttempts,
+        maxAttempts: 4,
+        delay: const Duration(milliseconds: 666),
       );
+
+      if (newGroups.isEmpty) {
+        throw 'getProxiesGroups returned empty after inner retries, forcing outer retry';
+      }
 
       final currentProfile = _ref.read(currentProfileProvider);
       if (currentProfile != null) {
@@ -607,11 +610,12 @@ class AppController {
       return;
     } catch (e) {
       final currentGroups = _ref.read(groupsProvider);
-      final isInitialDesktopLoad = system.isDesktop && currentGroups.isEmpty;
-      final maxRetryRounds = isInitialDesktopLoad ? 8 : 4;
-      final retryDelay = isInitialDesktopLoad
-          ? const Duration(seconds: 1)
-          : const Duration(seconds: 2);
+      // 所有平台初次加载（groups 为空）都给予更多重试机会
+      final isInitialLoad = currentGroups.isEmpty;
+      final maxRetryRounds = isInitialLoad ? 6 : 4;
+      final retryDelay = isInitialLoad
+          ? const Duration(seconds: 2)
+          : const Duration(seconds: 3);
       if (currentGroups.isNotEmpty) {
         commonPrint.log('updateGroups error, keeping existing groups: $e');
         return;
