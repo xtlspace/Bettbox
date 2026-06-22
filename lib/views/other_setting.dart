@@ -115,17 +115,14 @@ class StoreFixItem extends ConsumerWidget {
               .read(vpnSettingProvider.notifier)
               .updateState((state) => state.copyWith(storeFix: value));
 
-          // Update hosts mapping
           final currentHosts = Map<String, String>.from(
             ref.read(patchClashConfigProvider).hosts,
           );
 
           if (value) {
-            // Add the hosts mapping
-            currentHosts['service.googleapis.cn'] = 'service.googleapis.com';
+            currentHosts['services.googleapis.cn'] = 'services.googleapis.com';
           } else {
-            // Remove the hosts mapping
-            currentHosts.remove('service.googleapis.cn');
+            currentHosts.remove('services.googleapis.cn');
           }
 
           ref
@@ -170,28 +167,21 @@ class NetworkFixItem extends ConsumerWidget {
 
   Future<void> _applyNetworkFix(bool enable) async {
     try {
-      // Registry path
       const regPath =
           r'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet';
 
       if (enable) {
-        // Apply NETFIX config
         final commands = [
-          // DNS probe config
           'reg add "$regPath" /v ActiveDnsProbeContent /t REG_SZ /d "131.107.255.255" /f',
           'reg add "$regPath" /v ActiveDnsProbeContentV6 /t REG_SZ /d "fd3e:4f5a:5b81::1" /f',
           'reg add "$regPath" /v ActiveDnsProbeHost /t REG_SZ /d "dns.msftncsi.com" /f',
           'reg add "$regPath" /v ActiveDnsProbeHostV6 /t REG_SZ /d "dns.msftncsi.com" /f',
-
-          // Web probe config
           'reg add "$regPath" /v ActiveWebProbeContent /t REG_SZ /d "" /f',
           'reg add "$regPath" /v ActiveWebProbeContentV6 /t REG_SZ /d "" /f',
           'reg add "$regPath" /v ActiveWebProbeHost /t REG_SZ /d "dns.alidns.com" /f',
           'reg add "$regPath" /v ActiveWebProbeHostV6 /t REG_SZ /d "dns.alidns.com" /f',
           'reg add "$regPath" /v ActiveWebProbePath /t REG_SZ /d "dns-query" /f',
           'reg add "$regPath" /v ActiveWebProbePathV6 /t REG_SZ /d "dns-query" /f',
-
-          // Other config
           'reg add "$regPath" /v CaptivePortalTimer /t REG_DWORD /d 0x00000000 /f',
           'reg add "$regPath" /v CaptivePortalTimerBackOffIncrementsInSeconds /t REG_DWORD /d 0x00000001 /f',
           'reg add "$regPath" /v CaptivePortalTimerMaxInSeconds /t REG_DWORD /d 0x0000001e /f',
@@ -205,23 +195,17 @@ class NetworkFixItem extends ConsumerWidget {
           windows?.runas(cmd, '', showWindow: false);
         }
       } else {
-        // Restore WinNET default config
         final commands = [
-          // DNS probe config
           'reg add "$regPath" /v ActiveDnsProbeContent /t REG_SZ /d "131.107.255.255" /f',
           'reg add "$regPath" /v ActiveDnsProbeContentV6 /t REG_SZ /d "fd3e:4f5a:5b81::1" /f',
           'reg add "$regPath" /v ActiveDnsProbeHost /t REG_SZ /d "dns.msftncsi.com" /f',
           'reg add "$regPath" /v ActiveDnsProbeHostV6 /t REG_SZ /d "dns.msftncsi.com" /f',
-
-          // Web probe config - restore to Microsoft NCSI
           'reg add "$regPath" /v ActiveWebProbeContent /t REG_SZ /d "Microsoft NCSI" /f',
           'reg add "$regPath" /v ActiveWebProbeContentV6 /t REG_SZ /d "Microsoft NCSI" /f',
           'reg add "$regPath" /v ActiveWebProbeHost /t REG_SZ /d "www.msftncsi.com" /f',
           'reg add "$regPath" /v ActiveWebProbeHostV6 /t REG_SZ /d "ipv6.msftncsi.com" /f',
           'reg add "$regPath" /v ActiveWebProbePath /t REG_SZ /d "ncsi.txt" /f',
           'reg add "$regPath" /v ActiveWebProbePathV6 /t REG_SZ /d "ncsi.txt" /f',
-
-          // Other config
           'reg add "$regPath" /v CaptivePortalTimer /t REG_DWORD /d 0x00000000 /f',
           'reg add "$regPath" /v CaptivePortalTimerBackOffIncrementsInSeconds /t REG_DWORD /d 0x00000001 /f',
           'reg add "$regPath" /v CaptivePortalTimerMaxInSeconds /t REG_DWORD /d 0x0000001e /f',
@@ -259,7 +243,6 @@ class NetworkFixItem extends ConsumerWidget {
                 .read(vpnSettingProvider.notifier)
                 .updateState((state) => state.copyWith(networkFix: value));
           } catch (e) {
-            // Show error if failed
             if (context.mounted) {
               context.showSnackBar('Network fix failed: $e');
             }
