@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:yaml/yaml.dart';
 
@@ -61,8 +61,6 @@ class AppController {
   void updateGroupsDebounce() {
     debouncer.call(FunctionTag.updateGroups, updateGroups);
   }
-
-
 
   void addCheckIpNumDebounce() {
     debouncer.call(FunctionTag.addCheckIpNum, () {
@@ -174,8 +172,6 @@ class AppController {
     _backgroundLoad();
   }
 
-
-
   void _scheduleCheckIpRefresh() {
     Future.delayed(const Duration(seconds: 1), () {
       addCheckIpNumDebounce();
@@ -283,16 +279,18 @@ class AppController {
   Future<void> updateTraffic() async {
     _ref.read(totalTrafficProvider.notifier).value = await clashCore
         .getTotalTraffic();
-    
+
     final shouldUpdateDashboard = await _shouldUpdateDashboardTick();
-    final networkSpeedNotification = system.isAndroid && _ref.read(vpnSettingProvider).networkSpeedNotification;
+    final networkSpeedNotification =
+        system.isAndroid &&
+        _ref.read(vpnSettingProvider).networkSpeedNotification;
 
     if (!shouldUpdateDashboard && !networkSpeedNotification) {
       return;
     }
-    
+
     final traffic = await clashCore.getTraffic();
-    
+
     if (shouldUpdateDashboard) {
       _ref.read(trafficsProvider.notifier).addTraffic(traffic);
     }
@@ -300,10 +298,15 @@ class AppController {
     if (networkSpeedNotification) {
       final currentProfileId = _ref.read(currentProfileIdProvider);
       final profiles = _ref.read(profilesProvider);
-      final profile = profiles.where((e) => e.id == currentProfileId).firstOrNull;
+      final profile = profiles
+          .where((e) => e.id == currentProfileId)
+          .firstOrNull;
       final profileName = profile?.label ?? 'Bettbox';
       final speedInfo = traffic.toString();
-      await vpn_service.service?.updateNotificationSpeed(profileName, speedInfo);
+      await vpn_service.service?.updateNotificationSpeed(
+        profileName,
+        speedInfo,
+      );
     }
   }
 
@@ -541,7 +544,8 @@ class AppController {
       final lastUpdate = profile.lastUpdateDate;
       if (lastUpdate == null) continue;
       final expectedNextUpdate = lastUpdate.add(profile.autoUpdateDuration);
-      final isOverdue = now.difference(expectedNextUpdate) > const Duration(minutes: 1);
+      final isOverdue =
+          now.difference(expectedNextUpdate) > const Duration(minutes: 1);
       if (isOverdue) {
         profilesToUpdate.add(profile);
       }
@@ -549,7 +553,9 @@ class AppController {
     if (profilesToUpdate.isEmpty) return;
     for (final profile in profilesToUpdate) {
       try {
-        commonPrint.log('[MissedUpdate] Updating profile: ${profile.label ?? profile.id}');
+        commonPrint.log(
+          '[MissedUpdate] Updating profile: ${profile.label ?? profile.id}',
+        );
         await updateProfile(profile);
       } catch (e) {
         commonPrint.log('[MissedUpdate] Failed to update ${profile.id}: $e');
@@ -583,11 +589,15 @@ class AppController {
 
       final currentProfile = _ref.read(currentProfileProvider);
       if (currentProfile != null) {
-        final selectedMap = Map<String, String>.from(currentProfile.selectedMap);
+        final selectedMap = Map<String, String>.from(
+          currentProfile.selectedMap,
+        );
         bool hasChanged = false;
 
         for (final newGroup in newGroups) {
-          final oldGroup = currentGroups.firstWhereOrNull((g) => g.name == newGroup.name);
+          final oldGroup = currentGroups.firstWhereOrNull(
+            (g) => g.name == newGroup.name,
+          );
           if (oldGroup != null &&
               newGroup.type == GroupType.Selector &&
               newGroup.now != oldGroup.now) {
@@ -599,9 +609,9 @@ class AppController {
         }
 
         if (hasChanged) {
-          _ref.read(profilesProvider.notifier).setProfile(
-                currentProfile.copyWith(selectedMap: selectedMap),
-              );
+          _ref
+              .read(profilesProvider.notifier)
+              .setProfile(currentProfile.copyWith(selectedMap: selectedMap));
         }
       }
 
@@ -687,7 +697,7 @@ class AppController {
 
   Future<void> setProcessPriority(bool enable) async {
     if (!system.isWindows) return;
-    
+
     try {
       await system.setProcessPriority('Bettbox.exe', enable);
       await request.setProcessPriorityByHelper('BettboxCore.exe', enable);
@@ -783,10 +793,18 @@ class AppController {
       if (res != true) {
         return;
       }
-      launchUrl(
-        Uri.parse('https://github.com/$repository/releases/latest'),
-        mode: LaunchMode.externalApplication,
-      );
+      const String assetSuffix = String.fromEnvironment('APP_ASSET_SUFFIX');
+      String downloadUrl = 'https://github.com/$repository/releases/latest';
+
+      if (assetSuffix.isNotEmpty) {
+        final versionWithoutV = tagName.startsWith('v')
+            ? tagName.substring(1)
+            : tagName;
+        downloadUrl =
+            'https://github.com/$repository/releases/download/$tagName/Bettbox-$versionWithoutV-$assetSuffix';
+      }
+
+      globalState.openUrl(downloadUrl);
     } else if (handleError) {
       globalState.showMessage(
         title: appLocalizations.checkUpdate,
@@ -921,9 +939,9 @@ class AppController {
         commonPrint.log('Fallback applyProfile also failed: $e2');
       }
     }
-    
+
     await updateGroups();
-    
+
     autoLaunch?.updateStatus(_ref.read(appSettingProvider).autoLaunch);
     autoUpdateProfiles();
     autoCheckUpdate();
@@ -1034,7 +1052,10 @@ class AppController {
   void toPage(PageLabel pageLabel) {
     final context = globalState.navigatorKey.currentState?.context;
     if (context != null && context.mounted) {
-      Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).popUntil((route) => route.isFirst);
     }
     _ref.read(currentPageLabelProvider.notifier).value = pageLabel;
   }
@@ -1121,7 +1142,10 @@ class AppController {
 
     final profile = await safeRun(
       () async {
-        return await Profile.normal(url: url, ageSecretKey: ageSecretKey).update();
+        return await Profile.normal(
+          url: url,
+          ageSecretKey: ageSecretKey,
+        ).update();
       },
       needLoading: true,
       title: '${appLocalizations.add}${appLocalizations.profile}',
@@ -1481,10 +1505,13 @@ class AppController {
     RecoveryOption recoveryOption,
   ) async {
     commonPrint.log('Starting recovery from bytes: ${data.length} bytes');
-    await _processRecoveryArchive(() => Isolate.run<Archive>(() {
-      final zipDecoder = ZipDecoder();
-      return zipDecoder.decodeBytes(data);
-    }), recoveryOption);
+    await _processRecoveryArchive(
+      () => Isolate.run<Archive>(() {
+        final zipDecoder = ZipDecoder();
+        return zipDecoder.decodeBytes(data);
+      }),
+      recoveryOption,
+    );
   }
 
   /// Restore data from file path
@@ -1493,23 +1520,26 @@ class AppController {
     RecoveryOption recoveryOption,
   ) async {
     commonPrint.log('Starting recovery from file: $path');
-    await _processRecoveryArchive(() => Isolate.run<Archive>(() {
-      try {
-        final input = InputFileStream(path);
-        final zipDecoder = ZipDecoder();
-        final result = zipDecoder.decodeStream(input);
-        input.close();
-        if (result.files.isNotEmpty) {
-          return result;
+    await _processRecoveryArchive(
+      () => Isolate.run<Archive>(() {
+        try {
+          final input = InputFileStream(path);
+          final zipDecoder = ZipDecoder();
+          final result = zipDecoder.decodeStream(input);
+          input.close();
+          if (result.files.isNotEmpty) {
+            return result;
+          }
+        } catch (e) {
+          commonPrint.log('Stream decoding failed: $e');
         }
-      } catch (e) {
-        commonPrint.log('Stream decoding failed: $e');
-      }
 
-      final bytes = File(path).readAsBytesSync();
-      final zipDecoder = ZipDecoder();
-      return zipDecoder.decodeBytes(bytes);
-    }), recoveryOption);
+        final bytes = File(path).readAsBytesSync();
+        final zipDecoder = ZipDecoder();
+        return zipDecoder.decodeBytes(bytes);
+      }),
+      recoveryOption,
+    );
   }
 
   /// Unified recovery entry: check marker and dispatch to recovery logic
@@ -1896,7 +1926,8 @@ class AppController {
       // 7. VPN settings
       if (system.isAndroid) {
         final currentVpnProps = _ref.read(vpnSettingProvider);
-        final hasBackupAccessControl = config.vpnProps.accessControl.enable ||
+        final hasBackupAccessControl =
+            config.vpnProps.accessControl.enable ||
             config.vpnProps.accessControl.acceptList.isNotEmpty ||
             config.vpnProps.accessControl.rejectList.isNotEmpty;
         _ref.read(vpnSettingProvider.notifier).value = config.vpnProps.copyWith(
