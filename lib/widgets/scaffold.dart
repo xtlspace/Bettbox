@@ -5,6 +5,7 @@ import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/widgets/fade_box.dart';
 import 'package:bett_box/widgets/pop_scope.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'chip.dart';
@@ -353,4 +354,31 @@ List<Widget> genActions(List<Widget> actions, {double? space}) {
     ...actions.separated(SizedBox(width: space ?? 4)),
     SizedBox(width: 8),
   ];
+}
+
+class DesktopBackShortcutWrapper extends StatelessWidget {
+  final Widget child;
+
+  const DesktopBackShortcutWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!system.isDesktop) return child;
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        if (!system.isMacOS)
+          const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () {
+            Navigator.maybePop(context);
+          },
+        if (system.isMacOS)
+          const SingleActivator(
+            LogicalKeyboardKey.bracketLeft,
+            meta: true,
+          ): () {
+            Navigator.maybePop(context);
+          },
+      },
+      child: Focus(autofocus: true, child: child),
+    );
+  }
 }
