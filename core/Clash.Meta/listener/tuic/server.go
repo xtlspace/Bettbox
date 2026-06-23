@@ -1,7 +1,6 @@
 package tuic
 
 import (
-	"context"
 	"net"
 	"strings"
 	"time"
@@ -33,7 +32,7 @@ type Listener struct {
 	servers      []*tuic.Server
 }
 
-func New(config LC.TuicServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
+func New(config LC.TuicServer, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
 	if len(additions) == 0 {
 		additions = []inbound.Addition{
 			inbound.WithInName("DEFAULT-TUIC"),
@@ -178,7 +177,7 @@ func New(config LC.TuicServer, lc C.InboundListenConfig, tunnel C.Tunnel, additi
 	for _, addr := range strings.Split(config.Listen, ",") {
 		addr := addr
 
-		ul, err := lc.ListenPacket(context.Background(), "udp", addr)
+		ul, err := inbound.ListenPacket("udp", addr)
 		if err != nil {
 			return nil, err
 		}

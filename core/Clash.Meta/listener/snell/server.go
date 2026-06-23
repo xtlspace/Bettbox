@@ -2,11 +2,10 @@ package snell
 
 import (
 	"bufio"
-	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
-	LC "github.com/metacubex/mihomo/listener/config"
 	"io"
 	"net"
 	"net/netip"
@@ -24,13 +23,27 @@ import (
 
 const maxPacketLength = 0x3fff
 
+type Config struct {
+	Listen   string
+	Psk      string
+	Version  int
+	UDP      bool
+	ObfsMode string
+	ObfsHost string
+}
+
+func (c Config) String() string {
+	b, _ := json.Marshal(c)
+	return string(b)
+}
+
 type Listener struct {
 	closed    bool
-	config    LC.SnellServer
+	config    Config
 	listeners []net.Listener
 }
 
-func New(config LC.SnellServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (C.MultiAddrListener, error) {
+func New(config Config, tunnel C.Tunnel, additions ...inbound.Addition) (C.MultiAddrListener, error) {
 	if config.Version == 0 {
 		config.Version = snell.Version4
 	}
@@ -52,7 +65,7 @@ func New(config LC.SnellServer, lc C.InboundListenConfig, tunnel C.Tunnel, addit
 		if addr == "" {
 			continue
 		}
-		ln, err := lc.Listen(context.Background(), "tcp", addr)
+		ln, err := inbound.Listen("tcp", addr)
 		if err != nil {
 			_ = l.Close()
 			return nil, err

@@ -165,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                   animation: focusNode,
                   builder: (context, child) {
                     final isFocused = focusNode.hasFocus;
-                      return InkWell(
+                      return Focus(
                         focusNode: focusNode,
                         onFocusChange: (hasFocus) {
                           if (hasFocus) {
@@ -185,10 +185,11 @@ class _HomePageState extends State<HomePage> {
                             });
                           }
                         },
-                        onTap: () {
-                          globalState.appController.toPage(item.label);
-                        },
-                        child: Container(
+                        child: InkWell(
+                          onTap: () {
+                            globalState.appController.toPage(item.label);
+                          },
+                          child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected
@@ -230,6 +231,7 @@ class _HomePageState extends State<HomePage> {
                               ],
                             ),
                           ),
+                        ),
                       );
                     },
                   ),

@@ -1,7 +1,6 @@
 package socks
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net"
@@ -44,15 +43,11 @@ func (l *Listener) Close() error {
 	return l.listener.Close()
 }
 
-func defaultConfig(addr string) LC.AuthServer {
-	return LC.AuthServer{Enable: true, Listen: addr, AuthStore: authStore.Default}
-}
-
 func New(addr string, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
-	return NewWithConfig(defaultConfig(addr), inbound.NewListenConfig(), tunnel, additions...)
+	return NewWithConfig(LC.AuthServer{Enable: true, Listen: addr, AuthStore: authStore.Default}, tunnel, additions...)
 }
 
-func NewWithConfig(config LC.AuthServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
+func NewWithConfig(config LC.AuthServer, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
 	isDefault := false
 	if len(additions) == 0 {
 		isDefault = true
@@ -62,7 +57,7 @@ func NewWithConfig(config LC.AuthServer, lc C.InboundListenConfig, tunnel C.Tunn
 		}
 	}
 
-	l, err := lc.Listen(context.Background(), "tcp", config.Listen)
+	l, err := inbound.Listen("tcp", config.Listen)
 	if err != nil {
 		return nil, err
 	}

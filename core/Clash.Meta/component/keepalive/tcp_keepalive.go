@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/common/atomic"
+	"github.com/metacubex/mihomo/common/utils"
 )
 
 var (
 	keepAliveIdle     = atomic.NewInt64(0)
 	keepAliveInterval = atomic.NewInt64(0)
 	disableKeepAlive  = atomic.NewBool(false)
+
+	SetDisableKeepAliveCallback = utils.NewCallback[bool]()
 )
 
 func SetKeepAliveIdle(t time.Duration) {
@@ -40,6 +43,7 @@ func SetDisableKeepAlive(disable bool) {
 
 func setDisableKeepAlive(disable bool) {
 	disableKeepAlive.Store(disable)
+	SetDisableKeepAliveCallback.Emit(disable)
 }
 
 func DisableKeepAlive() bool {

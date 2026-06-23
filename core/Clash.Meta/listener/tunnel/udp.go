@@ -1,7 +1,6 @@
 package tunnel
 
 import (
-	"context"
 	"fmt"
 	"net"
 
@@ -35,8 +34,8 @@ func (l *PacketConn) Close() error {
 	return l.conn.Close()
 }
 
-func NewUDP(addr, target, proxy string, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*PacketConn, error) {
-	l, err := lc.ListenPacket(context.Background(), "udp", addr)
+func NewUDP(addr, target, proxy string, tunnel C.Tunnel, additions ...inbound.Addition) (*PacketConn, error) {
+	l, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return nil, err
 	}

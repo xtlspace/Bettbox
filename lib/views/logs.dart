@@ -258,7 +258,7 @@ class LogDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CommonDialog(
-      title: appLocalizations.details,
+      title: appLocalizations.details(appLocalizations.log),
       actions: [
         TextButton(
           onPressed: () {

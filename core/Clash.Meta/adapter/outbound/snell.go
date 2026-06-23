@@ -91,9 +91,6 @@ func (s *Snell) DialContext(ctx context.Context, metadata *C.Metadata) (_ C.Conn
 			_ = c.Close()
 			return nil, err
 		}
-		if pc, ok := c.(*snell.PoolConn); ok {
-			pc.MarkReusable()
-		}
 		return NewConn(c, s), err
 	}
 
@@ -130,7 +127,7 @@ func (s *Snell) ListenPacketContext(ctx context.Context, metadata *C.Metadata) (
 	}
 
 	pc := snell.PacketConn(c)
-	return NewPacketConn(pc, s), nil
+	return newPacketConn(pc, s), nil
 }
 
 // SupportUOT implements C.ProxyAdapter

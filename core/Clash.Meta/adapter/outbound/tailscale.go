@@ -399,7 +399,7 @@ func (t *Tailscale) ListenPacketContext(ctx context.Context, metadata *C.Metadat
 	if pc == nil {
 		return nil, errors.New("packetConn is nil")
 	}
-	return NewPacketConn(pc, t), nil
+	return newPacketConn(pc, t), nil
 }
 
 func (t *Tailscale) ResolveUDP(ctx context.Context, metadata *C.Metadata) error {

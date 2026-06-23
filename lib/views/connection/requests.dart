@@ -126,7 +126,9 @@ class _RequestsViewState extends ConsumerState<RequestsView> {
                               onClickKeyword: (value) {
                                 context.commonScaffoldState?.addKeyword(value);
                               },
-                              detailTitle: appLocalizations.details
+                              detailTitle: appLocalizations.details(
+                                appLocalizations.request,
+                              ),
                             );
                           },
                           itemCount: requests.length * 2 - 1,

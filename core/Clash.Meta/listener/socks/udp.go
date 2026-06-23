@@ -1,14 +1,12 @@
 package socks
 
 import (
-	"context"
 	"net"
 
 	"github.com/metacubex/mihomo/adapter/inbound"
 	N "github.com/metacubex/mihomo/common/net"
 	"github.com/metacubex/mihomo/common/sockopt"
 	C "github.com/metacubex/mihomo/constant"
-	LC "github.com/metacubex/mihomo/listener/config"
 	"github.com/metacubex/mihomo/log"
 	"github.com/metacubex/mihomo/transport/socks5"
 )
@@ -36,17 +34,13 @@ func (l *UDPListener) Close() error {
 }
 
 func NewUDP(addr string, tunnel C.Tunnel, additions ...inbound.Addition) (*UDPListener, error) {
-	return NewUDPWithConfig(defaultConfig(addr), inbound.NewListenConfig(), tunnel, additions...)
-}
-
-func NewUDPWithConfig(config LC.AuthServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*UDPListener, error) {
 	if len(additions) == 0 {
 		additions = []inbound.Addition{
 			inbound.WithInName("DEFAULT-SOCKS"),
 			inbound.WithSpecialRules(""),
 		}
 	}
-	l, err := lc.ListenPacket(context.Background(), "udp", config.Listen)
+	l, err := inbound.ListenPacket("udp", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +51,7 @@ func NewUDPWithConfig(config LC.AuthServer, lc C.InboundListenConfig, tunnel C.T
 
 	sl := &UDPListener{
 		packetConn: l,
-		addr:       config.Listen,
+		addr:       addr,
 	}
 	conn := N.NewEnhancePacketConn(l)
 	go func() {

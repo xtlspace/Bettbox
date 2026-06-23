@@ -356,7 +356,6 @@ class MapInputPage extends StatelessWidget {
   final String? keyLabel;
   final String? valueLabel;
   final Function(Map<String, String> items) onChange;
-  final bool Function(MapEntry<String, String> item)? canDelete;
 
   const MapInputPage({
     super.key,
@@ -368,7 +367,6 @@ class MapInputPage extends StatelessWidget {
     this.keyLabel,
     this.valueLabel,
     this.subtitleBuilder,
-    this.canDelete,
   });
 
   List<MapEntry<String, String>> get items =>
@@ -462,14 +460,12 @@ class MapInputPage extends StatelessWidget {
                         subtitle: subtitleBuilder != null
                             ? subtitleBuilder!(e)
                             : null,
-                        trailing: (canDelete == null || canDelete!(e))
-                            ? IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () {
-                                  _handleDelete(e);
-                                },
-                              )
-                            : null,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () {
+                            _handleDelete(e);
+                          },
+                        ),
                       ),
                       onPressed: () {
                         _handleAddOrEdit(e);

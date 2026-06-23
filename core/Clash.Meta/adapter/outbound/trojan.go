@@ -219,7 +219,7 @@ func (t *Trojan) ListenPacketContext(ctx context.Context, metadata *C.Metadata) 
 	}
 
 	pc := trojan.NewPacketConn(c)
-	return NewPacketConn(pc, t), err
+	return newPacketConn(pc, t), err
 }
 
 // SupportUOT implements C.ProxyAdapter

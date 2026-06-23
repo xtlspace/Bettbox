@@ -2,7 +2,6 @@ package sudoku
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io"
 	"net"
@@ -229,7 +228,7 @@ func relayToFallback(wrapper net.Conn, rawConn net.Conn, fallback net.Conn) {
 	N.Relay(rawConn, fallback)
 }
 
-func New(config LC.SudokuServer, lc C.InboundListenConfig, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
+func New(config LC.SudokuServer, tunnel C.Tunnel, additions ...inbound.Addition) (*Listener, error) {
 	if len(additions) == 0 {
 		additions = []inbound.Addition{
 			inbound.WithInName("DEFAULT-SUDOKU"),
@@ -248,7 +247,7 @@ func New(config LC.SudokuServer, lc C.InboundListenConfig, tunnel C.Tunnel, addi
 		return nil, err
 	}
 
-	l, err := lc.Listen(context.Background(), "tcp", config.Listen)
+	l, err := inbound.Listen("tcp", config.Listen)
 	if err != nil {
 		return nil, err
 	}

@@ -114,12 +114,11 @@ func (s *Sudoku) Listen(tunnel C.Tunnel) error {
 	}
 
 	var errs []error
-	lc := s.ListenConfig()
 	for _, addr := range strings.Split(s.RawAddress(), ",") {
 		conf := s.serverConf
 		conf.Listen = addr
 
-		l, err := sudoku.New(conf, lc, tunnel, s.Additions()...)
+		l, err := sudoku.New(conf, tunnel, s.Additions()...)
 		if err != nil {
 			errs = append(errs, err)
 			continue

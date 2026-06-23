@@ -138,8 +138,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
 
   bool get _shouldCheckMissedUpdates {
     if (_lastMissedUpdateCheck == null) return true;
-    return DateTime.now().difference(_lastMissedUpdateCheck!) >
-        _missedUpdateCheckThrottle;
+    return DateTime.now().difference(_lastMissedUpdateCheck!) > _missedUpdateCheckThrottle;
   }
 
   void _scheduleMissedUpdateCheck() {
@@ -153,8 +152,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    final isBackgroundState =
-        state == AppLifecycleState.paused ||
+    final isBackgroundState = state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         (state == AppLifecycleState.inactive && !system.isDesktop);
 
@@ -181,9 +179,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     if (state == AppLifecycleState.resumed && system.isAndroid) {
       final hidden = ref.read(appSettingProvider.select((s) => s.hidden));
       app.updateExcludeFromRecents(hidden);
-      SystemChrome.setSystemUIOverlayStyle(
-        globalState.appState.systemUiOverlayStyle,
-      );
+      SystemChrome.setSystemUIOverlayStyle(globalState.appState.systemUiOverlayStyle);
     }
     if (state == AppLifecycleState.inactive) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -256,7 +252,10 @@ class AppSidebarContainer extends ConsumerWidget {
     required BuildContext context,
     required Widget child,
   }) {
-    return Material(color: context.colorScheme.surfaceContainer, child: child);
+    return Material(
+      color: context.colorScheme.surfaceContainer,
+      child: child,
+    );
   }
 
   @override
@@ -277,7 +276,7 @@ class AppSidebarContainer extends ConsumerWidget {
             _buildBackground(
               context: context,
               child: SafeArea(
-                left: true,
+                left: !system.isAndroid,
                 top: true,
                 right: false,
                 bottom: false,
@@ -285,110 +284,65 @@ class AppSidebarContainer extends ConsumerWidget {
                   children: [
                     if (system.isMacOS) const SizedBox(height: 22),
                     const SizedBox(height: 16),
-                    if (!system.isMacOS) ...[
-                      const AppIcon(),
-                      const SizedBox(height: 12),
-                    ],
+                    if (!system.isMacOS) ...[const AppIcon(), const SizedBox(height: 12)],
                     Expanded(
                       child: ScrollConfiguration(
                         behavior: HiddenBarScrollBehavior(),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: IntrinsicHeight(
-                                  child: CallbackShortcuts(
-                                    bindings: <ShortcutActivator, VoidCallback>{
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.arrowUp,
-                                      ): () {
-                                        if (currentIndex > 0) {
-                                          globalState.appController.toPage(
-                                            navigationItems[currentIndex - 1]
-                                                .label,
-                                          );
-                                        }
-                                      },
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.arrowDown,
-                                      ): () {
-                                        if (currentIndex <
-                                            navigationItems.length - 1) {
-                                          globalState.appController.toPage(
-                                            navigationItems[currentIndex + 1]
-                                                .label,
-                                          );
-                                        }
-                                      },
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.select,
-                                      ): () {},
-                                      const SingleActivator(
-                                        LogicalKeyboardKey.enter,
-                                      ): () {},
-                                    },
-                                    child: Focus(
-                                      autofocus: true,
-                                      child: NavigationRail(
-                                        backgroundColor: Colors.transparent,
-                                        selectedLabelTextStyle: context
-                                            .textTheme
-                                            .labelLarge!
-                                            .copyWith(
-                                              color:
-                                                  context.colorScheme.onSurface,
-                                            ),
-                                        unselectedLabelTextStyle: context
-                                            .textTheme
-                                            .labelLarge!
-                                            .copyWith(
-                                              color:
-                                                  context.colorScheme.onSurface,
-                                            ),
-                                        destinations: navigationItems
-                                            .map(
-                                              (e) => NavigationRailDestination(
-                                                icon: e.icon,
-                                                label: Text(
-                                                  Intl.message(e.label.name),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                        onDestinationSelected: (index) {
-                                          final label =
-                                              navigationItems[index].label;
-                                          if (currentIndex == index) {
-                                            final pageContext = GlobalObjectKey(
-                                              label,
-                                            ).currentContext;
-                                            if (pageContext != null) {
-                                              Navigator.of(
-                                                pageContext,
-                                              ).popUntil(
-                                                (route) => route.isFirst,
-                                              );
-                                            }
-                                          }
-                                          globalState.appController.toPage(
-                                            label,
-                                          );
-                                        },
-                                        extended: showLabel,
-                                        selectedIndex: currentIndex,
-                                        labelType: showLabel
-                                            ? NavigationRailLabelType.none
-                                            : NavigationRailLabelType.all,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
+                        child: CallbackShortcuts(
+                          bindings: <ShortcutActivator, VoidCallback>{
+                            const SingleActivator(LogicalKeyboardKey.arrowUp): () {
+                              if (currentIndex > 0) {
+                                globalState.appController.toPage(
+                                  navigationItems[currentIndex - 1].label,
+                                );
+                              }
+                            },
+                            const SingleActivator(LogicalKeyboardKey.arrowDown): () {
+                              if (currentIndex < navigationItems.length - 1) {
+                                globalState.appController.toPage(
+                                  navigationItems[currentIndex + 1].label,
+                                );
+                              }
+                            },
+                            const SingleActivator(LogicalKeyboardKey.select): () {},
+                            const SingleActivator(LogicalKeyboardKey.enter): () {},
                           },
+                          child: Focus(
+                            autofocus: true,
+                            child: NavigationRail(
+                              backgroundColor: Colors.transparent,
+                              selectedLabelTextStyle: context
+                                  .textTheme
+                                  .labelLarge!
+                                  .copyWith(
+                                    color: context.colorScheme.onSurface,
+                                  ),
+                              unselectedLabelTextStyle: context
+                                  .textTheme
+                                  .labelLarge!
+                                  .copyWith(
+                                    color: context.colorScheme.onSurface,
+                                  ),
+                              destinations: navigationItems
+                                  .map(
+                                    (e) => NavigationRailDestination(
+                                      icon: e.icon,
+                                      label: Text(Intl.message(e.label.name)),
+                                    ),
+                                  )
+                                  .toList(),
+                              onDestinationSelected: (index) {
+                                globalState.appController.toPage(
+                                  navigationItems[index].label,
+                                );
+                              },
+                              extended: showLabel,
+                              selectedIndex: currentIndex,
+                              labelType: showLabel
+                                  ? NavigationRailLabelType.none
+                                  : NavigationRailLabelType.all,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -399,17 +353,9 @@ class AppSidebarContainer extends ConsumerWidget {
             _buildLoading(),
           ],
         ),
-        Expanded(
-          flex: 1,
-          child: ClipRect(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeLeft: true,
-              child: child,
-            ),
-          ),
-        ),
+        Expanded(flex: 1, child: ClipRect(child: child)),
       ],
     );
   }
 }
+

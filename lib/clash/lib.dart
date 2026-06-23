@@ -161,15 +161,15 @@ class ClashLibHandler {
   Future<String> invokeAction(String actionParams) {
     final completer = Completer<String>();
     final receiver = ReceivePort();
+    final actionParamsChar = actionParams.toNativeUtf8().cast<Char>();
     receiver.listen((message) {
       if (!completer.isCompleted) {
         completer.complete(message);
         receiver.close();
+        malloc.free(actionParamsChar);
       }
     });
-    final actionParamsChar = actionParams.toNativeUtf8().cast<Char>();
     clashFFI.invokeAction(actionParamsChar, receiver.sendPort.nativePort);
-    malloc.free(actionParamsChar);
     return completer.future;
   }
 
@@ -178,15 +178,17 @@ class ClashLibHandler {
   }
 
   void updateDns(String dns) {
-    final dnsChar = dns.toNativeUtf8().cast<Char>();
-    clashFFI.updateDns(dnsChar);
-    malloc.free(dnsChar);
+    using((arena) {
+      final dnsChar = dns.toNativeUtf8(allocator: arena).cast<Char>();
+      clashFFI.updateDns(dnsChar);
+    });
   }
 
   void setState(CoreState state) {
-    final stateChar = json.encode(state).toNativeUtf8().cast<Char>();
-    clashFFI.setState(stateChar);
-    malloc.free(stateChar);
+    using((arena) {
+      final stateChar = json.encode(state).toNativeUtf8(allocator: arena).cast<Char>();
+      clashFFI.setState(stateChar);
+    });
   }
 
   String getCurrentProfileName() {
@@ -248,14 +250,10 @@ class ClashLibHandler {
     return using((arena) {
       final pathChar = json.encode(params).toNativeUtf8(allocator: arena).cast<Char>();
       final configRaw = clashFFI.getConfig(pathChar);
-      if (configRaw == nullptr) return <String, dynamic>{};
-      try {
-        final configString = configRaw.cast<Utf8>().toDartString();
-        if (configString.isEmpty) return <String, dynamic>{};
-        return json.decode(configString) as Map<String, dynamic>;
-      } finally {
-        clashFFI.freeCString(configRaw);
-      }
+      final configString = configRaw.cast<Utf8>().toDartString();
+      clashFFI.freeCString(configRaw);
+      if (configString.isEmpty) return <String, dynamic>{};
+      return json.decode(configString) as Map<String, dynamic>;
     });
   }
 
@@ -266,27 +264,27 @@ class ClashLibHandler {
   ) {
     final completer = Completer<String>();
     final receiver = ReceivePort();
-    receiver.listen((message) {
-      if (!completer.isCompleted) {
-        completer.complete(message);
-        receiver.close();
-      }
-    });
     final params = json.encode(setupParams);
     final initValue = json.encode(initParams);
     final stateParams = json.encode(state);
     final initParamsChar = initValue.toNativeUtf8().cast<Char>();
     final paramsChar = params.toNativeUtf8().cast<Char>();
     final stateParamsChar = stateParams.toNativeUtf8().cast<Char>();
+    receiver.listen((message) {
+      if (!completer.isCompleted) {
+        completer.complete(message);
+        receiver.close();
+        malloc.free(initParamsChar);
+        malloc.free(paramsChar);
+        malloc.free(stateParamsChar);
+      }
+    });
     clashFFI.quickStart(
       initParamsChar,
       paramsChar,
       stateParamsChar,
       receiver.sendPort.nativePort,
     );
-    malloc.free(initParamsChar);
-    malloc.free(paramsChar);
-    malloc.free(stateParamsChar);
     return completer.future;
   }
 }

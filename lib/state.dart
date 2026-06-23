@@ -615,7 +615,7 @@ class GlobalState {
     if (system.isAndroid && rawConfig['dns']['listen'] != null) {
       final listen = rawConfig['dns']['listen'] as String;
       if (listen.endsWith(':53')) {
-        rawConfig['dns']['listen'] = listen.replaceAll(':53', ':10053');
+        rawConfig['dns']['listen'] = listen.replaceAll(':53', ':1053');
       }
     }
 

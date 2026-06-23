@@ -114,9 +114,9 @@ jobs:
           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.2' }}
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.1' }}
 
-      - name: Setup Desktop QuickJS bridge (arm64)
+      - name: Setup QuickJS bridge (arm64)
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows" ] && [ "${{ matrix.arch }}" = "arm64" ]; then

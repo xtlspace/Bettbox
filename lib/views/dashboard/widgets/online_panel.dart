@@ -2,7 +2,6 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/state.dart';
-import 'package:bett_box/views/config/general.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,22 +26,10 @@ class OnlinePanel extends ConsumerWidget {
             final externalController = clashConfig.externalController;
             final secret = clashConfig.secret;
 
-            if (externalController != ExternalControllerStatus.open) {
-              showExtend(
-                context,
-                builder: (_, type) => AdaptiveSheetScaffold(
-                  title: appLocalizations.general,
-                  type: type,
-                  body: DesktopBackShortcutWrapper(
-                    child: generateListView(generalItems),
-                  ),
-                ),
-              );
-              return;
-            }
-
             // Pass secret only if external controller is enabled
-            if (secret != null && secret.isNotEmpty) {
+            if (externalController == ExternalControllerStatus.open &&
+                secret != null &&
+                secret.isNotEmpty) {
               // Build URL with secret in fragment
               final uri = Uri.parse(
                 'http://127.0.0.1:9090/ui/#/setup?hostname=127.0.0.1&port=9090&secret=$secret',
@@ -51,7 +38,7 @@ class OnlinePanel extends ConsumerWidget {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             } else {
-              // External controller enabled but no secret
+              // External controller not enabled or no secret
               final uri = Uri.parse('http://127.0.0.1:9090/ui/');
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);

@@ -221,12 +221,6 @@ func New(options LC.Tun, tunnel C.Tunnel, additions ...inbound.Addition) (l *Lis
 	} else {
 		udpTimeout = sing.UDPTimeout
 	}
-	var icmpTimeout time.Duration
-	if options.ICMPTimeout != 0 {
-		icmpTimeout = time.Second * time.Duration(options.ICMPTimeout)
-	} else {
-		icmpTimeout = sing.ICMPTimeout
-	}
 	tableIndex := options.IPRoute2TableIndex
 	if tableIndex == 0 {
 		tableIndex = tun.DefaultIPRoute2TableIndex
@@ -508,7 +502,6 @@ func New(options LC.Tun, tunnel C.Tunnel, additions ...inbound.Addition) (l *Lis
 		TunOptions:             tunOptions,
 		EndpointIndependentNat: options.EndpointIndependentNat,
 		UDPTimeout:             udpTimeout,
-		ICMPTimeout:            icmpTimeout,
 		Handler:                handler,
 		Logger:                 log.SingLogger,
 		ForwarderBindInterface: forwarderBindInterface,

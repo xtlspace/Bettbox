@@ -31,12 +31,10 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       builder: (_, type) {
         return AdaptiveSheetScaffold(
           type: type,
-          body: DesktopBackShortcutWrapper(
-            child: AddProfileView(
-              context: globalState.navigatorKey.currentState!.context,
-            ),
+          body: AddProfileView(
+            context: globalState.navigatorKey.currentState!.context,
           ),
-          title: appLocalizations.add,
+          title: '${appLocalizations.add}${appLocalizations.profile}',
         );
       },
     );
@@ -85,7 +83,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           showExtend(
             context,
             builder: (_, type) {
-              return const DesktopBackShortcutWrapper(child: ScriptsView());
+              return ScriptsView();
             },
           );
         },
@@ -107,9 +105,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           showSheet(
             context: context,
             builder: (_, type) {
-              return DesktopBackShortcutWrapper(
-                child: ReorderableProfilesSheet(type: type, profiles: profiles),
-              );
+              return ReorderableProfilesSheet(type: type, profiles: profiles);
             },
           );
         },
@@ -158,10 +154,9 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
                 crossAxisSpacing: 16,
                 crossAxisCount: system.isAndroid
                     ? 1
-                    : profilesSelectorState.profiles.length <
-                          profilesSelectorState.columns
-                    ? profilesSelectorState.profiles.length
-                    : profilesSelectorState.columns,
+                    : profilesSelectorState.profiles.length < profilesSelectorState.columns
+                        ? profilesSelectorState.profiles.length
+                        : profilesSelectorState.columns,
                 children: [
                   for (
                     int i = 0;
@@ -226,13 +221,11 @@ class ProfileItem extends StatelessWidget {
           return;
         }
 
-        final previewPage = DesktopBackShortcutWrapper(
-          child: EditorPage(
-            title:
-                '${appLocalizations.runtimeConfig} - ${profile.label ?? profile.id}',
-            content: content,
-            readOnly: true,
-          ),
+        final previewPage = EditorPage(
+          title:
+              '${appLocalizations.runtimeConfig} - ${profile.label ?? profile.id}',
+          content: content,
+          readOnly: true,
         );
         BaseNavigator.push<String>(context, previewPage);
       },
@@ -270,14 +263,8 @@ class ProfileItem extends StatelessWidget {
               },
             ),
           ],
-          body: DesktopBackShortcutWrapper(
-            child: EditProfileView(
-              key: editKey,
-              profile: profile,
-              context: context,
-            ),
-          ),
-          title: appLocalizations.edit,
+          body: EditProfileView(key: editKey, profile: profile, context: context),
+          title: '${appLocalizations.edit}${appLocalizations.profile}',
         );
       },
     );
@@ -327,13 +314,13 @@ class ProfileItem extends StatelessWidget {
 
     // Show Unlimited when no traffic info
     if (use == 0 && total == 0) {
-      return '∞';
+      return 'Unlimited';
     }
 
     // Total is 0 but has usage
     if (total == 0) {
       final useShow = TrafficValue(value: use).show;
-      return '$useShow / ∞';
+      return '$useShow / Unlimited';
     }
 
     final useShow = TrafficValue(value: use).show;
@@ -391,9 +378,7 @@ class ProfileItem extends StatelessWidget {
   }
 
   void _handlePushGenProfilePage(BuildContext context, String id) {
-    final overrideProfileView = DesktopBackShortcutWrapper(
-      child: OverrideProfileView(profileId: id),
-    );
+    final overrideProfileView = OverrideProfileView(profileId: id);
     BaseNavigator.push(context, overrideProfileView);
   }
 
