@@ -428,71 +428,9 @@ class BuildCommand extends Command {
     }
 
     await file.writeAsString(content);
-    print('macOS ${enable ? "Compatible" : "Standard"} build: FLTDisableImpeller set to $enable');
-  }
-
-  Future<void> _setWindowsCompatibleBuild(bool enable) async {
-    final cmakePath = 'windows/CMakeLists.txt';
-    final file = File(cmakePath);
-
-    if (!await file.exists()) {
-      print('Warning: CMakeLists.txt not found at $cmakePath');
-      return;
-    }
-
-    var content = await file.readAsString();
-    final hasDefinition = content.contains('FLUTTER_DISABLE_IMPELLER');
-
-    if (enable) {
-      if (!hasDefinition) {
-        content = content.replaceFirst(
-          'project(Bettbox LANGUAGES CXX)',
-          'project(Bettbox LANGUAGES CXX)\n\nadd_definitions(-DFLUTTER_DISABLE_IMPELLER=1)',
-        );
-      }
-    } else {
-      if (hasDefinition) {
-        content = content.replaceAll(
-          RegExp(r'\n?add_definitions\(-DFLUTTER_DISABLE_IMPELLER=1\)\n?'),
-          '\n',
-        );
-      }
-    }
-
-    await file.writeAsString(content);
-    print('Windows ${enable ? "Compatible" : "Standard"} build: Impeller ${enable ? "disabled" : "enabled"}');
-  }
-
-  Future<void> _setLinuxCompatibleBuild(bool enable) async {
-    final cmakePath = 'linux/CMakeLists.txt';
-    final file = File(cmakePath);
-
-    if (!await file.exists()) {
-      print('Warning: CMakeLists.txt not found at $cmakePath');
-      return;
-    }
-
-    var content = await file.readAsString();
-    final hasDefinition = content.contains('FLUTTER_DISABLE_IMPELLER');
-
-    if (enable) {
-      if (!hasDefinition) {
-        content = content.replaceFirst(
-          'set(APPLICATION_ID "com.appshub.bettbox")',
-          'set(APPLICATION_ID "com.appshub.bettbox")\n\nadd_definitions(-DFLUTTER_DISABLE_IMPELLER=1)',
-        );
-      }
-    } else {
-      if (hasDefinition) {
-        content = content.replaceAll(
-          RegExp(r'\n?add_definitions\(-DFLUTTER_DISABLE_IMPELLER=1\)\n?'),
-          '\n',
-        );
-      }
-    }
-
-    await file.writeAsString(content);
-    print('Linux ${enable ? "Compatible" : "Standard"} build: Impeller ${enable ? "disabled" : "enabled"}');
+    print(
+      'macOS ${enable ? "Compatible" : "Standard"} build: FLTDisableImpeller set to $enable',
+    );
   }
 
   Future<void> _buildDistributor({
@@ -500,17 +438,21 @@ class BuildCommand extends Command {
     required String targets,
     String args = '',
     required String env,
+    required String suffix,
   }) async {
     final sentryDsn = Platform.environment['SENTRY_DSN'] ?? '';
     final sentryArg = sentryDsn.isNotEmpty
         ? ' --build-dart-define=SENTRY_DSN=$sentryDsn'
+        : '';
+    final suffixArg = suffix.isNotEmpty
+        ? ' --build-dart-define=APP_ASSET_SUFFIX=$suffix'
         : '';
 
     await Build.getDistributor();
     await Build.exec(
       name: name,
       Build.getExecutable(
-        'flutter_distributor package --skip-clean --platform ${target.name} --targets $targets --flutter-build-args=verbose$args$sentryArg --build-dart-define=APP_ENV=$env',
+        'flutter_distributor package --skip-clean --platform ${target.name} --targets $targets --flutter-build-args=verbose$args$sentryArg$suffixArg --build-dart-define=APP_ENV=$env',
       ),
     );
   }
@@ -555,22 +497,41 @@ class BuildCommand extends Command {
 
     final String desc = compatible ? '$archName-compatible' : (archName ?? '');
 
+    String appAssetSuffix = '';
+    switch (target) {
+      case Target.windows:
+        appAssetSuffix = 'windows-$desc-setup.exe';
+        break;
+      case Target.macos:
+        appAssetSuffix = 'macos-$desc.dmg';
+        break;
+      case Target.linux:
+        break;
+      case Target.android:
+        if (archName == 'universal') {
+          appAssetSuffix = 'android-universal.apk';
+        } else if (arch == Arch.arm64) {
+          appAssetSuffix = 'android-arm64-v8a.apk';
+        } else if (arch == Arch.arm) {
+          appAssetSuffix = 'android-armeabi-v7a.apk';
+        } else if (arch == Arch.amd64) {
+          appAssetSuffix = 'android-x86_64.apk';
+        }
+        break;
+    }
+
     switch (target) {
       case Target.windows:
         final token = target != Target.android
             ? await Build.calcSha256(corePaths.first)
             : null;
         Build.buildHelper(target, token!);
-        if (compatible) {
-          await _setWindowsCompatibleBuild(true);
-        } else {
-          await _setWindowsCompatibleBuild(false);
-        }
         _buildDistributor(
           target: target,
           targets: 'exe',
           args: ' --description $desc --build-dart-define=CORE_SHA256=$token',
           env: env,
+          suffix: appAssetSuffix,
         );
         return;
       case Target.linux:
@@ -579,20 +540,20 @@ class BuildCommand extends Command {
           'deb',
           if (arch == Arch.amd64) 'appimage',
           if (arch == Arch.amd64) 'rpm',
-        ].join(',');
+        ];
         final defaultTarget = targetMap[arch];
         await _getLinuxDependencies(arch!);
-        if (compatible) {
-          await _setLinuxCompatibleBuild(true);
-        } else {
-          await _setLinuxCompatibleBuild(false);
+        for (final t in targets) {
+          final ext = t == 'appimage' ? 'AppImage' : t;
+          final currentSuffix = 'linux-$desc.$ext';
+          await _buildDistributor(
+            target: target,
+            targets: t,
+            args: ' --description $desc --build-target-platform $defaultTarget',
+            env: env,
+            suffix: currentSuffix,
+          );
         }
-        _buildDistributor(
-          target: target,
-          targets: targets,
-          args: ' --description $desc --build-target-platform $defaultTarget',
-          env: env,
-        );
         return;
       case Target.android:
         final targetMap = {
@@ -615,6 +576,7 @@ class BuildCommand extends Command {
           targets: 'apk',
           args: buildArgs,
           env: env,
+          suffix: appAssetSuffix,
         );
         return;
       case Target.macos:
@@ -630,6 +592,7 @@ class BuildCommand extends Command {
           targets: 'dmg',
           args: ' --description $desc',
           env: env,
+          suffix: appAssetSuffix,
         );
         return;
     }

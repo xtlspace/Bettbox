@@ -365,7 +365,7 @@ abstract class FallbackFilter with _$FallbackFilter {
 abstract class Dns with _$Dns {
   const factory Dns({
     @Default(true) bool enable,
-    @Default('0.0.0.0:1053') String listen,
+    @Default('0.0.0.0:10053') String listen,
     @Default(false) @JsonKey(name: 'prefer-h3') bool preferH3,
     @Default(CacheAlgorithm.arc)
     @JsonKey(name: 'cache-algorithm')

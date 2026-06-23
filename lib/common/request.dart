@@ -31,19 +31,30 @@ class Request {
     );
   }
 
-  Future<Response> _getResponseForUrl(String url, ResponseType responseType) async {
+  Future<Response> _getResponseForUrl(
+    String url,
+    ResponseType responseType,
+  ) async {
     String? userInfo;
     String requestUrl = url;
 
     if (url.startsWith('http://') || url.startsWith('https://')) {
       final schemeEnd = url.indexOf('://') + 3;
-      final atIndex = url.indexOf('@', schemeEnd);
-      if (atIndex != -1) {
-        final slashIndex = url.indexOf('/', schemeEnd);
-        if (slashIndex == -1 || atIndex < slashIndex) {
-          userInfo = url.substring(schemeEnd, atIndex);
-          requestUrl = url.substring(0, schemeEnd) + url.substring(atIndex + 1);
-        }
+      final slashIndex = url.indexOf('/', schemeEnd);
+      final questionIndex = url.indexOf('?', schemeEnd);
+      final hashIndex = url.indexOf('#', schemeEnd);
+      var authorityEnd = url.length;
+      if (slashIndex != -1) authorityEnd = slashIndex;
+      if (questionIndex != -1 && questionIndex < authorityEnd) {
+        authorityEnd = questionIndex;
+      }
+      if (hashIndex != -1 && hashIndex < authorityEnd) {
+        authorityEnd = hashIndex;
+      }
+      final atIndex = url.lastIndexOf('@', authorityEnd - 1);
+      if (atIndex >= schemeEnd) {
+        userInfo = url.substring(schemeEnd, atIndex);
+        requestUrl = url.substring(0, schemeEnd) + url.substring(atIndex + 1);
       }
     }
 
@@ -88,7 +99,8 @@ class Request {
         'https://github.com/$repository/releases/latest',
         options: Options(
           followRedirects: false,
-          validateStatus: (status) => status != null && status >= 300 && status < 400,
+          validateStatus: (status) =>
+              status != null && status >= 300 && status < 400,
         ),
       );
       final location = response.headers.value('location');
@@ -97,7 +109,11 @@ class Request {
         if (remoteVersion.isNotEmpty) {
           final version = globalState.packageInfo.version;
           final hasUpdate =
-              utils.compareVersions(remoteVersion.replaceAll('v', ''), version) > 0;
+              utils.compareVersions(
+                remoteVersion.replaceAll('v', ''),
+                version,
+              ) >
+              0;
           if (!hasUpdate) return null;
           return {
             'tag_name': remoteVersion,
@@ -148,31 +164,34 @@ class Request {
     }
 
     for (final url in sources) {
-      dio.get<String>(
-        url,
-        cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.plain),
-      ).then((res) {
-        if (resultCompleter.isCompleted) return;
-        if (res.statusCode == HttpStatus.ok && res.data != null) {
-          try {
-            resultCompleter.complete(
-              Result.success(IpInfo.fromCloudflareTrace(res.data!)),
-            );
-          } catch (_) {
+      dio
+          .get<String>(
+            url,
+            cancelToken: cancelToken,
+            options: Options(responseType: ResponseType.plain),
+          )
+          .then((res) {
+            if (resultCompleter.isCompleted) return;
+            if (res.statusCode == HttpStatus.ok && res.data != null) {
+              try {
+                resultCompleter.complete(
+                  Result.success(IpInfo.fromCloudflareTrace(res.data!)),
+                );
+              } catch (_) {
+                handleFailure();
+              }
+            } else {
+              handleFailure();
+            }
+          })
+          .catchError((e) {
+            if (resultCompleter.isCompleted) return;
+            if (e is DioException && e.type == DioExceptionType.cancel) {
+              resultCompleter.complete(Result.error('cancelled'));
+              return;
+            }
             handleFailure();
-          }
-        } else {
-          handleFailure();
-        }
-      }).catchError((e) {
-        if (resultCompleter.isCompleted) return;
-        if (e is DioException && e.type == DioExceptionType.cancel) {
-          resultCompleter.complete(Result.error('cancelled'));
-          return;
-        }
-        handleFailure();
-      });
+          });
     }
 
     try {
@@ -219,7 +238,9 @@ class Request {
   Future<bool> startCoreByHelper(String arg) async {
     final helperAlive = await quickPingHelper();
     if (!helperAlive) {
-      commonPrint.log('Helper service is not reachable, skipping startCoreByHelper');
+      commonPrint.log(
+        'Helper service is not reachable, skipping startCoreByHelper',
+      );
       return false;
     }
 
@@ -253,7 +274,9 @@ class Request {
         }
       } catch (e) {
         if (attempt == maxAttempts) {
-          commonPrint.log('Failed to start core by helper after $maxAttempts attempts: $e');
+          commonPrint.log(
+            'Failed to start core by helper after $maxAttempts attempts: $e',
+          );
           return false;
         }
       }
@@ -285,18 +308,20 @@ class Request {
     }
   }
 
-  Future<bool> setProcessPriorityByHelper(String processName, bool enable) async {
+  Future<bool> setProcessPriorityByHelper(
+    String processName,
+    bool enable,
+  ) async {
     try {
       final helperAlive = await quickPingHelper();
       if (!helperAlive) {
-        commonPrint.log('Helper service is not reachable, skipping setProcessPriorityByHelper');
+        commonPrint.log(
+          'Helper service is not reachable, skipping setProcessPriorityByHelper',
+        );
         return false;
       }
 
-      final body = json.encode({
-        'process_name': processName,
-        'enable': enable,
-      });
+      final body = json.encode({'process_name': processName, 'enable': enable});
       final authHeaders = HelperAuthManager.generateAuthHeaders(body);
 
       final response = await _dio
@@ -309,7 +334,7 @@ class Request {
             ),
           )
           .timeout(const Duration(milliseconds: 2000));
-      
+
       return response.statusCode == HttpStatus.ok;
     } catch (e) {
       commonPrint.log('Failed to set process priority by helper: $e');

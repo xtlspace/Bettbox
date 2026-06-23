@@ -47,9 +47,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.withLock
 
 data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+    @Volatile
     private var bettBoxService: BaseServiceInterface? = null
+    @Volatile
     private var options: VpnOptions? = null
 
+    @Volatile
     private var isBind = false
     private val isBinding = AtomicBoolean(false)
 
@@ -59,6 +62,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private val uidPageNameMap = ConcurrentHashMap<Int, String>()
     private var suspendModule: SuspendModule? = null
 
+    @Volatile
     private var quickResponseEnabled = false
     private var quickResponseJob: Job? = null
     private var lastNetworkType: Int? = null
@@ -71,7 +75,7 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private var bindTimeoutJob: Job? = null
-    private val attachedMessengers = mutableSetOf<BinaryMessenger>()
+    private val attachedMessengers = Collections.newSetFromMap(ConcurrentHashMap<BinaryMessenger, Boolean>())
     private val channelMap = ConcurrentHashMap<BinaryMessenger, MethodChannel>()
     private val activeChannels = CopyOnWriteArrayList<MethodChannel>()
     private val networkCallbackRegistered = AtomicBoolean(false)

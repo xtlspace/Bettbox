@@ -239,7 +239,7 @@ Map<String, dynamic> _$FallbackFilterToJson(_FallbackFilter instance) =>
 
 _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
   enable: json['enable'] as bool? ?? true,
-  listen: json['listen'] as String? ?? '0.0.0.0:1053',
+  listen: json['listen'] as String? ?? '0.0.0.0:10053',
   preferH3: json['prefer-h3'] as bool? ?? false,
   cacheAlgorithm:
       $enumDecodeNullable(_$CacheAlgorithmEnumMap, json['cache-algorithm']) ??

@@ -12,6 +12,7 @@ import com.appshub.bettbox.plugins.TilePlugin
 import com.appshub.bettbox.plugins.VpnPlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineGroup
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugins.GeneratedPluginRegistrant
@@ -46,13 +47,17 @@ class MainActivity : FlutterActivity() {
         return engineCache.get(MAIN_ENGINE_ID) ?: createAndCacheEngine(context, engineCache)
     }
 
-    private fun createAndCacheEngine(context: Context, cache: FlutterEngineCache) =
-        FlutterEngine(context.applicationContext).apply {
+    private fun createAndCacheEngine(context: Context, cache: FlutterEngineCache): FlutterEngine {
+        val app = context.applicationContext as BettboxApplication
+        val options = FlutterEngineGroup.Options(app).apply {
+            dartEntrypoint = DartExecutor.DartEntrypoint.createDefault()
+        }
+        return app.engineGroup.createAndRunEngine(options).apply {
             GeneratedPluginRegistrant.registerWith(this)
-            dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault())
             cache.put(MAIN_ENGINE_ID, this)
             GlobalState.flutterEngine = this
         }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

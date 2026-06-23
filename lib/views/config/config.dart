@@ -156,11 +156,20 @@ class _ConfigViewState extends State<ConfigView> {
               final hosts = ref.watch(
                 patchClashConfigProvider.select((state) => state.hosts),
               );
+              final storeFix = ref.watch(
+                vpnSettingProvider.select((state) => state.storeFix),
+              );
+              final networkFix = ref.watch(
+                vpnSettingProvider.select((state) => state.networkFix),
+              );
               return MapInputPage(
                 title: 'Hosts',
                 map: hosts,
                 titleBuilder: (item) => Text(item.key),
                 subtitleBuilder: (item) => Text(item.value),
+                canDelete: (item) =>
+                    !(storeFix && item.key == 'services.googleapis.cn') &&
+                    !(networkFix && item.key == 'dns.msftncsi.com'),
                 onChange: (value) {
                   ref
                       .read(patchClashConfigProvider.notifier)

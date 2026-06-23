@@ -108,7 +108,6 @@ class TrayManagerPlugin : public flutter::Plugin {
   UINT windows_taskbar_created_message_id = 0;
 
   bool is_menu_open_ = false;
-  bool should_reopen_menu_ = false;
 
   // The ID of the WindowProc delegate registration.
   int window_proc_id = -1;
@@ -183,6 +182,10 @@ TrayManagerPlugin::TrayManagerPlugin(flutter::PluginRegistrarWindows* registrar)
 }
 
 TrayManagerPlugin::~TrayManagerPlugin() {
+  if (hMenu) {
+    DestroyMenu(hMenu);
+    hMenu = NULL;
+  }
   registrar->UnregisterTopLevelWindowProcDelegate(window_proc_id);
 }
 
@@ -193,7 +196,7 @@ void TrayManagerPlugin::_CreateMenu(HMENU menu, flutter::EncodableMap args) {
   int count = GetMenuItemCount(menu);
   for (int i = 0; i < count; i++) {
     // always remove at 0 because they shift every time
-    RemoveMenu(menu, 0, MF_BYPOSITION);
+    DeleteMenu(menu, 0, MF_BYPOSITION);
   }
 
   for (flutter::EncodableValue item_value : items) {
@@ -340,6 +343,12 @@ std::optional<LRESULT> TrayManagerPlugin::HandleWindowProc(HWND hWnd,
       default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     };
+  } else if (message == WM_POWERBROADCAST) {
+    if (wParam == PBT_APMRESUMESUSPEND || wParam == PBT_APMRESUMEAUTOMATIC || wParam == PBT_APMRESUMECRITICAL) {
+      if (tray_icon_setted) {
+        Shell_NotifyIcon(NIM_MODIFY, &nid);
+      }
+    }
   } else if (message == windows_taskbar_created_message_id) {
     if (windows_taskbar_created_message_id != 0 && tray_icon_setted) {
       // restore the icon with the existing resource.

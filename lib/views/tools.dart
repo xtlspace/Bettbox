@@ -47,7 +47,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           : null,
       delegate: OpenDelegate(
         title: Intl.message(navigationItem.label.name),
-        widget: _buildNavigationPage(navigationItem),
+        widget: DesktopBackShortcutWrapper(
+          child: _buildNavigationPage(navigationItem),
+        ),
         wrap: false,
       ),
     );
@@ -134,8 +136,8 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 class _LocaleItem extends ConsumerWidget {
   const _LocaleItem();
 
-  static final List<Locale> _localeOptions = 
-    AppLocalizations.delegate.supportedLocales;
+  static final List<Locale> _localeOptions =
+      AppLocalizations.delegate.supportedLocales;
 
   String _getLocaleString(Locale locale) {
     return Intl.message(locale.toString());
@@ -146,8 +148,8 @@ class _LocaleItem extends ConsumerWidget {
     final locale = ref.watch(
       appSettingProvider.select((state) => state.locale),
     );
-    final currentLocale = utils.getLocaleForString(locale) ?? 
-      utils.getSystemLocale();
+    final currentLocale =
+        utils.getLocaleForString(locale) ?? utils.getSystemLocale();
     return ListItem<Locale>.options(
       leading: const Icon(Icons.language_outlined),
       title: Text(appLocalizations.language),
@@ -181,7 +183,7 @@ class _ThemeItem extends StatelessWidget {
       subtitle: Text(appLocalizations.themeDesc),
       delegate: OpenDelegate(
         title: appLocalizations.theme,
-        widget: const ThemeView(),
+        widget: const DesktopBackShortcutWrapper(child: ThemeView()),
       ),
     );
   }
@@ -198,7 +200,7 @@ class _BackupItem extends StatelessWidget {
       subtitle: Text(appLocalizations.backupAndRecoveryDesc),
       delegate: OpenDelegate(
         title: appLocalizations.backupAndRecovery,
-        widget: const BackupAndRecovery(),
+        widget: const DesktopBackShortcutWrapper(child: BackupAndRecovery()),
       ),
     );
   }
@@ -215,7 +217,7 @@ class _HotkeyItem extends StatelessWidget {
       subtitle: Text(appLocalizations.hotkeyManagementDesc),
       delegate: OpenDelegate(
         title: appLocalizations.hotkeyManagement,
-        widget: const HotKeyView(),
+        widget: const DesktopBackShortcutWrapper(child: HotKeyView()),
       ),
     );
   }
@@ -252,7 +254,7 @@ class _AccessItem extends StatelessWidget {
       subtitle: Text(appLocalizations.accessControlDesc),
       delegate: OpenDelegate(
         title: appLocalizations.appAccessControl,
-        widget: const AccessView(),
+        widget: const DesktopBackShortcutWrapper(child: AccessView()),
       ),
     );
   }
@@ -269,7 +271,7 @@ class _ConfigItem extends StatelessWidget {
       subtitle: Text(appLocalizations.basicConfigDesc),
       delegate: OpenDelegate(
         title: appLocalizations.basicConfig,
-        widget: const ConfigView(),
+        widget: const DesktopBackShortcutWrapper(child: ConfigView()),
       ),
     );
   }
@@ -286,7 +288,7 @@ class _OtherSettingItem extends StatelessWidget {
       subtitle: Text(appLocalizations.otherSettingsDesc),
       delegate: OpenDelegate(
         title: appLocalizations.otherSettings,
-        widget: const OtherSettingView(),
+        widget: const DesktopBackShortcutWrapper(child: OtherSettingView()),
       ),
     );
   }
@@ -303,7 +305,7 @@ class _SettingItem extends StatelessWidget {
       subtitle: Text(appLocalizations.applicationDesc),
       delegate: OpenDelegate(
         title: appLocalizations.application,
-        widget: const ApplicationSettingView(),
+        widget: const DesktopBackShortcutWrapper(child: ApplicationSettingView()),
       ),
     );
   }
@@ -338,7 +340,7 @@ class _InfoItem extends StatelessWidget {
       title: Text(appLocalizations.about),
       delegate: OpenDelegate(
         title: appLocalizations.about,
-        widget: const AboutView(),
+        widget: const DesktopBackShortcutWrapper(child: AboutView()),
       ),
     );
   }
@@ -354,7 +356,7 @@ class _DeveloperItem extends StatelessWidget {
       title: Text(appLocalizations.developerMode),
       delegate: OpenDelegate(
         title: appLocalizations.developerMode,
-        widget: const DeveloperView(),
+        widget: const DesktopBackShortcutWrapper(child: DeveloperView()),
       ),
     );
   }
