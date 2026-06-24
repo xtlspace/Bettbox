@@ -152,6 +152,7 @@ jobs:
         run: |
           flutter pub get
           dart run build_runner build -d
+          dart run intl_utils:generate
           dart setup.dart ${{ matrix.platform }} --arch ${{ matrix.arch }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} ${{ matrix.compatible == true && '--compatible' || '' }}
       
       - name: Upload Artifacts
