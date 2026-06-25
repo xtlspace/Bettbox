@@ -96,20 +96,14 @@ class Request {
   Future<Map<String, dynamic>?> checkForUpdate() async {
     try {
       final response = await _dio.get(
-        'https://github.com/$repository/releases/latest',
-        options: Options(
-          followRedirects: false,
-          validateStatus: (status) =>
-              status != null && status >= 300 && status < 400,
-        ),
+        'https://api.github.com/repos/$repository/releases/latest',
       );
-      final location = response.headers.value('location');
-      if (location != null && location.contains('/releases/tag/')) {
-        final remoteVersion = location.split('/').last.trim();
-        if (remoteVersion.isNotEmpty) {
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final data = response.data;
+        final remoteVersion = data['tag_name'] as String?;
+        if (remoteVersion != null && remoteVersion.isNotEmpty) {
           final version = globalState.packageInfo.version;
-          final hasUpdate =
-              utils.compareVersions(
+          final hasUpdate = utils.compareVersions(
                 remoteVersion.replaceAll('v', ''),
                 version,
               ) >
@@ -117,8 +111,9 @@ class Request {
           if (!hasUpdate) return null;
           return {
             'tag_name': remoteVersion,
-            'html_url': 'https://github.com/$repository/releases/latest',
-            'body': 'New version available. Please visit GitHub to download.',
+            'html_url': data['html_url'] ??
+                'https://github.com/$repository/releases/latest',
+            'body': data['body'] ?? 'New version available.',
           };
         }
       }
