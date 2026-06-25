@@ -52,11 +52,10 @@ const repository = 'xtlspace/Bettbox';
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;
-const defaultTestUrl = 'https://g.cn/generate_204';
+const defaultTestUrl = 'https://cp.cloudflare.com/generate_204';
 
 // Preset test URLs
 const presetTestUrls = [
-  'https://g.cn/generate_204',
   'https://www.gstatic.com/generate_204',
   'https://www.google.com/generate_204',
   'https://cp.cloudflare.com/generate_204',

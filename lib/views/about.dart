@@ -7,14 +7,6 @@ import 'package:bett_box/widgets/list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@immutable
-class Contributor {
-  final String avatar;
-  final String name;
-
-  const Contributor({required this.avatar, required this.name});
-}
-
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
@@ -42,37 +34,6 @@ class AboutView extends StatelessWidget {
           onTap: () {
             _checkUpdate(context);
           },
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildContributorsSection() {
-    const contributors = [
-      Contributor(avatar: 'assets/images/avatars/june2.jpg', name: 'June2'),
-      Contributor(avatar: 'assets/images/avatars/arue.jpg', name: 'Arue'),
-      Contributor(avatar: 'assets/images/avatars/dabaozi.jpg', name: '大包子'),
-      Contributor(avatar: 'assets/images/avatars/xiaolou.jpg', name: '小楼'),
-      Contributor(avatar: 'assets/images/avatars/www.jpg', name: 'Www'),
-      Contributor(avatar: 'assets/images/avatars/AIsouler.jpg', name: 'AIsouler'),
-      Contributor(avatar: 'assets/images/avatars/songchenwen.jpg', name: 'songchenwen'),
-      Contributor(avatar: 'assets/images/avatars/EriDeLee.jpg', name: 'EriDeLee'),
-    ];
-    return generateSection(
-      separated: false,
-      title: appLocalizations.otherContributors,
-      items: [
-        ListItem(
-          title: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Wrap(
-              spacing: 24,
-              children: [
-                for (final contributor in contributors)
-                  Avatar(contributor: contributor),
-              ],
-            ),
-          ),
         ),
       ],
     );
@@ -137,33 +98,11 @@ class AboutView extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
-      ..._buildContributorsSection(),
       ..._buildMoreSection(context),
     ];
     return Padding(
       padding: kMaterialListPadding.copyWith(top: 16, bottom: 16),
       child: generateListView(items),
-    );
-  }
-}
-
-class Avatar extends StatelessWidget {
-  final Contributor contributor;
-
-  const Avatar({super.key, required this.contributor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: 36,
-          height: 36,
-          child: CircleAvatar(foregroundImage: AssetImage(contributor.avatar)),
-        ),
-        const SizedBox(height: 4),
-        Text(contributor.name, style: context.textTheme.bodySmall),
-      ],
     );
   }
 }
