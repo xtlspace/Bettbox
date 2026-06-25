@@ -11,16 +11,6 @@ Bettbox意为: Better Experience, Out of the box，卓越体验，亦开箱即�
 
 [![Latest Release](https://img.shields.io/github/v/release/appshubcc/Bettbox?style=for-the-badge&logo=github&color=238636&label=Release)](https://github.com/appshubcc/Bettbox/releases/latest) [![Core](https://img.shields.io/github/v/release/MetaCubeX/mihomo?style=for-the-badge&logo=go&logoColor=white&color=8A2BE2&label=Mihomo)](https://github.com/MetaCubeX/mihomo/releases/latest) [![Downloads](https://img.shields.io/github/downloads/appshubcc/Bettbox/total?style=for-the-badge&logo=github&color=007ec6)](https://github.com/appshubcc/Bettbox/releases) 
 
----
-
-##  推荐服务链接
-
-### 高性价比机场： [一分机场](https://xn--4gqx1hgtfdmt.com/#/register?code=AuCiXprV)   -   [良心云官网](https://xn--9kqz23b19z.com/#/register?code=VTnrQYAj) 
-简评: 2元/100G/月起售，大流量套餐：6元/1000GB流量性价比较高，流媒体与AI服务解锁尚可，相对跑路风险较低
-
-**注意** : 以上机场&服务与Bettbox项目并无直接关联，经群友反馈口碑相对尚可，仅日常推荐且后期可能会有变化
-
----
 
 
 ## 🛠️ 安装与下载
@@ -33,16 +23,6 @@ Bettbox意为: Better Experience, Out of the box，卓越体验，亦开箱即�
 * **Android TV**: 已适配,可选ARMv7 32位
 * **鸿蒙NEXT**: 请配合 [[卓易通]](https://harmonyos.cool/android-app) 使用
 
----
-### ✈️ Telegram 社区交流
-
-</div>
-
-<div align="left">
-
-[![Telegram Group](https://img.shields.io/badge/Appshub-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Appshub-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
-
----
 </div>
 
 ## 🚀 核心特性
@@ -91,29 +71,6 @@ Bettbox意为: Better Experience, Out of the box，卓越体验，亦开箱即�
    - 其他问题如持续存在，请提交ISSUE反馈
 
 4. 待持续完善补充..
-
----
-
-##  开发构建
-
-以Windows为例：
-
-* 你需要一台Windows设备（≥Windows 10）
-* 必要的软件依赖：Visual Studio，Flutter SDK≥3.44，Golang，Inno Setup，Rust
-* dart .\setup.dart windows --arch amd64 --compatible(可选兼容版本)
-
----
-
-##  致谢
-
-Bettbox 的诞生依赖以下根基项目：
-
-* [FlClash](https://github.com/chen08209/FlClash) - 来自陈师傅的优秀开源项目
-* [Mihomo](https://github.com/MetaCubeX/mihomo) - 强大灵活稳定的代理内核
-
-开发构建过程中还额外从以下开源项目获取过灵感(以参考顺序排名)：
-
-[CMFA](https://github.com/MetaCubeX/ClashMetaForAndroid), [Sparkle](https://github.com/xishang0128/sparkle), [SFA](https://github.com/SagerNet/sing-box-for-android), [HUSI](https://github.com/xchacha20-poly1305/husi), [V2rayN](https://github.com/2dust/v2rayN)
 
 ---
 
