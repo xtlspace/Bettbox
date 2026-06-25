@@ -188,7 +188,7 @@
   "project": "專案",
   "core": "內核",
   "tabAnimation": "切換動畫",
-  "desc": "Bettbox 基於強大靈活的 Mihomo (Clash.Meta) 代理內核，致力於提供更好的體驗，Forked from FlClash，Better Experience, Out of the box",
+  "desc": "XTLS修改版Bettbox，针对网站微调，增加易用性，致力于更好的体验。",
   "startVpn": "正在啟動",
   "stopVpn": "正在停止",
   "discovery": "發現新版本",
