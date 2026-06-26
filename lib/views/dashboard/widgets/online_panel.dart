@@ -33,9 +33,7 @@ class OnlinePanel extends ConsumerWidget {
                 builder: (_, type) => AdaptiveSheetScaffold(
                   title: appLocalizations.general,
                   type: type,
-                  body: DesktopBackShortcutWrapper(
-                    child: generateListView(generalItems),
-                  ),
+                  body: generateListView(generalItems),
                 ),
               );
               return;

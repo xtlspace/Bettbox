@@ -297,6 +297,7 @@ std::optional<LRESULT> TrayManagerPlugin::HandleWindowProc(HWND hWnd,
                                                            LPARAM lParam) {
   std::optional<LRESULT> result;
   if (message == WM_DESTROY) {
+    KillTimer(hWnd, 1001);
     if (tray_icon_setted) {
       Shell_NotifyIcon(NIM_DELETE, &nid);
     }
@@ -343,6 +344,12 @@ std::optional<LRESULT> TrayManagerPlugin::HandleWindowProc(HWND hWnd,
       default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     };
+  } else if (message == WM_TIMER && wParam == 1001) {
+    if (!tray_icon_setted && nid.hIcon != nullptr) {
+      _ApplyIcon();
+    } else {
+      KillTimer(hWnd, 1001);
+    }
   } else if (message == WM_POWERBROADCAST) {
     if (wParam == PBT_APMRESUMESUSPEND || wParam == PBT_APMRESUMEAUTOMATIC || wParam == PBT_APMRESUMECRITICAL) {
       if (tray_icon_setted) {
@@ -350,7 +357,7 @@ std::optional<LRESULT> TrayManagerPlugin::HandleWindowProc(HWND hWnd,
       }
     }
   } else if (message == windows_taskbar_created_message_id) {
-    if (windows_taskbar_created_message_id != 0 && tray_icon_setted) {
+    if (windows_taskbar_created_message_id != 0 && nid.hIcon != nullptr) {
       // restore the icon with the existing resource.
       tray_icon_setted = false;
       _ApplyIcon();
@@ -413,15 +420,21 @@ void TrayManagerPlugin::_ApplyIcon() {
     nid.uID = 1;
     nid.uCallbackMessage = WM_MYMESSAGE;
     nid.uFlags = NIF_MESSAGE | NIF_ICON;
-    Shell_NotifyIcon(NIM_ADD, &nid);
+    if (wcslen(nid.szTip) > 0) nid.uFlags |= NIF_TIP;
+    
+    if (Shell_NotifyIcon(NIM_ADD, &nid)) {
+      tray_icon_setted = true;
+      if (nid.hWnd) KillTimer(nid.hWnd, 1001);
+    } else {
+      tray_icon_setted = false;
+      if (nid.hWnd) SetTimer(nid.hWnd, 1001, 2000, nullptr);
+    }
   }
 
   niif.cbSize = sizeof(NOTIFYICONIDENTIFIER);
   niif.hWnd = nid.hWnd;
   niif.uID = nid.uID;
   niif.guidItem = GUID_NULL;
-
-  tray_icon_setted = true;
 }
 
 void TrayManagerPlugin::SetToolTip(

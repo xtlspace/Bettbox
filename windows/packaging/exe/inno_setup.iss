@@ -19,7 +19,7 @@ PrivilegesRequired={{PRIVILEGES_REQUIRED}}
 ArchitecturesAllowed={{ARCH}}
 ArchitecturesInstallIn64BitMode={{ARCH}}
 CloseApplications=yes
-CloseApplicationsFilter={{EXECUTABLE_NAME}},BettboxCore.exe,BettboxHelperService.exe
+CloseApplicationsFilter={{EXECUTABLE_NAME}},{{CORE_EXECUTABLE_NAME}},{{HELPER_EXECUTABLE_NAME}}
 SetupLogging=yes
 
 [Code]
@@ -41,22 +41,22 @@ var
   i: Integer;
   WaitCount: Integer;
 begin
-  if IsProcessRunning('BettboxHelperService.exe') then
+  if IsProcessRunning('{{HELPER_EXECUTABLE_NAME}}') then
   begin
-    Exec('sc', 'stop BettboxHelperService', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec('sc', 'stop {{HELPER_SERVICE_NAME}}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
     WaitCount := 0;
-    while (WaitCount < 5) and IsProcessRunning('BettboxHelperService.exe') do
+    while (WaitCount < 5) and IsProcessRunning('{{HELPER_EXECUTABLE_NAME}}') do
     begin
       Sleep(400);
       WaitCount := WaitCount + 1;
     end;
 
-    if IsProcessRunning('BettboxHelperService.exe') then
-      Exec('taskkill', '/f /im BettboxHelperService.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    if IsProcessRunning('{{HELPER_EXECUTABLE_NAME}}') then
+      Exec('taskkill', '/f /im {{HELPER_EXECUTABLE_NAME}}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 
-  Processes := ['Bettbox.exe', 'BettboxCore.exe'];
+  Processes := ['{{EXECUTABLE_NAME}}', '{{CORE_EXECUTABLE_NAME}}'];
 
   for i := 0 to GetArrayLength(Processes)-1 do
   begin
@@ -111,8 +111,8 @@ var
   HelperPath: String;
   ServiceName: String;
 begin
-  ServiceName := 'BettboxHelperService';
-  HelperPath := ExpandConstant('{app}\BettboxHelperService.exe');
+  ServiceName := '{{HELPER_SERVICE_NAME}}';
+  HelperPath := ExpandConstant('{app}\{{HELPER_EXECUTABLE_NAME}}');
   
   Exec('sc', 'stop ' + ServiceName, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec('sc', 'delete ' + ServiceName, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -127,7 +127,7 @@ var
   ResultCode: Integer;
   ServiceName: String;
 begin
-  ServiceName := 'BettboxHelperService';
+  ServiceName := '{{HELPER_SERVICE_NAME}}';
   
   Exec('sc', 'stop ' + ServiceName, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec('sc', 'delete ' + ServiceName, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -139,7 +139,7 @@ var
   TaskNames: TArrayOfString;
   i: Integer;
 begin
-  TaskNames := ['Bettbox'];
+  TaskNames := ['{{TASK_NAME}}'];
   
   for i := 0 to GetArrayLength(TaskNames)-1 do
   begin

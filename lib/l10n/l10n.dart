@@ -1014,29 +1014,64 @@ class AppLocalizations {
     return Intl.message('Delete', name: 'delete', desc: '', args: []);
   }
 
-  /// `Years`
-  String get years {
-    return Intl.message('Years', name: 'years', desc: '', args: []);
+  /// `{count, plural, one{year} other{years}}`
+  String years(num count) {
+    return Intl.plural(
+      count,
+      one: 'year',
+      other: 'years',
+      name: 'years',
+      desc: '',
+      args: [count],
+    );
   }
 
-  /// `Months`
-  String get months {
-    return Intl.message('Months', name: 'months', desc: '', args: []);
+  /// `{count, plural, one{month} other{months}}`
+  String months(num count) {
+    return Intl.plural(
+      count,
+      one: 'month',
+      other: 'months',
+      name: 'months',
+      desc: '',
+      args: [count],
+    );
   }
 
-  /// `Hours`
-  String get hours {
-    return Intl.message('Hours', name: 'hours', desc: '', args: []);
+  /// `{count, plural, one{hour} other{hours}}`
+  String hours(num count) {
+    return Intl.plural(
+      count,
+      one: 'hour',
+      other: 'hours',
+      name: 'hours',
+      desc: '',
+      args: [count],
+    );
   }
 
-  /// `Days`
-  String get days {
-    return Intl.message('Days', name: 'days', desc: '', args: []);
+  /// `{count, plural, one{day} other{days}}`
+  String days(num count) {
+    return Intl.plural(
+      count,
+      one: 'day',
+      other: 'days',
+      name: 'days',
+      desc: '',
+      args: [count],
+    );
   }
 
-  /// `Minutes`
-  String get minutes {
-    return Intl.message('Minutes', name: 'minutes', desc: '', args: []);
+  /// `{count, plural, one{minute} other{minutes}}`
+  String minutes(num count) {
+    return Intl.plural(
+      count,
+      one: 'minute',
+      other: 'minutes',
+      name: 'minutes',
+      desc: '',
+      args: [count],
+    );
   }
 
   /// `Seconds`
@@ -1044,9 +1079,9 @@ class AppLocalizations {
     return Intl.message('Seconds', name: 'seconds', desc: '', args: []);
   }
 
-  /// ` Ago`
+  /// ` ago`
   String get ago {
-    return Intl.message(' Ago', name: 'ago', desc: '', args: []);
+    return Intl.message(' ago', name: 'ago', desc: '', args: []);
   }
 
   /// `Please close TUN first`
@@ -4574,6 +4609,26 @@ class AppLocalizations {
     return Intl.message('Text Scaling', name: 'textScale', desc: '', args: []);
   }
 
+  /// `Invert Tray Icon`
+  String get trayIconInvert {
+    return Intl.message(
+      'Invert Tray Icon',
+      name: 'trayIconInvert',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invert the current tray icon color`
+  String get trayIconInvertDesc {
+    return Intl.message(
+      'Invert the current tray icon color',
+      name: 'trayIconInvertDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Light Icon`
   String get lightIcon {
     return Intl.message('Light Icon', name: 'lightIcon', desc: '', args: []);
@@ -4869,14 +4924,9 @@ class AppLocalizations {
     );
   }
 
-  /// `{label} Details`
-  String details(Object label) {
-    return Intl.message(
-      '$label Details',
-      name: 'details',
-      desc: '',
-      args: [label],
-    );
+  /// `Details`
+  String get details {
+    return Intl.message('Details', name: 'details', desc: '', args: []);
   }
 
   /// `Creation Time`

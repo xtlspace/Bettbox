@@ -60,6 +60,12 @@ object GlobalState {
     @Volatile
     var isStopping = false
 
+    @Volatile
+    var currentProfileName: String = ""
+
+    @Volatile
+    var isSpeedNotificationEnabled: Boolean = false
+
     fun updateRunState(newState: RunState) {
         if (newState != RunState.PENDING) {
             pendingTimeoutJob?.cancel()

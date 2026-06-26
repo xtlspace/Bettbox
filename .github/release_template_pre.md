@@ -9,6 +9,8 @@
 **Note: For desktop CPUs from 2012 or earlier, please download the Compatible version**
 <br>**注意：桌面端2012年同期及之前的CPU，需要使用Compatible兼容版本**
 
+**常用设备平台，android-arm64-v8a, windows-amd64, macos-arm64**
+
 ---
 
 <div align="left">

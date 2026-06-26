@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:bett_box/common/common.dart';
-import 'package:bett_box/common/helper_auth.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/state.dart';
 import 'package:flutter/cupertino.dart';
@@ -95,8 +94,14 @@ class Request {
 
   Future<Map<String, dynamic>?> checkForUpdate() async {
     try {
+      final t = DateTime.now().millisecondsSinceEpoch;
       final response = await _dio.get(
-        'https://api.github.com/repos/$repository/releases/latest',
+        'https://github.com/$repository/releases/latest?t=$t',
+        options: Options(
+          followRedirects: false,
+          validateStatus: (status) =>
+              status != null && status >= 300 && status < 400,
+        ),
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final data = response.data;
@@ -125,7 +130,7 @@ class Request {
 
   final List<String> _ipInfoSources = [
     'https://1.1.1.1/cdn-cgi/trace',
-    'https://cp.cloudflare.com/cdn-cgi/trace',
+    'https://162.159.36.1/cdn-cgi/trace',
   ];
 
   final List<String> _domesticIpSources = [
@@ -211,130 +216,6 @@ class Request {
     Duration? timeout,
   }) async {
     return _checkIpFromSources(_domesticIpSources, cancelToken, timeout);
-  }
-
-  Future<bool> quickPingHelper() async {
-    try {
-      final response = await _dio
-          .get(
-            'http://$localhost:$helperPort/ping',
-            options: Options(responseType: ResponseType.plain),
-          )
-          .timeout(const Duration(milliseconds: 500));
-      if (response.statusCode != HttpStatus.ok) {
-        return false;
-      }
-      return (response.data as String) == globalState.coreSHA256;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> startCoreByHelper(String arg) async {
-    final helperAlive = await quickPingHelper();
-    if (!helperAlive) {
-      commonPrint.log(
-        'Helper service is not reachable, skipping startCoreByHelper',
-      );
-      return false;
-    }
-
-    final homeDirPath = await appPath.homeDirPath;
-    final body = json.encode({
-      'path': appPath.corePath,
-      'arg': arg,
-      'home_dir': homeDirPath,
-    });
-    final authHeaders = HelperAuthManager.generateAuthHeaders(body);
-
-    const maxAttempts = 4;
-    const interval = Duration(milliseconds: 500);
-    const requestTimeout = Duration(seconds: 5);
-
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        final response = await _dio
-            .post(
-              'http://$localhost:$helperPort/start',
-              data: body,
-              options: Options(
-                responseType: ResponseType.plain,
-                headers: authHeaders,
-              ),
-            )
-            .timeout(requestTimeout);
-        if (response.statusCode == HttpStatus.ok) {
-          final data = response.data as String;
-          if (data.isEmpty) return true;
-        }
-      } catch (e) {
-        if (attempt == maxAttempts) {
-          commonPrint.log(
-            'Failed to start core by helper after $maxAttempts attempts: $e',
-          );
-          return false;
-        }
-      }
-      await Future.delayed(interval);
-    }
-    return false;
-  }
-
-  Future<bool> stopCoreByHelper() async {
-    try {
-      final authHeaders = HelperAuthManager.generateAuthHeaders('');
-
-      final response = await _dio
-          .post(
-            'http://$localhost:$helperPort/stop',
-            options: Options(
-              responseType: ResponseType.plain,
-              headers: authHeaders,
-            ),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-      if (response.statusCode != HttpStatus.ok) {
-        return false;
-      }
-      return true;
-    } catch (e) {
-      commonPrint.log('Failed to stop core by helper: $e');
-      return false;
-    }
-  }
-
-  Future<bool> setProcessPriorityByHelper(
-    String processName,
-    bool enable,
-  ) async {
-    try {
-      final helperAlive = await quickPingHelper();
-      if (!helperAlive) {
-        commonPrint.log(
-          'Helper service is not reachable, skipping setProcessPriorityByHelper',
-        );
-        return false;
-      }
-
-      final body = json.encode({'process_name': processName, 'enable': enable});
-      final authHeaders = HelperAuthManager.generateAuthHeaders(body);
-
-      final response = await _dio
-          .post(
-            'http://$localhost:$helperPort/set_priority',
-            data: body,
-            options: Options(
-              responseType: ResponseType.plain,
-              headers: authHeaders,
-            ),
-          )
-          .timeout(const Duration(milliseconds: 2000));
-
-      return response.statusCode == HttpStatus.ok;
-    } catch (e) {
-      commonPrint.log('Failed to set process priority by helper: $e');
-      return false;
-    }
   }
 }
 

@@ -13,7 +13,7 @@ body:
     id: bug-description
     attributes:
       label: 问题描述 / Description
-      placeholder: 请清晰地描述你遇到的问题，必要时附上截图。 / Describe the issue in detail, with screenshots if possible.
+      placeholder: 注意: Android系统相关ISSUE，如为国内OS版本务必注明, 例如: HyperOS 3。请清晰地描述你遇到的问题，必要时附上截图。 / Describe the issue in detail, with screenshots if possible.
     validations:
       required: true
 
@@ -21,7 +21,7 @@ body:
     id: version
     attributes:
       label: 软件版本 / Version
-      placeholder: 例如 1.15.6
+      placeholder: 例如 1.18.2
     validations:
       required: true
 
@@ -45,6 +45,7 @@ body:
         1. 打开...
         2. 点击...
         3. 出现...
+        4. 注意: Android系统相关ISSUE，如为国内OS版本务必注明, 例如: HyperOS 3
     validations:
       required: false
 

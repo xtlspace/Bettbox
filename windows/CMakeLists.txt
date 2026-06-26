@@ -6,7 +6,6 @@ project(Bettbox LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "Bettbox")
 
-add_definitions(-DFLUTTER_DISABLE_IMPELLER=1)
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -93,9 +92,23 @@ set(CLASH_DIR "../libclash/windows")
 # endif()
 
 install(PROGRAMS "${CLASH_DIR}/BettboxCore.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  CONFIGURATIONS Profile;Release
+  COMPONENT Runtime)
+
+install(PROGRAMS "${CLASH_DIR}/BettboxDevCore.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  CONFIGURATIONS Debug
+  COMPONENT Runtime)
+
+install(PROGRAMS "${CLASH_DIR}/BettboxDevHelperService.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  CONFIGURATIONS Debug
+  COMPONENT Runtime)
+
+install(PROGRAMS "${CLASH_DIR}/BettboxCore.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
 
 install(PROGRAMS "${CLASH_DIR}/BettboxHelperService.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
 
 install(FILES "WindowsLoopbackManager.exe" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

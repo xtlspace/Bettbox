@@ -32,8 +32,14 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
     });
   }
 
-  Future<void> _updateProviders() async {
-    final providers = ref.read(providersProvider);
+  Future<void> _updateProviders({String? type}) async {
+    final allProviders = ref.read(providersProvider);
+    final providers = type == null
+        ? allProviders
+        : allProviders.where((p) => p.type == type).toList();
+
+    if (providers.isEmpty) return;
+
     final providersNotifier = ref.read(providersProvider.notifier);
     final messages = [];
     final updateProviders = providers.map<Future>((provider) async {
@@ -80,10 +86,30 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
     final proxySection = generateSection(
       title: appLocalizations.proxyProviders,
       items: proxyProviders,
+      actions: [
+        IconButton(
+          onPressed: () => _updateProviders(type: 'Proxy'),
+          icon: const Icon(Icons.sync),
+          iconSize: 20,
+          splashRadius: 20,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
     );
     final ruleSection = generateSection(
       title: appLocalizations.ruleProviders,
       items: ruleProviders,
+      actions: [
+        IconButton(
+          onPressed: () => _updateProviders(type: 'Rule'),
+          icon: const Icon(Icons.sync),
+          iconSize: 20,
+          splashRadius: 20,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
     );
     return AdaptiveSheetScaffold(
       actions: [

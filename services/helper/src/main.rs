@@ -1,8 +1,11 @@
 #[cfg(not(all(feature = "windows-service", target_os = "windows")))]
-use tokio::runtime::Runtime;
-#[cfg(not(all(feature = "windows-service", target_os = "windows")))]
 use crate::service::hub::run_service;
+#[cfg(not(all(feature = "windows-service", target_os = "windows")))]
+use tokio::runtime::Runtime;
 
+mod ipc;
+mod ops;
+mod rpc;
 mod service;
 
 #[cfg(all(feature = "windows-service", target_os = "windows"))]

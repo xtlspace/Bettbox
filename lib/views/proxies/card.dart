@@ -37,7 +37,10 @@ class ProxyCard extends StatelessWidget {
 
   bool get _isNonTestableProxy {
     final name = proxy.name.toUpperCase();
-    return name == 'REJECT' || name == 'REJECT-DROP' || name == 'PASS';
+    return name == 'REJECT' ||
+        name == 'REJECT-DROP' ||
+        name == 'PASS' ||
+        proxy.type.toUpperCase() == 'REMATCH';
   }
 
   void _handleTestCurrentDelay() {

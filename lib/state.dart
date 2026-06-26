@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:animations/animations.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:bett_box/clash/clash.dart';
@@ -81,6 +83,9 @@ class GlobalState {
   Future<void> initApp(int version) async {
     isExiting = false;
     coreSHA256 = const String.fromEnvironment('CORE_SHA256');
+    if (system.isWindows && (coreSHA256 == null || coreSHA256!.isEmpty)) {
+      coreSHA256 = await _calcCoreSHA256();
+    }
     isPre = const String.fromEnvironment('APP_ENV') != 'stable';
     appState = AppState(
       brightness: WidgetsBinding.instance.platformDispatcher.platformBrightness,
@@ -94,6 +99,18 @@ class GlobalState {
     );
     await _initDynamicColor();
     await init();
+  }
+
+  Future<String?> _calcCoreSHA256() async {
+    try {
+      final file = File(appPath.corePath);
+      if (!await file.exists()) return null;
+      final digest = await sha256.bind(file.openRead()).first;
+      return digest.toString();
+    } catch (e) {
+      commonPrint.log('Failed to calculate core SHA256: $e');
+      return null;
+    }
   }
 
   Future<void> _initDynamicColor() async {
@@ -487,7 +504,10 @@ class GlobalState {
         fakeIpRangeV6: patchConfig.dns.fakeIpRangeV6,
       ),
     );
-    rawConfig['external-controller'] = realPatchConfig.externalController.value;
+    rawConfig['external-controller'] = realPatchConfig.allowLan
+        ? realPatchConfig.externalController.value
+            .replaceAll('127.0.0.1', '0.0.0.0')
+        : realPatchConfig.externalController.value;
     if (realPatchConfig.externalController == ExternalControllerStatus.open) {
       final secret = realPatchConfig.secret;
       if (secret != null && secret.isNotEmpty) {

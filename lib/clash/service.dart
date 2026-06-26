@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:bett_box/clash/interface.dart';
 import 'package:bett_box/common/common.dart';
+import 'package:bett_box/helper/helper.dart';
 import 'package:bett_box/models/core.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/utils/frame_codec.dart';
@@ -137,7 +138,11 @@ class ClashService extends ClashHandlerInterface {
     if (system.isWindows) {
       final serviceOk = await windows?.registerService() ?? false;
       if (serviceOk) {
-        final started = await request.startCoreByHelper(arg);
+        final started = await helperClient.startCore(
+          corePath: appPath.corePath,
+          arg: arg,
+          homeDir: homeDirPath,
+        );
         if (started) {
           await _waitForCoreReady();
           isStarting = false;
@@ -220,7 +225,7 @@ class ClashService extends ClashHandlerInterface {
   shutdown() async {
     _isDestroying = true;
     if (system.isWindows) {
-      await request.stopCoreByHelper();
+      await helperClient.stopCore();
     }
     await _destroySocket();
     process?.kill();

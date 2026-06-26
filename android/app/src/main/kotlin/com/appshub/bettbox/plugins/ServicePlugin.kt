@@ -103,6 +103,14 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 if (context != null) {
                     val profileName = call.argument<String>("profileName") ?: ""
                     val speedInfo = call.argument<String>("speedInfo") ?: ""
+                    
+                    com.appshub.bettbox.GlobalState.currentProfileName = profileName
+                    com.appshub.bettbox.GlobalState.isSpeedNotificationEnabled = true
+                    android.service.quicksettings.TileService.requestListeningState(
+                        context,
+                        android.content.ComponentName(context, com.appshub.bettbox.services.BettboxTileService::class.java)
+                    )
+
                     val intent = android.content.Intent(
                         context, 
                         com.appshub.bettbox.services.BettboxVpnService::class.java
@@ -118,6 +126,12 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "restoreNotification" -> {
                 val context = com.appshub.bettbox.BettboxApplication.getAppContext()
                 if (context != null) {
+                    com.appshub.bettbox.GlobalState.isSpeedNotificationEnabled = false
+                    android.service.quicksettings.TileService.requestListeningState(
+                        context,
+                        android.content.ComponentName(context, com.appshub.bettbox.services.BettboxTileService::class.java)
+                    )
+
                     val intent = android.content.Intent(
                         context, 
                         com.appshub.bettbox.services.BettboxVpnService::class.java

@@ -15,16 +15,29 @@ use windows_service::{
     service_dispatcher, Result,
 };
 
-const SERVICE_NAME: &str = "BettboxHelperService";
+const DEFAULT_SERVICE_NAME: &str = "BettboxHelperService";
 
 const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
+
+fn service_name() -> String {
+    std::env::var("HELPER_SERVICE_NAME").unwrap_or_else(|_| {
+        std::env::current_exe()
+            .ok()
+            .and_then(|path| {
+                path.file_stem()
+                    .map(|stem| stem.to_string_lossy().to_string())
+            })
+            .filter(|stem| stem.contains("Dev"))
+            .unwrap_or_else(|| DEFAULT_SERVICE_NAME.to_string())
+    })
+}
 
 pub fn main() -> Result<()> {
     start_service()
 }
 
 pub fn start_service() -> Result<()> {
-    service_dispatcher::start(SERVICE_NAME, service_entry)
+    service_dispatcher::start(service_name(), service_entry)
 }
 
 define_windows_service!(service_entry, service_main);
@@ -33,7 +46,12 @@ pub fn service_main(_arguments: Vec<OsString>) {
     if let Ok(rt) = Runtime::new() {
         rt.block_on(async {
             if let Err(e) = run_windows_service().await {
-                let log_path = std::env::temp_dir().join("bettbox_helper_error.log");
+                let log_name = if service_name().contains("Dev") {
+                    "bettbox_dev_helper_error.log"
+                } else {
+                    "bettbox_helper_error.log"
+                };
+                let log_path = std::env::temp_dir().join(log_name);
                 let ts = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs())
@@ -49,8 +67,9 @@ pub fn service_main(_arguments: Vec<OsString>) {
 }
 
 async fn run_windows_service() -> anyhow::Result<()> {
+    let service_name = service_name();
     let status_handle = service_control_handler::register(
-        SERVICE_NAME,
+        service_name,
         move |event| -> ServiceControlHandlerResult {
             match event {
                 ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,

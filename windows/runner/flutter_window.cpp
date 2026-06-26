@@ -8,6 +8,12 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "resource.h"
 
+#ifdef BETTBOX_DEV
+#define BETTBOX_REG_KEY L"Software\\BettboxDev"
+#else
+#define BETTBOX_REG_KEY L"Software\\Bettbox"
+#endif
+
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
@@ -184,7 +190,7 @@ void FlutterWindow::SaveIconPreference(bool use_light_icon) {
   HKEY hKey;
   LONG result = RegCreateKeyExW(
       HKEY_CURRENT_USER,
-      L"Software\\Bettbox",
+      BETTBOX_REG_KEY,
       0,
       NULL,
       REG_OPTION_NON_VOLATILE,
@@ -205,7 +211,7 @@ bool FlutterWindow::LoadIconPreference() {
   HKEY hKey;
   LONG result = RegOpenKeyExW(
       HKEY_CURRENT_USER,
-      L"Software\\Bettbox",
+      BETTBOX_REG_KEY,
       0,
       KEY_READ,
       &hKey

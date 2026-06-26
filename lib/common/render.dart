@@ -1,4 +1,5 @@
 import 'package:bett_box/common/common.dart';
+import 'package:bett_box/enum/enum.dart';
 import 'package:flutter/scheduler.dart';
 
 class Render {
@@ -16,10 +17,15 @@ class Render {
   }
 
   void pause() {
-    _pause();
+    throttler.call(
+      FunctionTag.renderPause,
+      _pause,
+      duration: const Duration(seconds: 5),
+    );
   }
 
   void resume() {
+    throttler.cancel(FunctionTag.renderPause);
     _resume();
   }
 

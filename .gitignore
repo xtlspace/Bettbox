@@ -1,5 +1,8 @@
 # Miscellaneous
 *.md
+!/README.md
+!/README_en.md
+!/SIGNING-POLICY.md
 !.github/release_template.md
 !.github/release_template_pre.md
 *.class
@@ -39,7 +42,9 @@ migrate_working_dir/
 /specs/
 /dist/
 .test/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 /services/helper/target/
 
 # Symbolication related
@@ -60,6 +65,10 @@ app.*.map.json
 
 #jniLibs
 /android/app/src/main/jniLibs/
+/android/core/src/main/jniLibs/
+
+# Tool-generated local configuration
+/plugins/flutter_distributor/packages/flutter_distributor/devtools_options.yaml
 
 # FVM Version Cache
 .fvm/

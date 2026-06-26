@@ -6,6 +6,8 @@ import 'dart:isolate';
 import 'package:archive/archive_io.dart';
 import 'package:bett_box/clash/clash.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:bett_box/helper/helper.dart';
+
 import 'package:bett_box/plugins/app.dart';
 import 'package:bett_box/plugins/service.dart' as vpn_service;
 import 'package:bett_box/providers/providers.dart';
@@ -104,8 +106,16 @@ class AppController {
       final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
       if (wasRunning) {
         await globalState.handleStop();
+        _ref.read(runTimeProvider.notifier).value = null;
       }
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (system.isAndroid) {
+        clashCore.closeConnections();
+        await clashCore.flushFakeIP();
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      if (system.isDesktop) {
+        await clashService!.reStart();
+      }
       await _initCore();
       if (wasRunning) {
         if (system.isDesktop) {
@@ -139,6 +149,36 @@ class AppController {
 
     if (isDesktop && patchConfig.tun.enable) {
       await _quickSetupConfig(enableTun: false);
+
+      if (system.isMacOS) {
+        try {
+          final res = await _requestAdmin(true);
+          if (res.needRestart) {
+            await restartCore();
+            return;
+          }
+          await globalState.handleStart([updateRunTime, updateTraffic]);
+          if (!res.isError) {
+            Future.microtask(() async {
+              try {
+                await _updateClashConfig();
+              } catch (e) {
+                commonPrint.log('FastStart macOS TUN update failed: $e');
+              }
+              _backgroundLoad();
+            });
+          } else {
+            _backgroundLoad();
+          }
+        } catch (e) {
+          commonPrint.log('FastStart macOS auth error: $e');
+          await globalState.handleStart([updateRunTime, updateTraffic]);
+          _backgroundLoad();
+        }
+        _scheduleCheckIpRefresh();
+        return;
+      }
+
       await globalState.handleStart([updateRunTime, updateTraffic]);
 
       Future.microtask(() async {
@@ -146,7 +186,9 @@ class AppController {
           final res = await _requestAdmin(true);
           if (res.needRestart) {
             await restartCore();
-          } else if (!res.isError) {
+            return;
+          }
+          if (!res.isError) {
             await _updateClashConfig();
           }
         } catch (e) {
@@ -454,9 +496,6 @@ class AppController {
   }
 
   Future<Result<bool>> _requestAdmin(bool enableTun) async {
-    if (system.isWindows && kDebugMode) {
-      return Result.success(false);
-    }
     final realTunEnable = _ref.read(realTunEnableProvider);
     if (enableTun != realTunEnable && realTunEnable == false) {
       final code = await system.authorizeCore();
@@ -466,9 +505,9 @@ class AppController {
         case AuthorizeCode.none:
           break;
         case AuthorizeCode.error:
-          if (system.isWindows) {
-            globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);
-          }
+          globalState.showNotifier(
+            'TUN mode requires administrator privileges.',
+          );
           enableTun = false;
           break;
       }
@@ -502,9 +541,10 @@ class AppController {
     addCheckIpNumDebounce();
   }
 
-  void handleChangeProfile() {
+  Future<void> handleChangeProfile() async {
     _ref.read(delayDataSourceProvider.notifier).value = {};
-    applyProfile();
+    await applyProfile(silence: true);
+    await restartCore();
     _ref.read(logsProvider.notifier).value = FixedList(maxLength);
     _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
     globalState.computeHeightMapCache = {};
@@ -697,8 +737,14 @@ class AppController {
     if (!system.isWindows) return;
 
     try {
-      await system.setProcessPriority('Bettbox.exe', enable);
-      await request.setProcessPriorityByHelper('BettboxCore.exe', enable);
+      await system.setProcessPriority(
+        '${AppIdentity.mainExecutableName}.exe',
+        enable,
+      );
+      await helperClient.setProcessPriority(
+        '${AppIdentity.coreExecutableName}.exe',
+        enable,
+      );
     } catch (e) {
       commonPrint.log('Set process priority error: $e');
       rethrow;
@@ -1074,9 +1120,7 @@ class AppController {
                 decorationColor: Theme.of(context).colorScheme.primary,
               ),
             ),
-            TextSpan(
-              text: appLocalizations.create,
-            ),
+            TextSpan(text: appLocalizations.create),
           ],
         ),
       );

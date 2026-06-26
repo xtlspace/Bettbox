@@ -528,7 +528,31 @@ ProxyCardState _getProxyCardState(
   final index = groups.indexWhere(
     (element) => element.name == proxyDelayState.proxyName,
   );
-  if (index == -1) return proxyDelayState;
+  if (index == -1) {
+    Proxy? proxy;
+    for (final group in groups) {
+      for (final p in group.all) {
+        if (p.name == proxyDelayState.proxyName) {
+          proxy = p;
+          break;
+        }
+      }
+      if (proxy != null) break;
+    }
+    final now = proxy?.now;
+    if (proxy != null &&
+        proxy.type.toUpperCase() == 'REMATCH' &&
+        now != null &&
+        now.isNotEmpty &&
+        now != proxyDelayState.proxyName) {
+      return _getProxyCardState(
+        groups,
+        selectedMap,
+        proxyDelayState.copyWith(proxyName: now),
+      );
+    }
+    return proxyDelayState;
+  }
   final group = groups[index];
   final currentSelectedName = group.getCurrentSelectedName(
     selectedMap[proxyDelayState.proxyName] ?? '',

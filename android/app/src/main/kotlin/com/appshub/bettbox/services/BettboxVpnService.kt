@@ -1,7 +1,10 @@
 package com.appshub.bettbox.services
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Binder
@@ -33,9 +36,25 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     @Volatile
     private var hasStartedForeground = false
 
+    private var unlockReceiver: BroadcastReceiver? = null
+    
+    @Volatile
+    private var isSpeedNotificationEnabled = false
+
     override fun onCreate() {
         super.onCreate()
         GlobalState.initServiceEngine()
+        
+        unlockReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (isSpeedNotificationEnabled) {
+                    cachedBuilder?.build()?.let {
+                        getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, it)
+                    }
+                }
+            }
+        }
+        registerReceiver(unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Context.RECEIVER_NOT_EXPORTED else 0)
     }
 
     override suspend fun start(options: VpnOptions): Int = with(Builder()) {
@@ -99,12 +118,14 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         if (intent?.action == "UPDATE_NOTIFICATION_SPEED") {
             val profileName = intent.getStringExtra("profileName") ?: ""
             val speedInfo = intent.getStringExtra("speedInfo") ?: ""
+            isSpeedNotificationEnabled = true
             if (!GlobalState.isSmartStopped && hasStartedForeground) {
                 CoroutineScope(Dispatchers.Main).launch {
                     updateNotificationSpeed(profileName, speedInfo)
                 }
             }
         } else if (intent?.action == "RESTORE_NOTIFICATION") {
+            isSpeedNotificationEnabled = false
             if (hasStartedForeground) {
                 CoroutineScope(Dispatchers.Main).launch {
                     startForeground()
@@ -261,6 +282,10 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
     override fun onDestroy() {
         stop()
+        unlockReceiver?.let {
+            unregisterReceiver(it)
+            unlockReceiver = null
+        }
         super.onDestroy()
     }
 }

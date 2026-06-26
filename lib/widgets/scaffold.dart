@@ -328,23 +328,25 @@ class CommonScaffoldState extends State<CommonScaffold> {
         ],
       ),
     );
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: body,
-      resizeToAvoidBottomInset: true,
-      backgroundColor: widget.backgroundColor,
-      floatingActionButton:
-          widget.floatingActionButton ??
-          ValueListenableBuilder<Widget?>(
-            valueListenable: _floatingActionButton,
-            builder: (_, value, _) {
-              return IntrinsicWidth(
-                child: IntrinsicHeight(
-                  child: FadeScaleBox(child: value ?? SizedBox()),
-                ),
-              );
-            },
-          ),
+    return DesktopBackShortcutWrapper(
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: body,
+        resizeToAvoidBottomInset: true,
+        backgroundColor: widget.backgroundColor,
+        floatingActionButton:
+            widget.floatingActionButton ??
+            ValueListenableBuilder<Widget?>(
+              valueListenable: _floatingActionButton,
+              builder: (_, value, _) {
+                return IntrinsicWidth(
+                  child: IntrinsicHeight(
+                    child: FadeScaleBox(child: value ?? SizedBox()),
+                  ),
+                );
+              },
+            ),
+      ),
     );
   }
 }

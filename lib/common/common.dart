@@ -6,6 +6,7 @@ export 'context.dart';
 export 'converter.dart';
 export 'datetime.dart';
 export 'fixed.dart';
+export 'identity.dart';
 export 'function.dart';
 export 'future.dart';
 export 'http.dart';

@@ -6,7 +6,7 @@ part of '../state.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$configStateHash() => r'1f4ea3cc8f6461ba734e7e0c5d7295bfa4fd5afb';
+String _$configStateHash() => r'd827b2e403f65301fc2b85ed4e84d6243cc44586';
 
 /// See also [configState].
 @ProviderFor(configState)
@@ -61,7 +61,7 @@ final navigationItemsStateProvider =
 // ignore: unused_element
 typedef NavigationItemsStateRef = AutoDisposeProviderRef<NavigationItemsState>;
 String _$currentNavigationItemsStateHash() =>
-    r'06fbdc194f4527b945695fe3b72b16e0585fa440';
+    r'159f22cdd09a4393e53d08d5ea1542df64710fd7';
 
 /// See also [currentNavigationItemsState].
 @ProviderFor(currentNavigationItemsState)
@@ -623,7 +623,7 @@ final packageListSelectorStateProvider =
 typedef PackageListSelectorStateRef =
     AutoDisposeProviderRef<PackageListSelectorState>;
 String _$moreToolsSelectorStateHash() =>
-    r'6329d92652135e2af009dddeac590b4369d2fa04';
+    r'e9560ecd2bccfe98f3360bf83c70f524d6ec1b12';
 
 /// See also [moreToolsSelectorState].
 @ProviderFor(moreToolsSelectorState)

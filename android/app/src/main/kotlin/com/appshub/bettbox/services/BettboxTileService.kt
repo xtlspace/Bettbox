@@ -26,6 +26,11 @@ class BettboxTileService : TileService() {
                 RunState.PENDING -> Tile.STATE_UNAVAILABLE
                 RunState.STOP -> Tile.STATE_INACTIVE
             }
+            if (GlobalState.isSpeedNotificationEnabled && GlobalState.currentProfileName.isNotEmpty()) {
+                label = GlobalState.currentProfileName
+            } else {
+                label = "Bettbox"
+            }
             updateTile()
         }
     }

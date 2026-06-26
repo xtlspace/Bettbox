@@ -50,6 +50,8 @@ class Tray {
             brightness ??
             WidgetsBinding.instance.platformDispatcher.platformBrightness,
         isStart: isStart,
+        invertTrayIcon:
+            system.isWindows && globalState.config.themeProps.invertTrayIcon,
       ),
       isTemplate: system.isMacOS,
     );
@@ -366,7 +368,10 @@ class Tray {
     final appController = globalState.appController;
     final testableProxies = group.all.where((p) {
       final name = p.name.toUpperCase();
-      return name != 'REJECT' && name != 'REJECT-DROP' && name != 'PASS';
+      return name != 'REJECT' &&
+          name != 'REJECT-DROP' &&
+          name != 'PASS' &&
+          p.type.toUpperCase() != 'REMATCH';
     }).toList();
 
     _isTesting = true;
@@ -419,7 +424,18 @@ class Tray {
 
   bool _isNonTestableProxyName(String proxyName) {
     final name = proxyName.toUpperCase();
-    return name == 'REJECT' || name == 'REJECT-DROP' || name == 'PASS';
+    if (name == 'REJECT' || name == 'REJECT-DROP' || name == 'PASS') {
+      return true;
+    }
+    final groups = globalState.appController.getCurrentGroups();
+    for (final group in groups) {
+      for (final proxy in group.all) {
+        if (proxy.name == proxyName) {
+          return proxy.type.toUpperCase() == 'REMATCH';
+        }
+      }
+    }
+    return false;
   }
 }
 

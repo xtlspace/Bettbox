@@ -31,10 +31,8 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       builder: (_, type) {
         return AdaptiveSheetScaffold(
           type: type,
-          body: DesktopBackShortcutWrapper(
-            child: AddProfileView(
-              context: globalState.navigatorKey.currentState!.context,
-            ),
+          body: AddProfileView(
+            context: globalState.navigatorKey.currentState!.context,
           ),
           title: appLocalizations.add,
         );
@@ -85,7 +83,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           showExtend(
             context,
             builder: (_, type) {
-              return const DesktopBackShortcutWrapper(child: ScriptsView());
+              return const ScriptsView();
             },
           );
         },
@@ -107,9 +105,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           showSheet(
             context: context,
             builder: (_, type) {
-              return DesktopBackShortcutWrapper(
-                child: ReorderableProfilesSheet(type: type, profiles: profiles),
-              );
+              return ReorderableProfilesSheet(type: type, profiles: profiles);
             },
           );
         },
@@ -226,13 +222,11 @@ class ProfileItem extends StatelessWidget {
           return;
         }
 
-        final previewPage = DesktopBackShortcutWrapper(
-          child: EditorPage(
-            title:
-                '${appLocalizations.runtimeConfig} - ${profile.label ?? profile.id}',
-            content: content,
-            readOnly: true,
-          ),
+        final previewPage = EditorPage(
+          title:
+              '${appLocalizations.runtimeConfig} - ${profile.label ?? profile.id}',
+          content: content,
+          readOnly: true,
         );
         BaseNavigator.push<String>(context, previewPage);
       },
@@ -270,12 +264,10 @@ class ProfileItem extends StatelessWidget {
               },
             ),
           ],
-          body: DesktopBackShortcutWrapper(
-            child: EditProfileView(
-              key: editKey,
-              profile: profile,
-              context: context,
-            ),
+          body: EditProfileView(
+            key: editKey,
+            profile: profile,
+            context: context,
           ),
           title: appLocalizations.edit,
         );
@@ -391,9 +383,7 @@ class ProfileItem extends StatelessWidget {
   }
 
   void _handlePushGenProfilePage(BuildContext context, String id) {
-    final overrideProfileView = DesktopBackShortcutWrapper(
-      child: OverrideProfileView(profileId: id),
-    );
+    final overrideProfileView = OverrideProfileView(profileId: id);
     BaseNavigator.push(context, overrideProfileView);
   }
 

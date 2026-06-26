@@ -32,17 +32,28 @@ class Proxy extends ProxyPlatform {
     };
   }
 
+  Future<String> _getKWriteConfigCmd() async {
+    try {
+      final res =
+          await Process.run('which', ['kwriteconfig6'], runInShell: true);
+      if (res.exitCode == 0) return 'kwriteconfig6';
+    } catch (_) {}
+    return 'kwriteconfig5';
+  }
+
   Future<bool> _startProxyWithLinux(int port, List<String> bypassDomain) async {
     try {
       final homeDir = Platform.environment['HOME']!;
       final configDir = join(homeDir, ".config");
       final cmdList = List<List<String>>.empty(growable: true);
-      final desktop = Platform.environment['XDG_CURRENT_DESKTOP'];
-      final isKDE = desktop == "KDE";
+      final desktop = Platform.environment['XDG_CURRENT_DESKTOP'] ?? "";
+      final isKDE = desktop.toUpperCase().contains("KDE");
+
       if (isKDE) {
+        final kwriteconfig = await _getKWriteConfigCmd();
         cmdList.add(
           [
-            "kwriteconfig5",
+            kwriteconfig,
             "--file",
             "$configDir/kioslaverc",
             "--group",
@@ -54,7 +65,7 @@ class Proxy extends ProxyPlatform {
         );
         cmdList.add(
           [
-            "kwriteconfig5",
+            kwriteconfig,
             "--file",
             "$configDir/kioslaverc",
             "--group",
@@ -99,39 +110,32 @@ class Proxy extends ProxyPlatform {
               "$port"
             ],
           );
-          cmdList.add(
-            [
-              "gsettings",
-              "set",
-              "org.gnome.system.proxy.${type.name}",
-              "port",
-              "$port"
-            ],
-          );
-          cmdList.add(
-            [
-              "gsettings",
-              "set",
-              "org.gnome.system.proxy.${type.name}",
-              "port",
-              "$port"
-            ],
-          );
         }
         if (isKDE) {
+          final kwriteconfig = await _getKWriteConfigCmd();
+          final protocol = type == ProxyTypes.socks ? 'socks' : 'http';
           cmdList.add(
             [
-              "kwriteconfig5",
+              kwriteconfig,
               "--file",
               "$configDir/kioslaverc",
               "--group",
               "Proxy Settings",
               "--key",
               "${type.name}Proxy",
-              "${type.name}://$url:$port"
+              "$protocol://$url:$port"
             ],
           );
         }
+      }
+      if (isKDE) {
+        cmdList.add([
+          "dbus-send",
+          "--type=method_call",
+          "--dest=org.kde.KIO",
+          "/KIO/kioslave",
+          "org.kde.KIO.kioslave.reparseConfiguration"
+        ]);
       }
       for (final cmd in cmdList) {
         await Process.run(cmd[0], cmd.sublist(1), runInShell: true);
@@ -147,12 +151,13 @@ class Proxy extends ProxyPlatform {
       final homeDir = Platform.environment['HOME']!;
       final configDir = join(homeDir, ".config/");
       final cmdList = List<List<String>>.empty(growable: true);
-      final desktop = Platform.environment['XDG_CURRENT_DESKTOP'];
-      final isKDE = desktop == "KDE";
+      final desktop = Platform.environment['XDG_CURRENT_DESKTOP'] ?? "";
+      final isKDE = desktop.toUpperCase().contains("KDE");
       if (isKDE) {
+        final kwriteconfig = await _getKWriteConfigCmd();
         cmdList.add(
           [
-            "kwriteconfig5",
+            kwriteconfig,
             "--file",
             "$configDir/kioslaverc",
             "--group",
@@ -162,13 +167,20 @@ class Proxy extends ProxyPlatform {
             "0"
           ],
         );
+        cmdList.add([
+          "dbus-send",
+          "--type=method_call",
+          "--dest=org.kde.KIO",
+          "/KIO/kioslave",
+          "org.kde.KIO.kioslave.reparseConfiguration"
+        ]);
       } else {
         cmdList.add(
           ["gsettings", "set", "org.gnome.system.proxy", "mode", "none"],
         );
       }
       for (final cmd in cmdList) {
-        await Process.run(cmd[0], cmd.sublist(1));
+        await Process.run(cmd[0], cmd.sublist(1), runInShell: true);
       }
       return true;
     } catch (_) {

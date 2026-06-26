@@ -563,6 +563,8 @@
   "clearData": "清除資料",
   "zoom": "縮放",
   "textScale": "文字縮放",
+  "trayIconInvert": "托盤反轉",
+  "trayIconInvertDesc": "針對目前托盤圖示顏色取反設定",
   "lightIcon": "浅色图标",
   "lightIconDesc": "手動切換淺色系桌面應用程式圖示",
   "harmonyFont": "字體修復",

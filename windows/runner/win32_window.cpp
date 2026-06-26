@@ -18,7 +18,11 @@ namespace
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
+#ifdef BETTBOX_DEV
+  constexpr const wchar_t kWindowClassName[] = L"BETTBOX_DEV_RUNNER_WIN32_WINDOW";
+#else
   constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
+#endif
 
   /// Registry key for app theme preference.
   ///
@@ -287,32 +291,9 @@ Win32Window::MessageHandler(HWND hwnd,
     UpdateTheme(hwnd);
     return 0;
 
-  case WM_POWERBROADCAST:
-    if (wparam == PBT_APMRESUMESUSPEND || wparam == PBT_APMRESUMEAUTOMATIC || wparam == PBT_APMRESUMECRITICAL)
-    {
-      SetTimer(hwnd, kResumeTimerId, 500, nullptr);
-    }
-    else if (wparam == PBT_APMSUSPEND)
-    {
-      KillTimer(hwnd, kResumeTimerId);
-    }
-    return TRUE;
-
-  case WM_TIMER:
-    if (wparam == kResumeTimerId)
-    {
-      KillTimer(hwnd, kResumeTimerId);
-      if (IsWindowVisible(hwnd) && !IsIconic(hwnd))
-      {
-        RECT rect = GetClientArea();
-        PostMessage(hwnd, WM_SIZE, SIZE_RESTORED,
-                    MAKELPARAM(rect.right - rect.left, rect.bottom - rect.top));
-      }
-    }
-    return 0;
   }
 
-  return DefWindowProc(window_handle_, message, wparam, lparam);
+  return DefWindowProc(hwnd, message, wparam, lparam);
 }
 
 void Win32Window::Destroy()

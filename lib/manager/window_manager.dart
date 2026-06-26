@@ -49,18 +49,19 @@ class _WindowContainerState extends ConsumerState<WindowManager>
   @override
   void initState() {
     super.initState();
-    _autoLaunchSub =
-        ref.listenManual(appSettingProvider.select((state) => state.autoLaunch), (
-      prev,
-      next,
-    ) {
-      if (prev != next) {
-        final smartDelayLaunch = ref.read(appSettingProvider).smartDelayLaunch;
-        debouncer.call(FunctionTag.autoLaunch, () {
-          autoLaunch?.updateStatus(next, requireNetwork: smartDelayLaunch);
-        });
-      }
-    });
+    _autoLaunchSub = ref.listenManual(
+      appSettingProvider.select((state) => state.autoLaunch),
+      (prev, next) {
+        if (prev != next) {
+          final smartDelayLaunch = ref
+              .read(appSettingProvider)
+              .smartDelayLaunch;
+          debouncer.call(FunctionTag.autoLaunch, () {
+            autoLaunch?.updateStatus(next, requireNetwork: smartDelayLaunch);
+          });
+        }
+      },
+    );
 
     _smartDelaySub = ref.listenManual(
       appSettingProvider.select((state) => state.smartDelayLaunch),
@@ -250,13 +251,11 @@ class _WindowHeaderState extends State<WindowHeader> {
               final alwaysShowTitleBar = ref.watch(
                 vpnSettingProvider.select((state) => state.alwaysShowTitleBar),
               );
-              final showButtons = !shouldUseHoverEffect || alwaysShowTitleBar || isHovering;
+              final showButtons =
+                  !shouldUseHoverEffect || alwaysShowTitleBar || isHovering;
               return Opacity(
                 opacity: showButtons ? 1.0 : 0.0,
-                child: IgnorePointer(
-                  ignoring: !showButtons,
-                  child: child,
-                ),
+                child: IgnorePointer(ignoring: !showButtons, child: child),
               );
             },
             child: Row(
