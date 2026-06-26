@@ -1,3 +1,7 @@
+<h4 align="right">
+  <strong>简体中文</strong> | <a href="README_en.md">English</a>
+</h4>
+
 <h1 align="center">⚡ Bettbox</h1>
 <p align="center">
   <strong>Another Better Mihomo Client</strong>
