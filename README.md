@@ -29,6 +29,9 @@ Bettbox意为: Better Experience, Out of the box，卓越体验，亦开箱即�
 
 请前往 [Releases](https://github.com/appshubcc/Bettbox/releases) 页面下载最新适合您平台和系统的安装包
 
+其他安装方式:</br>
+ArchLinux: yay -S bettbox-bin 或 paru -S bettbox-bin
+
 * **桌面端多平台**: Windows (x64/arm64), macOS (Intel/Apple Silicon), Linux (x64/arm64)
 * **Windows7**: 请配合 [[VxKex]](https://github.com/i486/VxKex/releases) 使用
 * **Android平台**: Android (ARMv8/ ARMv7/ x86_64/ Universal) 
@@ -42,7 +45,7 @@ Bettbox意为: Better Experience, Out of the box，卓越体验，亦开箱即�
 
 <div align="left">
 
-[![Telegram Group](https://img.shields.io/badge/Appshub-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Appshub-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
+[![Telegram GroArchLinuxup](https://img.shields.io/badge/Appshub-Chat-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_chat) [![Telegram Channel](https://img.shields.io/badge/Appshub-Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/appshub_channel)
 
 ---
 </div>
