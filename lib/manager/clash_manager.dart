@@ -31,7 +31,10 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     clashMessage.addListener(this);
     ref.listenManual(needSetupProvider, (prev, next) {
       if (prev != next) {
-        globalState.appController.handleChangeProfile();
+        final profileChanged = prev?.a != next.a;
+        globalState.appController.handleChangeProfile(
+          hardRestart: system.isDesktop && profileChanged,
+        );
       }
     });
     ref.listenManual(coreStateProvider, (prev, next) async {

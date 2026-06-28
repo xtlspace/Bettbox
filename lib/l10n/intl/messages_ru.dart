@@ -394,7 +394,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Улучшенный NAT",
     ),
     "endpointIndependentNatDesc": MessageLookupByLibrary.simpleMessage(
-      "Включить NAT независимый от конечной точки",
+      "Оптимизация работы приложений UDP/P2P",
     ),
     "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "exclude": MessageLookupByLibrary.simpleMessage("Скрыть из недавних"),
@@ -440,6 +440,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fakeipRangeV6": MessageLookupByLibrary.simpleMessage("Диапазон FakeIPv6"),
     "fakeipTtl": MessageLookupByLibrary.simpleMessage("Время жизни FakeIP"),
     "fallback": MessageLookupByLibrary.simpleMessage("Резервный DNS"),
+    "fallbackConcurrent": MessageLookupByLibrary.simpleMessage(
+      "Параллельный запрос Fallback",
+    ),
+    "fallbackConcurrentDesc": MessageLookupByLibrary.simpleMessage(
+      "Одновременный запрос к основному DNS и Fallback",
+    ),
     "fallbackDesc": MessageLookupByLibrary.simpleMessage(
       "Обычно используются зарубежные DNS",
     ),
@@ -466,7 +472,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "findProcessMode": MessageLookupByLibrary.simpleMessage("Поиск процесса"),
     "findProcessModeDesc": MessageLookupByLibrary.simpleMessage(
-      "Включить поиск процесса",
+      "Включить сопоставление процессов",
     ),
     "fontFamily": MessageLookupByLibrary.simpleMessage("Шрифт"),
     "forceDnsMapping": MessageLookupByLibrary.simpleMessage(
@@ -619,6 +625,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "loose": MessageLookupByLibrary.simpleMessage("Максимальная"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Обновить IP"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("Расход памяти"),
+    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
+      "Текущее значение памяти — это динамическое потребление стека ядра во время выполнения, а не полная статистика памяти приложения, только для справки.",
+    ),
     "messageTest": MessageLookupByLibrary.simpleMessage("Тест сообщения"),
     "messageTestTip": MessageLookupByLibrary.simpleMessage(
       "Это тестовое сообщение.",
@@ -1105,7 +1114,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "toggle": MessageLookupByLibrary.simpleMessage("Переключить"),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("Тональный акцент"),
-    "tooManyRules": MessageLookupByLibrary.simpleMessage("Максимум 2 правила"),
+    "tooManyRules": MessageLookupByLibrary.simpleMessage("Максимум 5 правил"),
     "tools": MessageLookupByLibrary.simpleMessage("Настройки"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("Общий трафик"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Порт Tproxy"),
@@ -1125,7 +1134,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tun": MessageLookupByLibrary.simpleMessage("Виртуальный адаптер"),
     "tunDesc": MessageLookupByLibrary.simpleMessage(
-      "Перехват всего трафика устройства",
+      "Использовать TUN для перехвата трафика устройства",
     ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "Для включения виртуального адаптера требуются права администратора. Запустите программу от имени администратора.",

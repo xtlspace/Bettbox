@@ -180,6 +180,10 @@ func readFile(path string) ([]byte, error) {
 func updateConfig(params *UpdateParams) {
 	runLock.Lock()
 	defer runLock.Unlock()
+	if currentConfig == nil {
+		log.Infoln("[APP] updateConfig called before setupConfig")
+		return
+	}
 	general := currentConfig.General
 	wasDebug := general.LogLevel == log.DEBUG
 	if params.MixedPort != nil {

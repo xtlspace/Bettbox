@@ -632,6 +632,12 @@ class GlobalState {
       }
     }
 
+    if (rawConfig['dns'] != null && rawConfig['dns']['fallback-filter'] != null) {
+      if (rawConfig['dns']['fallback-filter'] is Map) {
+        (rawConfig['dns']['fallback-filter'] as Map).remove('geosite');
+      }
+    }
+
     if (system.isAndroid && rawConfig['dns']['listen'] != null) {
       final listen = rawConfig['dns']['listen'] as String;
       if (listen.endsWith(':53')) {

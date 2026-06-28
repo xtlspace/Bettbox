@@ -766,39 +766,29 @@ class GeoipCodeItem extends ConsumerWidget {
   }
 }
 
-class GeositeItem extends StatelessWidget {
-  const GeositeItem({super.key});
+class FallbackConcurrentItem extends ConsumerWidget {
+  const FallbackConcurrentItem({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ListItem.open(
-      title: const Text('Geosite'),
-      delegate: OpenDelegate(
-        blur: false,
-        title: 'Geosite',
-        widget: Consumer(
-          builder: (_, ref, _) {
-            final geosite = ref.watch(
-              patchClashConfigProvider.select(
-                (state) => state.dns.fallbackFilter.geosite,
-              ),
-            );
-            return ListInputPage(
-              title: 'Geosite',
-              items: geosite,
-              titleBuilder: (item) => Text(item),
-              onChange: (items) {
-                ref
-                    .read(patchClashConfigProvider.notifier)
-                    .updateState(
-                      (state) => state.copyWith.dns.fallbackFilter(
-                        geosite: List.from(items),
-                      ),
-                    );
-              },
-            );
-          },
-        ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fallbackLazyQuery = ref.watch(
+      patchClashConfigProvider.select(
+        (state) => state.dns.fallbackLazyQuery,
+      ),
+    );
+    final value = !fallbackLazyQuery;
+    return ListItem.switchItem(
+      title: Text(appLocalizations.fallbackConcurrent),
+      subtitle: Text(appLocalizations.fallbackConcurrentDesc),
+      delegate: SwitchDelegate(
+        value: value,
+        onChanged: (bool newValue) async {
+          ref
+              .read(patchClashConfigProvider.notifier)
+              .updateState(
+                (state) => state.copyWith.dns(fallbackLazyQuery: !newValue),
+              );
+        },
       ),
     );
   }
@@ -927,7 +917,7 @@ class FallbackFilterOptions extends StatelessWidget {
         items: [
           const GeoipItem(),
           const GeoipCodeItem(),
-          const GeositeItem(),
+          const FallbackConcurrentItem(),
           const IpcidrItem(),
           const DomainItem(),
         ],

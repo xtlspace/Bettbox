@@ -278,7 +278,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "enableOverride": MessageLookupByLibrary.simpleMessage("啟用覆寫"),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT 增強"),
     "endpointIndependentNatDesc": MessageLookupByLibrary.simpleMessage(
-      "啟用獨立於端點的 NAT",
+      "優化 UDP/P2P 應用體驗",
     ),
     "entries": MessageLookupByLibrary.simpleMessage("個項目"),
     "exclude": MessageLookupByLibrary.simpleMessage("背景隱藏"),
@@ -314,6 +314,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "fakeipRangeV6": MessageLookupByLibrary.simpleMessage("FakeIPv6 範圍"),
     "fakeipTtl": MessageLookupByLibrary.simpleMessage("FakeIP 有效時間"),
     "fallback": MessageLookupByLibrary.simpleMessage("Fallback"),
+    "fallbackConcurrent": MessageLookupByLibrary.simpleMessage("Fallback併發"),
+    "fallbackConcurrentDesc": MessageLookupByLibrary.simpleMessage(
+      "使用默認DNS和Fallback同步查詢",
+    ),
     "fallbackDesc": MessageLookupByLibrary.simpleMessage("一般情況下使用境外 DNS"),
     "fallbackFilter": MessageLookupByLibrary.simpleMessage("Fallback 過濾"),
     "fcmOptimization": MessageLookupByLibrary.simpleMessage("FCM 優化"),
@@ -329,7 +333,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "fileIsUpdate": MessageLookupByLibrary.simpleMessage("檔案有修改，是否儲存修改"),
     "filterSystemApp": MessageLookupByLibrary.simpleMessage("過濾系統應用程式"),
     "findProcessMode": MessageLookupByLibrary.simpleMessage("尋找處理程序"),
-    "findProcessModeDesc": MessageLookupByLibrary.simpleMessage("開啟後將可以尋找處理程序"),
+    "findProcessModeDesc": MessageLookupByLibrary.simpleMessage(
+      "開啟後可以匹配尋找處理程序",
+    ),
     "fontFamily": MessageLookupByLibrary.simpleMessage("字體"),
     "forceDnsMapping": MessageLookupByLibrary.simpleMessage("強制 DNS 映射"),
     "forceDnsMappingDesc": MessageLookupByLibrary.simpleMessage(
@@ -349,9 +355,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "generateSecret": MessageLookupByLibrary.simpleMessage("產生"),
     "geoData": MessageLookupByLibrary.simpleMessage("地理資料"),
     "geodataLoader": MessageLookupByLibrary.simpleMessage("GEO 節能"),
-    "geodataLoaderDesc": MessageLookupByLibrary.simpleMessage(
-      "開啟後使用 GEO 低記憶體載入器",
-    ),
+    "geodataLoaderDesc": MessageLookupByLibrary.simpleMessage("使用 GEO 低記憶體載入器"),
     "geoipCode": MessageLookupByLibrary.simpleMessage("GeoIP 代碼"),
     "getOriginRules": MessageLookupByLibrary.simpleMessage("獲取原始規則"),
     "global": MessageLookupByLibrary.simpleMessage("全域"),
@@ -431,6 +435,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "loose": MessageLookupByLibrary.simpleMessage("寬鬆"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("重新取得 IP"),
     "memoryInfo": MessageLookupByLibrary.simpleMessage("記憶體資訊"),
+    "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
+      "當前記憶體資訊數值顯示為內核運行時的動態堆棧記憶體佔用，非完整APP記憶體統計，僅供參考。",
+    ),
     "messageTest": MessageLookupByLibrary.simpleMessage("訊息測試"),
     "messageTestTip": MessageLookupByLibrary.simpleMessage("這是一條訊息。"),
     "min": MessageLookupByLibrary.simpleMessage("最小"),
@@ -771,7 +778,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tlsPortSniffer": MessageLookupByLibrary.simpleMessage("TLS 連接埠嗅探"),
     "toggle": MessageLookupByLibrary.simpleMessage("切換"),
     "tonalSpotScheme": MessageLookupByLibrary.simpleMessage("調性點綴"),
-    "tooManyRules": MessageLookupByLibrary.simpleMessage("最多允許 2 個規則"),
+    "tooManyRules": MessageLookupByLibrary.simpleMessage("最多允許 5 個規則"),
     "tools": MessageLookupByLibrary.simpleMessage("更多"),
     "totalTraffic": MessageLookupByLibrary.simpleMessage("傳輸總量"),
     "tproxyPort": MessageLookupByLibrary.simpleMessage("Tproxy 連接埠"),
@@ -786,7 +793,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "tryManualRefresh": MessageLookupByLibrary.simpleMessage("請嘗試手動重新整理"),
     "tun": MessageLookupByLibrary.simpleMessage("虛擬網卡"),
-    "tunDesc": MessageLookupByLibrary.simpleMessage("接管目前裝置全域流量"),
+    "tunDesc": MessageLookupByLibrary.simpleMessage("使用 TUN 接管裝置流量"),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
       "啟用虛擬網卡需要管理員權限，請以管理員身分執行程式",
     ),

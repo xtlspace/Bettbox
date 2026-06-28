@@ -324,6 +324,7 @@ const _$ActionMethodEnumMap = {
   ActionMethod.flushDnsCache: 'flushDnsCache',
   ActionMethod.generateAgeKeyPair: 'generateAgeKeyPair',
   ActionMethod.convertAgeSecretKeyToPublicKey: 'convertAgeSecretKeyToPublicKey',
+  ActionMethod.decryptAgeConfig: 'decryptAgeConfig',
   ActionMethod.setState: 'setState',
   ActionMethod.startTun: 'startTun',
   ActionMethod.stopTun: 'stopTun',

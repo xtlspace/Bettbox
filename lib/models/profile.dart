@@ -178,22 +178,44 @@ extension ProfileExtension on Profile {
   }
 
   Future<Profile> saveFile(Uint8List bytes) async {
-    final message = await clashCore.validateConfig(utf8.decode(bytes), ageSecretKey: ageSecretKey);
+    String content = utf8.decode(bytes);
+    final key = ageSecretKey;
+    if (key != null && key.isNotEmpty) {
+      try {
+        final decrypted = await clashCore.decryptAgeConfig(content, key);
+        if (decrypted.isNotEmpty) {
+          content = decrypted;
+        }
+      } catch (_) {}
+    }
+    final message =
+        await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
     if (message.isNotEmpty) {
       throw message;
     }
     final file = await getFile();
-    await file.writeAsBytes(bytes);
+    await file.writeAsString(content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
 
   Future<Profile> saveFileWithString(String value) async {
-    final message = await clashCore.validateConfig(value, ageSecretKey: ageSecretKey);
+    String content = value;
+    final key = ageSecretKey;
+    if (key != null && key.isNotEmpty) {
+      try {
+        final decrypted = await clashCore.decryptAgeConfig(content, key);
+        if (decrypted.isNotEmpty) {
+          content = decrypted;
+        }
+      } catch (_) {}
+    }
+    final message =
+        await clashCore.validateConfig(content, ageSecretKey: ageSecretKey);
     if (message.isNotEmpty) {
       throw message;
     }
     final file = await getFile();
-    await file.writeAsString(value);
+    await file.writeAsString(content);
     return copyWith(lastUpdateDate: DateTime.now());
   }
 }

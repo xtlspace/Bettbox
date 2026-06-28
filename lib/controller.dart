@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
+import 'package:synchronized/synchronized.dart';
 
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:yaml/yaml.dart';
@@ -36,12 +37,15 @@ class AppController {
   WidgetRef get ref => _ref;
 
   Timer? _wakelockSyncTimer;
-  Completer<void>? _restartLock;
   Completer<void>? _exitLock;
+  final Lock _coreLifecycleLock = Lock(reentrant: true);
   int _backgroundLoadVersion = 0;
 
   int _updateGroupsRetryCount = 0;
   bool _isUpdatingGroups = false;
+  Timer? _updateGroupsRetryTimer;
+  int _coreGeneration = 0;
+  int _setupGeneration = 0;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
@@ -94,43 +98,65 @@ class AppController {
     }, args: [groupName, proxyName]);
   }
 
-  Future<void> restartCore() async {
-    if (_restartLock != null) {
-      return _restartLock!.future;
+  void _invalidateCoreReads() {
+    _coreGeneration++;
+    _backgroundLoadVersion++;
+    _updateGroupsRetryTimer?.cancel();
+    _updateGroupsRetryTimer = null;
+    _updateGroupsRetryCount = 0;
+  }
+
+  Future<void> restartCore() {
+    return _coreLifecycleLock.synchronized(() async {
+      _ref.read(isRestartingCoreProvider.notifier).state = true;
+      try {
+        await _restartCore();
+      } finally {
+        _ref.read(isRestartingCoreProvider.notifier).state = false;
+      }
+    });
+  }
+
+  Future<void> _restartCore({
+    bool setupConfig = true,
+    bool refreshData = true,
+  }) async {
+    commonPrint.log('restart core');
+    _invalidateCoreReads();
+
+    final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
+    if (wasRunning) {
+      await globalState.handleStop();
+      _ref.read(runTimeProvider.notifier).value = null;
+    }
+    if (system.isAndroid) {
+      clashCore.closeConnections();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    if (system.isDesktop) {
+      lastProfileModified = null;
+      await clashService!.reStart();
+    }
+    await _initCore();
+
+    final configured = setupConfig ? await _setupCoreConfig() : false;
+    if (refreshData && configured) {
+      await updateGroups();
+      await updateProviders();
     }
 
-    _restartLock = Completer<void>();
-    commonPrint.log('restart core');
-
-    try {
-      final wasRunning = _ref.read(runTimeProvider.notifier).isStart;
-      if (wasRunning) {
-        await globalState.handleStop();
-        _ref.read(runTimeProvider.notifier).value = null;
-      }
-      if (system.isAndroid) {
-        clashCore.closeConnections();
-        await clashCore.flushFakeIP();
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
-      if (system.isDesktop) {
-        await clashService!.reStart();
-      }
-      await _initCore();
-      if (wasRunning) {
-        if (system.isDesktop) {
-          await _fastStart();
-        } else {
-          await globalState.handleStart();
-        }
-      }
-    } finally {
-      _restartLock?.complete();
-      _restartLock = null;
+    if (wasRunning) {
+      await globalState.handleStart([updateRunTime, updateTraffic]);
+      _scheduleCheckIpRefresh();
+      _backgroundLoad();
     }
   }
 
-  Future<void> updateStatus(bool isStart) async {
+  Future<void> updateStatus(bool isStart) {
+    return _coreLifecycleLock.synchronized(() => _updateStatus(isStart));
+  }
+
+  Future<void> _updateStatus(bool isStart) async {
     if (isStart) {
       await _fastStart();
     } else {
@@ -201,7 +227,7 @@ class AppController {
       return;
     }
 
-    final needReapply = await _checkIfNeedReapply();
+    final needReapply = await _needsSetupConfig();
     if (needReapply) {
       await _quickSetupConfig();
     }
@@ -254,13 +280,24 @@ class AppController {
     return true;
   }
 
-  Future<void> _setupCoreConfig({bool? enableTun}) async {
-    await _ref.read(currentProfileProvider)?.checkAndUpdate();
+  Future<bool> _needsSetupConfig() async {
+    if (_setupGeneration != _coreGeneration) {
+      return true;
+    }
+    return _checkIfNeedReapply();
+  }
+
+  Future<bool> _setupCoreConfig({bool? enableTun}) async {
+    final currentProfile = _ref.read(currentProfileProvider);
+    if (currentProfile == null) {
+      return false;
+    }
+    await currentProfile.checkAndUpdate();
     final patchConfig = _ref.read(patchClashConfigProvider);
     final targetTun = enableTun ?? patchConfig.tun.enable;
 
     final realTunEnable = await _prepareTun(targetTun);
-    if (realTunEnable == null) return;
+    if (realTunEnable == null) return false;
 
     final realPatchConfig = patchConfig.copyWith.tun(enable: realTunEnable);
     final params = await globalState.getSetupParams(
@@ -275,11 +312,13 @@ class AppController {
     lastProfileModified = await _ref.read(
       currentProfileProvider.select((state) => state?.profileLastModified),
     );
+    _setupGeneration = _coreGeneration;
+    return true;
   }
 
-  Future<void> _quickSetupConfig({bool? enableTun}) async {
-    await safeRun(() async {
-      await _setupCoreConfig(enableTun: enableTun);
+  Future<bool?> _quickSetupConfig({bool? enableTun}) async {
+    return await safeRun(() async {
+      return await _setupCoreConfig(enableTun: enableTun);
     }, needLoading: false);
   }
 
@@ -468,26 +507,35 @@ class AppController {
     setProfile(profile.copyWith(currentGroupName: groupName));
   }
 
-  Future<void> updateClashConfig() async {
-    await safeRun(() async {
-      await _updateClashConfig();
-    }, needLoading: true);
+  Future<void> updateClashConfig() {
+    return _coreLifecycleLock.synchronized(() async {
+      await safeRun(() async {
+        await _updateClashConfig();
+      }, needLoading: true);
+    });
   }
 
   Future<bool?> _prepareTun(bool targetTun) async {
     final res = await _requestAdmin(targetTun);
     if (res.needRestart) {
-      await restartCore();
+      await _restartCore(setupConfig: false, refreshData: false);
     } else if (res.isError) {
       return null;
     }
-    return _ref.read(realTunEnableProvider);
+    return res.data ?? _ref.read(realTunEnableProvider);
   }
 
   Future<void> _updateClashConfig() async {
     final updateParams = _ref.read(updateParamsProvider);
-    final realTunEnable = await _prepareTun(updateParams.tun.enable);
-    if (realTunEnable == null) return;
+    final tunResult = await _requestAdmin(updateParams.tun.enable);
+    if (tunResult.isError) return;
+
+    final bool realTunEnable =
+        tunResult.data ?? _ref.read(realTunEnableProvider);
+    if (tunResult.needRestart) {
+      await _restartCore();
+      return;
+    }
 
     final message = await clashCore.updateConfig(
       updateParams.copyWith.tun(enable: realTunEnable),
@@ -501,7 +549,8 @@ class AppController {
       final code = await system.authorizeCore();
       switch (code) {
         case AuthorizeCode.success:
-          return Result.success(true, needRestart: true);
+          _ref.read(realTunEnableProvider.notifier).value = enableTun;
+          return Result.success(enableTun, needRestart: true);
         case AuthorizeCode.none:
           break;
         case AuthorizeCode.error:
@@ -516,38 +565,57 @@ class AppController {
     return Result.success(enableTun);
   }
 
-  Future<void> setupClashConfig() async {
-    await safeRun(() async {
-      await _setupCoreConfig();
-    }, needLoading: false);
+  Future<void> setupClashConfig() {
+    return _coreLifecycleLock.synchronized(() async {
+      await safeRun(() async {
+        await _setupCoreConfig();
+      }, needLoading: false);
+    });
   }
 
-  Future _applyProfile() async {
-    _backgroundLoadVersion++;
+  Future<void> _applyProfile() async {
+    _invalidateCoreReads();
     await clashCore.requestGc();
-    await setupClashConfig();
+    final configured = await _setupCoreConfig();
+    if (!configured) return;
     await updateGroups();
     await updateProviders();
   }
 
-  Future applyProfile({bool silence = false}) async {
-    if (silence) {
-      await _applyProfile();
-    } else {
-      await safeRun(() async {
+  Future<void> applyProfile({bool silence = false}) {
+    return _coreLifecycleLock.synchronized(() async {
+      if (silence) {
         await _applyProfile();
-      }, needLoading: true);
-    }
-    addCheckIpNumDebounce();
+      } else {
+        await safeRun(() async {
+          await _applyProfile();
+        }, needLoading: true);
+      }
+    });
   }
 
-  Future<void> handleChangeProfile() async {
-    _ref.read(delayDataSourceProvider.notifier).value = {};
-    await applyProfile(silence: true);
-    await restartCore();
-    _ref.read(logsProvider.notifier).value = FixedList(maxLength);
-    _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
-    globalState.computeHeightMapCache = {};
+  Future<void> handleChangeProfile({bool hardRestart = false}) {
+    return _coreLifecycleLock.synchronized(() async {
+      _ref.read(delayDataSourceProvider.notifier).value = {};
+      if (hardRestart) {
+        _ref.read(isRestartingCoreProvider.notifier).state = true;
+        try {
+          await _restartCore();
+        } finally {
+          _ref.read(isRestartingCoreProvider.notifier).state = false;
+        }
+      } else {
+        if (system.isAndroid) {
+          clashCore.closeConnections();
+          await clashCore.flushFakeIP();
+        }
+        await _applyProfile();
+      }
+      _ref.read(logsProvider.notifier).value = FixedList(maxLength);
+      _ref.read(requestsProvider.notifier).value = FixedList(maxLength);
+      globalState.computeHeightMapCache = {};
+      addCheckIpNumDebounce();
+    });
   }
 
   void updateBrightness() {
@@ -604,12 +672,17 @@ class AppController {
     }
   }
 
-  Future<void> updateGroups() async {
+  Future<void> updateGroups() {
+    return _coreLifecycleLock.synchronized(_updateGroups);
+  }
+
+  Future<void> _updateGroups() async {
     if (_isUpdatingGroups) {
       commonPrint.log('updateGroups already in progress, skipping');
       return;
     }
     _isUpdatingGroups = true;
+    final generation = _coreGeneration;
 
     try {
       final currentGroups = _ref.read(groupsProvider);
@@ -655,34 +728,33 @@ class AppController {
 
       _ref.read(groupsProvider.notifier).value = newGroups;
       _updateGroupsRetryCount = 0;
+      _updateGroupsRetryTimer?.cancel();
+      _updateGroupsRetryTimer = null;
       return;
     } catch (e) {
+      if (generation != _coreGeneration) {
+        return;
+      }
       final currentGroups = _ref.read(groupsProvider);
-      // 所有平台初次加载（groups 为空）都给予更多重试机会
       final isInitialLoad = currentGroups.isEmpty;
       final maxRetryRounds = isInitialLoad ? 6 : 4;
       final retryDelay = isInitialLoad
           ? const Duration(seconds: 2)
           : const Duration(seconds: 3);
       if (currentGroups.isNotEmpty) {
-        commonPrint.log('updateGroups error, keeping existing groups: $e');
+        commonPrint.log('updateGroups error: $e');
         return;
       }
 
       if (_updateGroupsRetryCount >= maxRetryRounds) {
-        commonPrint.log(
-          'updateGroups max retries ($maxRetryRounds) reached, giving up',
-        );
         _updateGroupsRetryCount = 0;
         return;
       }
       _updateGroupsRetryCount++;
-
-      commonPrint.log(
-        'updateGroups initial load failed ($_updateGroupsRetryCount/$maxRetryRounds), scheduling retry in ${retryDelay.inSeconds}s: $e',
-      );
-      Future.delayed(retryDelay, () {
-        updateGroups();
+      _updateGroupsRetryTimer?.cancel();
+      _updateGroupsRetryTimer = Timer(retryDelay, () {
+        if (generation != _coreGeneration) return;
+        unawaited(updateGroups());
       });
     } finally {
       _isUpdatingGroups = false;

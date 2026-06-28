@@ -18,6 +18,11 @@ type ValidateConfigParams struct {
 	AgeSecretKey string `json:"age-secret-key"`
 }
 
+type DecryptAgeConfigParams struct {
+	Data         string `json:"data"`
+	AgeSecretKey string `json:"age-secret-key"`
+}
+
 type GetConfigParams struct {
 	Path         string `json:"path"`
 	AgeSecretKey string `json:"age-secret-key"`
@@ -90,6 +95,7 @@ const (
 	forceGcMethod                  Method = "forceGc"
 	shutdownMethod                 Method = "shutdown"
 	validateConfigMethod           Method = "validateConfig"
+	decryptAgeConfigMethod         Method = "decryptAgeConfig"
 	updateConfigMethod             Method = "updateConfig"
 	getProxiesMethod               Method = "getProxies"
 	changeProxyMethod              Method = "changeProxy"

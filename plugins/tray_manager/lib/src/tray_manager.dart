@@ -143,7 +143,9 @@ class TrayManager {
     int iconSize = 18, // macOS only
   }) async {
     final Map<String, dynamic> arguments = {
-      'id': shortid.generate(),
+      'id': defaultTargetPlatform == TargetPlatform.linux
+          ? 'bettbox'
+          : shortid.generate(),
       'iconPath': path.joinAll([
         path.dirname(Platform.resolvedExecutable),
         'data/flutter_assets',

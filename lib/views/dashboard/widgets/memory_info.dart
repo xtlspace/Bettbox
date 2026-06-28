@@ -79,12 +79,28 @@ class _MemoryInfoState extends State<MemoryInfo> {
     }
   }
 
+  Future<void> _showMemoryInfoDialog(BuildContext context) async {
+    await globalState.showCommonDialog<void>(
+      child: CommonDialog(
+        title: appLocalizations.memoryInfo,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+            },
+            child: Text(appLocalizations.confirm),
+          ),
+        ],
+        child: Text(appLocalizations.memoryInfoDesc),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: getWidgetHeight(1),
       child: CommonCard(
-        info: Info(iconData: Icons.memory, label: appLocalizations.memoryInfo),
         onLongPress: () async {
           // Show confirmation dialog
           final result = await globalState.showCommonDialog<bool>(
@@ -114,36 +130,81 @@ class _MemoryInfoState extends State<MemoryInfo> {
             globalState.showNotifier(appLocalizations.success);
           }
         },
-        child: Container(
-          padding: baseInfoEdgeInsets.copyWith(top: 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: globalState.measure.bodyMediumHeight + 2,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      _memoryValue.showValue,
-                      style: context.textTheme.bodyMedium?.toLight.adjustSize(
-                        1,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              height: globalState.measure.titleMediumHeight + 16,
+              padding: baseInfoEdgeInsets.copyWith(bottom: 0),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Icon(
+                    Icons.memory,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    flex: 1,
+                    child: TooltipText(
+                      text: Text(
+                        appLocalizations.memoryInfo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      _memoryValue.showUnit,
-                      style: context.textTheme.bodyMedium?.toLight.adjustSize(
-                        1,
+                  ),
+                  const SizedBox(width: 2),
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showMemoryInfoDialog(context),
+                      icon: Icon(
+                        size: 16.ap,
+                        Icons.info_outline,
+                        color: context.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Container(
+              padding: baseInfoEdgeInsets.copyWith(top: 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: globalState.measure.bodyMediumHeight + 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          _memoryValue.showValue,
+                          style: context.textTheme.bodyMedium?.toLight.adjustSize(
+                            1,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _memoryValue.showUnit,
+                          style: context.textTheme.bodyMedium?.toLight.adjustSize(
+                            1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

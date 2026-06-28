@@ -213,39 +213,54 @@ class Tray {
       );
       menuItems.add(MenuItem.separator());
     }
-    final autoStartMenuItem = MenuItem.checkbox(
-      label: appLocalizations.autoLaunch,
-      onClick: (_) async {
-        globalState.appController.updateAutoLaunch();
-      },
-      checked: trayState.autoLaunch,
-    );
-    final copyEnvVarMenuItem = MenuItem(
-      label: appLocalizations.copyEnvVar,
-      onClick: (_) async {
-        await _copyEnv(trayState.port);
-      },
-    );
     final restartMenuItem = MenuItem(
       label: appLocalizations.restartApp,
       onClick: (_) async {
         await Restart.restartApp();
       },
     );
-    menuItems.add(autoStartMenuItem);
-    menuItems.add(copyEnvVarMenuItem);
     menuItems.add(restartMenuItem);
 
-    if (!system.isAndroid) {
-      final wakelockMenuItem = MenuItem.checkbox(
-        label: appLocalizations.wakelock,
+    final List<MenuItem> moreMenuItems = [
+      MenuItem.checkbox(
+        label: appLocalizations.autoLaunch,
         onClick: (_) async {
-          await _toggleWakelock(trayState.wakelockEnabled);
+          globalState.appController.updateAutoLaunch();
         },
-        checked: trayState.wakelockEnabled,
+        checked: trayState.autoLaunch,
+      ),
+      MenuItem(
+        label: appLocalizations.copyEnvVar,
+        onClick: (_) async {
+          await _copyEnv(trayState.port);
+        },
+      ),
+      MenuItem(
+        label: appLocalizations.restartCoreTitle,
+        onClick: (_) async {
+          await globalState.appController.restartCore();
+        },
+      ),
+    ];
+
+    if (!system.isAndroid) {
+      moreMenuItems.add(
+        MenuItem.checkbox(
+          label: appLocalizations.wakelock,
+          onClick: (_) async {
+            await _toggleWakelock(trayState.wakelockEnabled);
+          },
+          checked: trayState.wakelockEnabled,
+        ),
       );
-      menuItems.add(wakelockMenuItem);
     }
+
+    menuItems.add(
+      MenuItem.submenu(
+        label: appLocalizations.tools,
+        submenu: Menu(items: moreMenuItems),
+      ),
+    );
 
     menuItems.add(MenuItem.separator());
     final exitMenuItem = MenuItem(
