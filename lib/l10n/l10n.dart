@@ -404,10 +404,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Max 2 rules allowed`
+  /// `Max 5 rules allowed`
   String get tooManyRules {
     return Intl.message(
-      'Max 2 rules allowed',
+      'Max 5 rules allowed',
       name: 'tooManyRules',
       desc: '',
       args: [],
@@ -744,10 +744,10 @@ class AppLocalizations {
     return Intl.message('TUN', name: 'tun', desc: '', args: []);
   }
 
-  /// `Take over global device traffic`
+  /// `Use TUN to take over device traffic`
   String get tunDesc {
     return Intl.message(
-      'Take over global device traffic',
+      'Use TUN to take over device traffic',
       name: 'tunDesc',
       desc: '',
       args: [],
@@ -3719,6 +3719,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Fallback Concurrent`
+  String get fallbackConcurrent {
+    return Intl.message(
+      'Fallback Concurrent',
+      name: 'fallbackConcurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Query default DNS and Fallback synchronously`
+  String get fallbackConcurrentDesc {
+    return Intl.message(
+      'Query default DNS and Fallback synchronously',
+      name: 'fallbackConcurrentDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `GeoIP Code`
   String get geoipCode {
     return Intl.message('GeoIP Code', name: 'geoipCode', desc: '', args: []);
@@ -3964,10 +3984,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Enable endpoint-independent NAT`
+  /// `Optimize UDP/P2P application experience`
   String get endpointIndependentNatDesc {
     return Intl.message(
-      'Enable endpoint-independent NAT',
+      'Optimize UDP/P2P application experience',
       name: 'endpointIndependentNatDesc',
       desc: '',
       args: [],
@@ -4127,6 +4147,16 @@ class AppLocalizations {
   /// `Memory Info`
   String get memoryInfo {
     return Intl.message('Memory Info', name: 'memoryInfo', desc: '', args: []);
+  }
+
+  /// `The current memory information value displayed is the dynamic stack memory usage of the core during runtime, not the complete APP memory statistics, for reference only.`
+  String get memoryInfoDesc {
+    return Intl.message(
+      'The current memory information value displayed is the dynamic stack memory usage of the core during runtime, not the complete APP memory statistics, for reference only.',
+      name: 'memoryInfoDesc',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Cancel`

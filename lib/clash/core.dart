@@ -79,6 +79,10 @@ class ClashCore {
     return clashInterface.validateConfig(data, ageSecretKey: ageSecretKey);
   }
 
+  FutureOr<String> decryptAgeConfig(String data, String ageSecretKey) {
+    return clashInterface.decryptAgeConfig(data, ageSecretKey);
+  }
+
   Future<String> updateConfig(UpdateParams updateParams) async {
     return await clashInterface.updateConfig(updateParams);
   }

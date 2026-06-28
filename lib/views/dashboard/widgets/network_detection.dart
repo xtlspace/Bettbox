@@ -5,6 +5,7 @@ import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class NetworkDetection extends ConsumerStatefulWidget {
   const NetworkDetection({super.key});
@@ -156,10 +157,11 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                                     )
                                   : Container(
                                       padding: const EdgeInsets.all(2),
-                                      child: const AspectRatio(
+                                      child: AspectRatio(
                                         aspectRatio: 1,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                        child: SpinKitThreeBounce(
+                                          color: context.colorScheme.primary,
+                                          size: 16,
                                         ),
                                       ),
                                     ),

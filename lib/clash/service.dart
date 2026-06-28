@@ -24,6 +24,8 @@ class ClashService extends ClashHandlerInterface {
 
   Process? process;
 
+  Completer<void>? _restartCompleter;
+
   TransportType _transportType = TransportType.unixSocket;
   String? _socketPath;
   int? _tcpPort;
@@ -67,10 +69,7 @@ class ClashService extends ClashHandlerInterface {
           await _deleteSocketFile();
           server = await ServerSocket.bind(address, 0, shared: true);
         } else {
-          server = await ServerSocket.bind(
-            InternetAddress.loopbackIPv4,
-            0,
-          );
+          server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
           _tcpPort = server.port;
           commonPrint.log('TCP Server bound to port: $_tcpPort');
         }
@@ -104,8 +103,30 @@ class ClashService extends ClashHandlerInterface {
   }
 
   @override
-  reStart() async {
-    if (isStarting) return;
+  Future<void> reStart() async {
+    final completer = Completer<void>();
+    final previous = _restartCompleter;
+    _restartCompleter = completer;
+
+    if (previous != null) {
+      await previous.future;
+    }
+
+    try {
+      // Perform a real restart so every caller is guaranteed to see a fresh
+      // core after this call returns. Queued calls will run sequentially.
+      await _doRestart();
+    } finally {
+      if (_restartCompleter == completer) {
+        _restartCompleter = null;
+      }
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+  }
+
+  Future<void> _doRestart() async {
     isStarting = true;
     _isDestroying = false;
 
@@ -113,10 +134,13 @@ class ClashService extends ClashHandlerInterface {
 
     process?.kill();
     if (process != null) {
-      await process!.exitCode.timeout(const Duration(seconds: 2), onTimeout: () {
-        process?.kill(ProcessSignal.sigkill);
-        return -1;
-      });
+      await process!.exitCode.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          process?.kill(ProcessSignal.sigkill);
+          return -1;
+        },
+      );
     }
     process = null;
 
@@ -148,7 +172,9 @@ class ClashService extends ClashHandlerInterface {
           isStarting = false;
           return;
         }
-        commonPrint.log('Helper start core failed, falling back to normal mode');
+        commonPrint.log(
+          'Helper start core failed, falling back to normal mode',
+        );
       }
     }
 

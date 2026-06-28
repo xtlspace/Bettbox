@@ -252,6 +252,7 @@ enum ActionMethod {
   flushDnsCache,
   generateAgeKeyPair,
   convertAgeSecretKeyToPublicKey,
+  decryptAgeConfig,
 
   ///Android,
   setState,

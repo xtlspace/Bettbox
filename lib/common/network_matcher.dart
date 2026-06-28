@@ -80,7 +80,7 @@ class NetworkMatcher {
     if (rules.isEmpty) return true;
 
     final ruleList = rules.split(',');
-    if (ruleList.length > 2) return false;
+    if (ruleList.length > 5) return false;
 
     return ruleList.every((rule) => rule.trim().isEmpty || isValidRule(rule));
   }
@@ -88,12 +88,12 @@ class NetworkMatcher {
   static String? getValidationError(
     String rules, {
     String invalidFormatMsg = 'Invalid IP or CIDR format',
-    String tooManyRulesMsg = 'Maximum 2 rules allowed',
+    String tooManyRulesMsg = 'Maximum 5 rules allowed',
   }) {
     if (rules.isEmpty) return null;
 
     final ruleList = rules.split(',');
-    if (ruleList.length > 2) return tooManyRulesMsg;
+    if (ruleList.length > 5) return tooManyRulesMsg;
 
     for (final rule in ruleList) {
       if (rule.trim().isNotEmpty && !isValidRule(rule)) {

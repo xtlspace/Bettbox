@@ -7,6 +7,7 @@ import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class StartButton extends ConsumerStatefulWidget {
   const StartButton({super.key});
@@ -81,6 +82,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
     final canPress = state.isInit && state.hasProfile && !_isDisabled;
+    final isRestarting = ref.watch(isRestartingCoreProvider);
 
     return ValueListenableBuilder<int>(
       valueListenable: dashboardRefreshManager.tick1s,
@@ -91,7 +93,9 @@ class _StartButtonState extends ConsumerState<StartButton> {
           height: getWidgetHeight(1),
           child: CommonCard(
             info: Info(
-              label: isStart
+              label: isRestarting
+                  ? appLocalizations.restartCoreTitle
+                  : isStart
                   ? appLocalizations.runTime
                   : appLocalizations.powerSwitch,
               iconData: Icons.power_settings_new,
@@ -107,7 +111,14 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   SizedBox(
                     height: globalState.measure.bodyMediumHeight + 2,
                     child: FadeThroughBox(
-                      child: _buildContent(context, ref, state, isStart, runTime),
+                      child: _buildContent(
+                        context,
+                        ref,
+                        state,
+                        isStart,
+                        runTime,
+                        isRestarting,
+                      ),
                     ),
                   ),
                 ],
@@ -125,13 +136,17 @@ class _StartButtonState extends ConsumerState<StartButton> {
     StartButtonSelectorState state,
     bool isStart,
     int? runTime,
+    bool isRestarting,
   ) {
     if (!state.isInit) {
       return Container(
         padding: EdgeInsets.all(2),
         child: AspectRatio(
           aspectRatio: 1,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          child: SpinKitThreeBounce(
+            color: context.colorScheme.primary,
+            size: 16,
+          ),
         ),
       );
     }
@@ -142,6 +157,20 @@ class _StartButtonState extends ConsumerState<StartButton> {
         style: context.textTheme.bodyMedium?.toLight.adjustSize(1),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    if (isRestarting) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: SpinKitThreeBounce(
+            color: context.colorScheme.primary,
+            size: 16,
+          ),
+        ),
       );
     }
 

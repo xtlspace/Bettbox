@@ -89,20 +89,27 @@ NavigationItemsState currentNavigationItemsState(Ref ref) {
     true => NavigationItemMode.mobile,
     false => NavigationItemMode.desktop,
   };
-  
+
   var items = navigationItemsState.value
-      .where((element) => element.modes.contains(navigationItemMode) || element.modes.isEmpty)
+      .where(
+        (element) =>
+            element.modes.contains(navigationItemMode) || element.modes.isEmpty,
+      )
       .toList();
-      
+
   if (globalState.isAndroidTV) {
-    items = items.where((element) => [
-      PageLabel.dashboard,
-      PageLabel.proxies,
-      PageLabel.profiles,
-      PageLabel.tools,
-    ].contains(element.label)).toList();
+    items = items
+        .where(
+          (element) => [
+            PageLabel.dashboard,
+            PageLabel.proxies,
+            PageLabel.profiles,
+            PageLabel.tools,
+          ].contains(element.label),
+        )
+        .toList();
   }
-  
+
   return NavigationItemsState(value: items);
 }
 
@@ -168,6 +175,8 @@ ProxyState proxyState(Ref ref) {
 }
 
 final wakelockStateProvider = StateProvider<bool>((ref) => false);
+
+final isRestartingCoreProvider = StateProvider<bool>((ref) => false);
 
 @riverpod
 TrayState trayState(Ref ref) {
@@ -412,9 +421,9 @@ MoreToolsSelectorState moreToolsSelectorState(Ref ref) {
     navigationItemsStateProvider.select((state) {
       return state.value.where((element) {
         final isMore = element.modes.contains(NavigationItemMode.more);
-        
+
         if (globalState.isAndroidTV) {
-           return isMore;
+          return isMore;
         }
 
         final isDesktop = element.modes.contains(NavigationItemMode.desktop);

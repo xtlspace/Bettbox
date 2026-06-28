@@ -14,11 +14,13 @@ import 'package:flutter/services.dart';
 class EditProfileView extends StatefulWidget {
   final Profile profile;
   final BuildContext context;
+  final bool isNew;
 
   const EditProfileView({
     super.key,
     required this.context,
     required this.profile,
+    this.isNew = false,
   });
 
   @override
@@ -31,6 +33,7 @@ class EditProfileViewState extends State<EditProfileView> {
   late TextEditingController autoUpdateDurationController;
   late bool autoUpdate;
   late TextEditingController ageSecretKeyController;
+  FocusNode? urlFocusNode;
   bool _obscureAgeSecretKey = true;
   String? rawText;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -44,11 +47,21 @@ class EditProfileViewState extends State<EditProfileView> {
     super.initState();
     labelController = TextEditingController(text: widget.profile.label);
     urlController = TextEditingController(text: widget.profile.url);
-    autoUpdate = widget.profile.autoUpdate;
+    autoUpdate = widget.isNew ? false : widget.profile.autoUpdate;
     autoUpdateDurationController = TextEditingController(
       text: widget.profile.autoUpdateDuration.inMinutes.toString(),
     );
     ageSecretKeyController = TextEditingController(text: widget.profile.ageSecretKey);
+    if (widget.isNew) {
+      urlFocusNode = FocusNode();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            urlFocusNode?.requestFocus();
+          }
+        });
+      });
+    }
     appPath.getProfilePath(widget.profile.id).then((path) async {
       fileInfoNotifier.value = await _getFileInfo(path);
     });
@@ -60,6 +73,7 @@ class EditProfileViewState extends State<EditProfileView> {
     urlController.dispose();
     autoUpdateDurationController.dispose();
     ageSecretKeyController.dispose();
+    urlFocusNode?.dispose();
     super.dispose();
   }
 
@@ -68,48 +82,62 @@ class EditProfileViewState extends State<EditProfileView> {
     final appController = globalState.appController;
     Profile profile = this.profile.copyWith(
       url: urlController.text,
-      label: labelController.text,
-      ageSecretKey: ageSecretKeyController.text.trim().isEmpty ? null : ageSecretKeyController.text.trim(),
+      label: labelController.text.trim().isEmpty
+          ? null
+          : labelController.text.trim(),
+      ageSecretKey: ageSecretKeyController.text.trim().isEmpty
+          ? null
+          : ageSecretKeyController.text.trim(),
       autoUpdate: autoUpdate,
       autoUpdateDuration: Duration(
         minutes: int.parse(autoUpdateDurationController.text),
       ),
     );
-    final hasUpdate = widget.profile.url != profile.url;
-    if (fileData != null) {
-      if (profile.type == ProfileType.url && autoUpdate) {
-        final res = await globalState.showMessage(
-          title: appLocalizations.tip,
-          message: TextSpan(text: appLocalizations.profileHasUpdate),
-        );
-        if (res == true) {
-          profile = profile.copyWith(autoUpdate: false);
-        }
-      }
-      try {
-        final updatedProfile = await profile.saveFile(fileData!);
-        appController.setProfileAndAutoApply(updatedProfile);
-      } catch (e) {
-        if (mounted) {
-          await globalState.showMessage(
-            title: appLocalizations.tip,
-            message: TextSpan(text: e.toString()),
-          );
-        }
-        return;
-      }
-    } else if (!hasUpdate) {
-      appController.setProfileAndAutoApply(profile);
+    if (widget.isNew) {
+      await appController.safeRun(() async {
+        final updatedProfile = await profile.update();
+        await appController.addProfile(updatedProfile);
+      }, silence: false);
     } else {
-      globalState.appController.safeRun(() async {
-        await Future.delayed(commonDuration);
-        if (hasUpdate) {
-          await appController.updateProfile(profile);
+      final hasUpdate = widget.profile.url != profile.url;
+      if (fileData != null) {
+        if (profile.type == ProfileType.url && autoUpdate) {
+          final res = await globalState.showMessage(
+            title: appLocalizations.tip,
+            message: TextSpan(text: appLocalizations.profileHasUpdate),
+          );
+          if (res == true) {
+            profile = profile.copyWith(autoUpdate: false);
+          }
         }
-      });
+        try {
+          final updatedProfile = await profile.saveFile(fileData!);
+          appController.setProfileAndAutoApply(updatedProfile);
+        } catch (e) {
+          if (mounted) {
+            await globalState.showMessage(
+              title: appLocalizations.tip,
+              message: TextSpan(text: e.toString()),
+            );
+          }
+          return;
+        }
+      } else if (!hasUpdate) {
+        appController.setProfileAndAutoApply(profile);
+      } else {
+        globalState.appController.safeRun(() async {
+          await Future.delayed(commonDuration);
+          if (hasUpdate) {
+            await appController.updateProfile(profile);
+          }
+        });
+      }
     }
     if (mounted) {
       Navigator.of(context).pop();
+      if (widget.isNew && widget.context.mounted) {
+        Navigator.of(widget.context).pop();
+      }
     }
   }
 
@@ -235,16 +263,18 @@ class EditProfileViewState extends State<EditProfileView> {
             labelText: appLocalizations.name,
           ),
           validator: (String? value) {
-            if (value == null || value.isEmpty) {
+            if (!widget.isNew && (value == null || value.isEmpty)) {
               return appLocalizations.profileNameNullValidationDesc;
             }
             return null;
           },
         ),
       ),
-      if (widget.profile.type == ProfileType.url) ...[
+      if (widget.profile.type == ProfileType.url || widget.isNew) ...[
         ListItem(
           title: TextFormField(
+            focusNode: urlFocusNode,
+            autofocus: widget.isNew,
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.url,
             controller: urlController,
@@ -329,9 +359,10 @@ class EditProfileViewState extends State<EditProfileView> {
             ),
           ),
       ],
-      ValueListenableBuilder<FileInfo?>(
-        valueListenable: fileInfoNotifier,
-        builder: (_, fileInfo, _) {
+      if (!widget.isNew)
+        ValueListenableBuilder<FileInfo?>(
+          valueListenable: fileInfoNotifier,
+          builder: (_, fileInfo, _) {
           return FadeThroughBox(
             child: fileInfo == null
                 ? Container()

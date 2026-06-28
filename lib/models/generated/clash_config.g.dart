@@ -217,9 +217,6 @@ _FallbackFilter _$FallbackFilterFromJson(
 ) => _FallbackFilter(
   geoip: json['geoip'] as bool? ?? false,
   geoipCode: json['geoip-code'] as String? ?? 'CN',
-  geosite:
-      (json['geosite'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-      const [],
   ipcidr:
       (json['ipcidr'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
@@ -232,7 +229,6 @@ Map<String, dynamic> _$FallbackFilterToJson(_FallbackFilter instance) =>
     <String, dynamic>{
       'geoip': instance.geoip,
       'geoip-code': instance.geoipCode,
-      'geosite': instance.geosite,
       'ipcidr': instance.ipcidr,
       'domain': instance.domain,
     };
@@ -257,7 +253,7 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       $enumDecodeNullable(_$DnsModeEnumMap, json['enhanced-mode']) ??
       DnsMode.fakeIp,
   fakeIpRange: json['fake-ip-range'] as String? ?? '198.18.0.1/15',
-  fakeIpRangeV6: json['fake-ip-range-v6'] as String? ?? 'fc00::/18',
+  fakeIpRangeV6: json['fake-ip-range6'] as String? ?? '',
   fakeIpFilterMode:
       $enumDecodeNullable(_$FilterModeEnumMap, json['fake-ip-filter-mode']) ??
       FilterMode.blacklist,
@@ -278,7 +274,7 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
         (k, e) => MapEntry(k, e as String),
       ) ??
       const {
-        '+.internal.crop.com': '10.0.0.1',
+        '+.internal.corp.com': '10.0.0.1',
         'geosite:cn': '119.29.29.29',
         'geosite:private': 'system',
         '*': 'system',
@@ -308,6 +304,7 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
       : FallbackFilter.fromJson(
           json['fallback-filter'] as Map<String, dynamic>,
         ),
+  fallbackLazyQuery: json['fallback-lazy-query'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$DnsToJson(_Dns instance) => <String, dynamic>{
@@ -322,7 +319,7 @@ Map<String, dynamic> _$DnsToJson(_Dns instance) => <String, dynamic>{
   'default-nameserver': instance.defaultNameserver,
   'enhanced-mode': _$DnsModeEnumMap[instance.enhancedMode]!,
   'fake-ip-range': instance.fakeIpRange,
-  'fake-ip-range-v6': instance.fakeIpRangeV6,
+  'fake-ip-range6': instance.fakeIpRangeV6,
   'fake-ip-filter-mode': _$FilterModeEnumMap[instance.fakeIpFilterMode]!,
   'fake-ip-filter': instance.fakeIpFilter,
   'fake-ip-ttl': instance.fakeIpTtl,
@@ -333,6 +330,7 @@ Map<String, dynamic> _$DnsToJson(_Dns instance) => <String, dynamic>{
   'direct-nameserver': instance.directNameserver,
   'direct-nameserver-follow-policy': instance.directNameserverFollowPolicy,
   'fallback-filter': instance.fallbackFilter,
+  'fallback-lazy-query': instance.fallbackLazyQuery,
 };
 
 const _$CacheAlgorithmEnumMap = {

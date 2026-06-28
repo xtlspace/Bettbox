@@ -20,6 +20,8 @@ mixin ClashInterface {
 
   FutureOr<String> validateConfig(String data, {String? ageSecretKey});
 
+  FutureOr<String> decryptAgeConfig(String data, String ageSecretKey);
+
   FutureOr<Result> getConfig(String path, {String? ageSecretKey});
 
   Future<Map<String, String>> generateAgeKeyPair();
@@ -207,6 +209,18 @@ abstract class ClashHandlerInterface with ClashInterface {
     };
     return invoke<String>(
       method: ActionMethod.validateConfig,
+      data: json.encode(params),
+    );
+  }
+
+  @override
+  FutureOr<String> decryptAgeConfig(String data, String ageSecretKey) {
+    final params = {
+      'data': data,
+      'age-secret-key': ageSecretKey,
+    };
+    return invoke<String>(
+      method: ActionMethod.decryptAgeConfig,
       data: json.encode(params),
     );
   }

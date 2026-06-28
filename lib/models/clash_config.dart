@@ -341,10 +341,7 @@ extension TunExt on Tun {
       );
     }
 
-    return copyWith(
-      autoRoute: true,
-      routeAddress: [],
-    );
+    return copyWith(autoRoute: true, routeAddress: []);
   }
 }
 
@@ -353,7 +350,6 @@ abstract class FallbackFilter with _$FallbackFilter {
   const factory FallbackFilter({
     @Default(false) bool geoip,
     @Default('CN') @JsonKey(name: 'geoip-code') String geoipCode,
-    @Default([]) List<String> geosite,
     @Default([]) List<String> ipcidr,
     @Default([]) List<String> domain,
   }) = _FallbackFilter;
@@ -383,9 +379,7 @@ abstract class Dns with _$Dns {
     @Default('198.18.0.1/15')
     @JsonKey(name: 'fake-ip-range')
     String fakeIpRange,
-    @Default('fc00::/18')
-    @JsonKey(name: 'fake-ip-range-v6')
-    String fakeIpRangeV6,
+    @Default('') @JsonKey(name: 'fake-ip-range6') String fakeIpRangeV6,
     @Default(FilterMode.blacklist)
     @JsonKey(name: 'fake-ip-filter-mode')
     FilterMode fakeIpFilterMode,
@@ -400,7 +394,7 @@ abstract class Dns with _$Dns {
     List<String> fakeIpFilter,
     @Default(1) @JsonKey(name: 'fake-ip-ttl') int fakeIpTtl,
     @Default({
-      '+.internal.crop.com': '10.0.0.1',
+      '+.internal.corp.com': '10.0.0.1',
       'geosite:cn': '119.29.29.29',
       'geosite:private': 'system',
       '*': 'system',
@@ -421,6 +415,9 @@ abstract class Dns with _$Dns {
     @Default(FallbackFilter())
     @JsonKey(name: 'fallback-filter')
     FallbackFilter fallbackFilter,
+    @Default(false)
+    @JsonKey(name: 'fallback-lazy-query')
+    bool fallbackLazyQuery,
   }) = _Dns;
 
   factory Dns.fromJson(Map<String, Object?> json) => _$DnsFromJson(json);
@@ -567,10 +564,7 @@ abstract class ParsedRule with _$ParsedRule {
 extension ParsedRuleExt on ParsedRule {
   String get value {
     if (ruleAction == RuleAction.MATCH) {
-      return [
-        ruleAction.value,
-        ruleTarget,
-      ].join(',');
+      return [ruleAction.value, ruleTarget].join(',');
     }
     return [
       ruleAction.value,
