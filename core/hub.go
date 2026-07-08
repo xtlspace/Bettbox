@@ -96,7 +96,7 @@ func handleValidateConfig(params *ValidateConfigParams) string {
 		defer age.SetGlobalSecretKeys()
 	}
 
-	_, err := config.UnmarshalRawConfig([]byte(params.Data))
+	_, err := config.Parse([]byte(params.Data))
 	if err != nil {
 		return err.Error()
 	}
@@ -117,7 +117,7 @@ func handleDecryptAgeConfig(params *DecryptAgeConfigParams) string {
 func handleGetProxies() map[string]constant.Proxy {
 	runLock.Lock()
 	defer runLock.Unlock()
-	return tunnel.ProxiesWithProviders()
+	return getProxiesWithProviders()
 }
 
 func handleChangeProxy(data string, fn func(string string)) {
@@ -132,7 +132,7 @@ func handleChangeProxy(data string, fn func(string string)) {
 		}
 		groupName := *params.GroupName
 		proxyName := *params.ProxyName
-		proxies := tunnel.ProxiesWithProviders()
+		proxies := getProxiesWithProviders()
 		group, ok := proxies[groupName]
 		if !ok {
 			fn("Not found group")
@@ -209,7 +209,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(params.Timeout))
 		defer cancel()
 
-		proxies := tunnel.ProxiesWithProviders()
+		proxies := getProxiesWithProviders()
 		proxy := proxies[params.ProxyName]
 
 		delayData := &Delay{
@@ -441,6 +441,10 @@ func handleGetMemory(fn func(value string)) {
 	go func() {
 		fn(strconv.FormatUint(statistic.DefaultManager.Memory(), 10))
 	}()
+}
+
+func handleGetMode() string {
+	return tunnel.Mode().String()
 }
 
 func handleSetState(params string) {

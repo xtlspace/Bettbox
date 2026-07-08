@@ -5,7 +5,7 @@ package pool
 const (
 	// RelayBufferSize using for tcp
 	// io.Copy default buffer size is 32 KiB
-	RelayBufferSize = 8 * 1024
+	RelayBufferSize = 16 * 1024
 
 	// UDPBufferSize using for udp
 	// Most UDPs are smaller than the MTU, and the TUN's MTU

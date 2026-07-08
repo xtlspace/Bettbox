@@ -325,6 +325,7 @@ const _$ActionMethodEnumMap = {
   ActionMethod.generateAgeKeyPair: 'generateAgeKeyPair',
   ActionMethod.convertAgeSecretKeyToPublicKey: 'convertAgeSecretKeyToPublicKey',
   ActionMethod.decryptAgeConfig: 'decryptAgeConfig',
+  ActionMethod.getMode: 'getMode',
   ActionMethod.setState: 'setState',
   ActionMethod.startTun: 'startTun',
   ActionMethod.stopTun: 'stopTun',

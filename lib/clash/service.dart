@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:bett_box/clash/interface.dart';
 import 'package:bett_box/common/common.dart';
+import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/helper/helper.dart';
 import 'package:bett_box/models/core.dart';
 import 'package:bett_box/state.dart';
@@ -87,6 +88,9 @@ class ClashService extends ClashHandlerInterface {
                 },
                 onError: (error) {
                   commonPrint.log('Frame decode error: $error');
+                },
+                onDone: () {
+                  commonPrint.log('Socket connection closed');
                 },
               );
         }
@@ -191,16 +195,11 @@ class ClashService extends ClashHandlerInterface {
   }
 
   Future<void> _waitForCoreReady() async {
-    const maxAttempts = 5;
-    const interval = Duration(milliseconds: 1000);
-
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-      if (socketCompleter.isCompleted) return;
-      await Future.delayed(interval);
+    try {
+      await socketCompleter.future.timeout(const Duration(seconds: 5));
+    } catch (_) {
+      commonPrint.log('Core ready timeout after 5s');
     }
-    commonPrint.log(
-      'Core ready timeout after ${maxAttempts * interval.inMilliseconds}ms',
-    );
   }
 
   @override
@@ -257,6 +256,22 @@ class ClashService extends ClashHandlerInterface {
     process?.kill();
     process = null;
     return true;
+  }
+
+  Future<bool> checkCoreHealth({
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    if (_isDestroying || globalState.isExiting || isStarting) return false;
+    if (!socketCompleter.isCompleted) return false;
+    try {
+      final result = await invoke<bool>(
+        method: ActionMethod.getIsInit,
+        timeout: timeout,
+      );
+      return result == true;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:bett_box/common/common.dart';
-import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
@@ -17,28 +16,30 @@ class StartButton extends ConsumerStatefulWidget {
 }
 
 class _StartButtonState extends ConsumerState<StartButton> {
-  static const Duration _disableDuration = Duration(milliseconds: 1000);
-  Timer? _disableTimer;
   bool _isDisabled = false;
+  bool? _optimisticStart;
 
-  void _handleStart() {
+  void _handleStart() async {
     if (_isDisabled) return;
-    _disableTimer?.cancel();
-    setState(() {
-      _isDisabled = true;
-    });
-    _disableTimer = Timer(_disableDuration, () {
-      if (!mounted) return;
-      setState(() {
-        _isDisabled = false;
-      });
-    });
     final isStart = ref.read(runTimeProvider) != null;
     final newState = !isStart;
+    setState(() {
+      _isDisabled = true;
+      _optimisticStart = newState;
+    });
 
-    debouncer.call(FunctionTag.updateStatus, () {
-      globalState.appController.updateStatus(newState);
-    }, duration: commonDuration);
+    try {
+      await globalState.appController.updateStatus(newState);
+    } catch (e) {
+      commonPrint.log('updateStatus failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDisabled = false;
+          _optimisticStart = null;
+        });
+      }
+    }
   }
 
   Future<void> _handleLongPress() async {
@@ -73,12 +74,6 @@ class _StartButtonState extends ConsumerState<StartButton> {
   }
 
   @override
-  void dispose() {
-    _disableTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
     final canPress = state.isInit && state.hasProfile && !_isDisabled;
@@ -89,13 +84,14 @@ class _StartButtonState extends ConsumerState<StartButton> {
       builder: (_, _, _) {
         final runTime = ref.read(runTimeProvider);
         final isStart = runTime != null;
+        final displayStart = _optimisticStart ?? isStart;
         return SizedBox(
           height: getWidgetHeight(1),
           child: CommonCard(
             info: Info(
               label: isRestarting
                   ? appLocalizations.restartCoreTitle
-                  : isStart
+                  : displayStart
                   ? appLocalizations.runTime
                   : appLocalizations.powerSwitch,
               iconData: Icons.power_settings_new,
@@ -118,6 +114,7 @@ class _StartButtonState extends ConsumerState<StartButton> {
                         isStart,
                         runTime,
                         isRestarting,
+                        _isDisabled,
                       ),
                     ),
                   ),
@@ -137,8 +134,9 @@ class _StartButtonState extends ConsumerState<StartButton> {
     bool isStart,
     int? runTime,
     bool isRestarting,
+    bool isDisabled,
   ) {
-    if (!state.isInit) {
+    if (!state.isInit || isDisabled) {
       return Container(
         padding: EdgeInsets.all(2),
         child: AspectRatio(

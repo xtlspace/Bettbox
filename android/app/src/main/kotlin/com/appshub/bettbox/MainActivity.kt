@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
+import android.view.MotionEvent
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.appshub.bettbox.plugins.AppPlugin
 import com.appshub.bettbox.plugins.ServicePlugin
@@ -73,15 +75,20 @@ class MainActivity : FlutterActivity() {
 
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        return try {
+            super.dispatchTouchEvent(ev)
+        } catch (e: RuntimeException) {
+            if (e.message?.contains("FlutterJNI is not attached to native") == true) {
+                Log.w("MainActivity", "Ignore touch event while FlutterJNI is not attached")
+                false
+            } else {
+                throw e
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        if (GlobalState.currentRunState != RunState.STOP) {
-            val engineCache = FlutterEngineCache.getInstance()
-            engineCache.get(MAIN_ENGINE_ID)?.let { engine ->
-                engine.destroy()
-                engineCache.remove(MAIN_ENGINE_ID)
-            }
-            GlobalState.flutterEngine = null
-        }
     }
 }

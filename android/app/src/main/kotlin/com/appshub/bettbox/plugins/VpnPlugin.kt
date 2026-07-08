@@ -419,6 +419,16 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    fun updateNotificationSpeed(profileName: String, speedInfo: String) {
+        scope.launch {
+            runCatching {
+                (bettBoxService as? BettboxVpnService)?.updateNotificationSpeed(profileName, speedInfo)
+            }.onFailure {
+                android.util.Log.e("VpnPlugin", "updateNotificationSpeed error: ${it.message}")
+            }
+        }
+    }
+
     fun getStatus(): Boolean {
         return GlobalState.runLock.withLock {
             GlobalState.currentRunState == RunState.START && bettBoxService != null

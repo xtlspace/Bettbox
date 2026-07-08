@@ -79,6 +79,7 @@ class System {
     if (await checkIsAdmin()) return AuthorizeCode.none;
 
     if (system.isWindows) {
+      if (await windows?._isHelperHealthy() ?? false) return AuthorizeCode.none;
       final result = await windows?.registerService();
       return result == true ? AuthorizeCode.success : AuthorizeCode.error;
     }
@@ -131,6 +132,25 @@ class System {
     }
 
     if (Platform.isLinux) {
+      final escapedCorePath = _shellEscape(appPath.corePath);
+
+      try {
+        final pkexecResult = await Process.run('pkexec', [
+          'sh',
+          '-c',
+          'chown root:root $escapedCorePath && chmod u+s $escapedCorePath && sync',
+        ]);
+        if (pkexecResult.exitCode == 0) {
+          return AuthorizeCode.success;
+        }
+        if (pkexecResult.exitCode != 127) {
+          return AuthorizeCode.error;
+        }
+      } catch (e) {
+        commonPrint.log('pkexec failed: $e');
+      }
+
+      window?.show();
       final shell = Platform.environment['SHELL'] ?? 'bash';
       final password = await globalState.showCommonDialog<String>(
         child: InputDialog(
@@ -143,7 +163,6 @@ class System {
         return AuthorizeCode.error;
       }
       final escapedPassword = _shellEscape(password);
-      final escapedCorePath = _shellEscape(appPath.corePath);
       final result = await Process.run(shell, [
         '-c',
         'echo $escapedPassword | sudo -S chown root:root $escapedCorePath && echo $escapedPassword | sudo -S chmod u+s $escapedCorePath && sync',
@@ -396,10 +415,7 @@ class Windows {
     await Process.run('sc', ['stop', appHelperService]);
   }
 
-  Future<bool> registerTask(
-    String appName, {
-    bool requireNetwork = true,
-  }) async {
+  Future<bool> registerTask(String appName) async {
     final executablePath = Platform.resolvedExecutable;
     final workingDirectory = dirname(executablePath);
 
@@ -428,7 +444,7 @@ class Windows {
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <AllowHardTerminate>false</AllowHardTerminate>
     <StartWhenAvailable>true</StartWhenAvailable>
-    <RunOnlyIfNetworkAvailable>$requireNetwork</RunOnlyIfNetworkAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
     <IdleSettings>
       <StopOnIdleEnd>false</StopOnIdleEnd>
       <RestartOnIdle>false</RestartOnIdle>

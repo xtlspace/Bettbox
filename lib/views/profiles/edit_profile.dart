@@ -125,12 +125,17 @@ class EditProfileViewState extends State<EditProfileView> {
       } else if (!hasUpdate) {
         appController.setProfileAndAutoApply(profile);
       } else {
-        globalState.appController.safeRun(() async {
+        try {
           await Future.delayed(commonDuration);
-          if (hasUpdate) {
-            await appController.updateProfile(profile);
-          }
-        });
+          await appController.updateProfile(profile);
+        } on Object catch (e) {
+          await globalState.showMessage(
+            title: appLocalizations.tip,
+            message: TextSpan(
+              text: '${profile.label ?? profile.id}: ${e.formatError}',
+            ),
+          );
+        }
       }
     }
     if (mounted) {

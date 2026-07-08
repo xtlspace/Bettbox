@@ -130,6 +130,7 @@ const (
 	flushDnsCacheMethod            Method = "flushDnsCache"
 	generateAgeKeyPairMethod              Method = "generateAgeKeyPair"
 	convertAgeSecretKeyToPublicKeyMethod  Method = "convertAgeSecretKeyToPublicKey"
+	getModeMethod                         Method = "getMode"
 )
 
 type Method string

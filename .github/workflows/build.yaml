@@ -88,7 +88,7 @@ jobs:
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/local.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
           
-      - name: Setup Java
+      - name: Setup Java (Android)
         if: matrix.platform == 'android'
         uses: actions/setup-java@v5
         with:
@@ -114,36 +114,28 @@ jobs:
           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.2' }}
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.4' }}
 
-      - name: Setup Desktop QuickJS bridge (arm64)
-        shell: bash
-        run: |
-          if [ "${{ matrix.platform }}" = "windows" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "Using prebuilt QuickJS bridge for Windows arm64..."
-            dll="windows/overrides/flutter_js/arm64/quickjs_c_bridge.dll"
-            if [ ! -f "$dll" ]; then
-              echo "Missing prebuilt QuickJS bridge: $dll"
-              exit 1
-            fi
-            ls -la "$dll"
-          elif [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "Compiling QuickJS bridge for Linux arm64..."
-            git clone --depth 1 https://github.com/abner/quickjs-c-bridge.git
-            cd quickjs-c-bridge
-            cmake -S linux -B build -DCMAKE_BUILD_TYPE=Release
-            cmake --build build -j
-            mkdir -p ../linux/overrides/flutter_js/arm64
-            cp build/libquickjs_c_bridge_plugin.so ../linux/overrides/flutter_js/arm64/
-            cd ..
-            rm -rf quickjs-c-bridge
-          fi
 
       - name: Clean Gradle (Android)
         if: matrix.platform == 'android'
         run: |
           cd android
           flutter clean
+
+      - name: Patch for Windows
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          cd core
+          SING_TUN_VERSION=$(grep -E 'github\.com/metacubex/sing-tun\s+v[^[:space:]]+' go.mod | awk '{print $2}')
+          echo "Detected sing-tun version: ${SING_TUN_VERSION}"
+          go mod download github.com/metacubex/sing-tun@${SING_TUN_VERSION}
+          MOD_CACHE=$(go env GOMODCACHE | tr '\\' '/')
+          FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
+          echo "Patching ${FILE}"
+          chmod +w "${FILE}"
+          perl -pi -e 's/inetIf\.ForwardingEnabled = true/inetIf.ForwardingEnabled = false/g' "${FILE}"
 
       - name: Build Bettbox
         shell: bash

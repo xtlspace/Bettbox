@@ -114,9 +114,9 @@ Future<void> _service(List<String> flags) async {
       enable: false,
     );
 
-    final params = await globalState.getSetupParams(pathConfig: clashConfig);
     Future(() async {
       try {
+        final params = await globalState.getSetupParams(pathConfig: clashConfig);
         final profileId = globalState.config.currentProfileId;
         if (profileId == null) {
           return;

@@ -84,6 +84,8 @@ mixin ClashInterface {
   FutureOr<bool> flushFakeIP();
 
   FutureOr<bool> flushDnsCache();
+
+  Future<String> getMode();
 }
 
 mixin AndroidClashInterface {
@@ -412,6 +414,11 @@ abstract class ClashHandlerInterface with ClashInterface {
   @override
   FutureOr<bool> flushDnsCache() {
     return invoke<bool>(method: ActionMethod.flushDnsCache);
+  }
+
+  @override
+  Future<String> getMode() {
+    return invoke<String>(method: ActionMethod.getMode);
   }
 
   @override

@@ -12,17 +12,17 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
       dashboardWidgets: json['dashboardWidgets'] == null
           ? defaultDashboardWidgets
           : dashboardWidgetsSafeFormJson(json['dashboardWidgets'] as List?),
-      onlyStatisticsProxy: json['onlyStatisticsProxy'] as bool? ?? false,
+      onlyStatisticsProxy: json['onlyStatisticsProxy'] as bool? ?? true,
       autoLaunch: json['autoLaunch'] as bool? ?? false,
       silentLaunch: json['silentLaunch'] as bool? ?? false,
-      smartDelayLaunch: json['smartDelayLaunch'] as bool? ?? true,
+      smartDelayLaunch: json['smartDelayLaunch'] as bool? ?? false,
       autoRun: json['autoRun'] as bool? ?? false,
       openLogs: json['openLogs'] as bool? ?? true,
       closeConnections: json['closeConnections'] as bool? ?? true,
       testUrl: json['testUrl'] as String? ?? defaultTestUrl,
       isAnimateToPage: json['isAnimateToPage'] as bool? ?? true,
       enableNavBarHapticFeedback:
-          json['enableNavBarHapticFeedback'] as bool? ?? false,
+          json['enableNavBarHapticFeedback'] as bool? ?? true,
       autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
       showLabel: json['showLabel'] as bool? ?? false,
       disclaimerAccepted: json['disclaimerAccepted'] as bool? ?? false,
@@ -169,7 +169,7 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
   trayEnhancement: json['trayEnhancement'] as bool? ?? true,
-  alwaysShowTitleBar: json['alwaysShowTitleBar'] as bool? ?? false,
+  alwaysShowTitleBar: json['alwaysShowTitleBar'] as bool? ?? true,
   quickResponse: json['quickResponse'] as bool? ?? true,
   accessControl: json['accessControl'] == null
       ? defaultAccessControl

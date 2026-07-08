@@ -42,20 +42,19 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
 
   Future<void> _updateProfiles() async {
     final profiles = globalState.config.profiles;
-    final messages = [];
+    final messages = <String>[];
     final updateProfiles = profiles.map<Future>((profile) async {
       if (profile.type == ProfileType.file) return;
       globalState.appController.setProfile(profile.copyWith(isUpdating: true));
       try {
         await globalState.appController.updateProfile(profile);
-      } catch (e) {
-        messages.add('${profile.label ?? profile.id}: $e \n');
+      } on Object catch (e) {
+        messages.add('${profile.label ?? profile.id}: ${e.formatError}\n');
         globalState.appController.setProfile(
           profile.copyWith(isUpdating: false),
         );
       }
     });
-    final titleMedium = context.textTheme.titleMedium;
     await Future.wait(updateProfiles);
     if (messages.isNotEmpty) {
       globalState.showMessage(
@@ -63,7 +62,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         message: TextSpan(
           children: [
             for (final message in messages)
-              TextSpan(text: message, style: titleMedium),
+              TextSpan(text: message),
           ],
         ),
       );
@@ -238,15 +237,18 @@ class ProfileItem extends StatelessWidget {
   Future updateProfile() async {
     final appController = globalState.appController;
     if (profile.type == ProfileType.file) return;
-    await globalState.appController.safeRun(silence: false, () async {
-      try {
-        appController.setProfile(profile.copyWith(isUpdating: true));
-        await appController.updateProfile(profile);
-      } catch (e) {
-        appController.setProfile(profile.copyWith(isUpdating: false));
-        rethrow;
-      }
-    });
+    try {
+      appController.setProfile(profile.copyWith(isUpdating: true));
+      await appController.updateProfile(profile);
+    } on Object catch (e) {
+      appController.setProfile(profile.copyWith(isUpdating: false));
+      globalState.showMessage(
+        title: appLocalizations.tip,
+        message: TextSpan(
+          text: '${profile.label ?? profile.id}: ${e.formatError}',
+        ),
+      );
+    }
   }
 
   void _handleShowEditExtendPage(BuildContext context) {

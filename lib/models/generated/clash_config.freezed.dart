@@ -2674,7 +2674,7 @@ return $default(_that.enable,_that.writeToSystem,_that.server,_that.port,_that.i
 @JsonSerializable()
 
 class _Ntp implements Ntp {
-  const _Ntp({this.enable = true, @JsonKey(name: 'write-to-system') this.writeToSystem = false, this.server = 'ntp.aliyun.com', this.port = 123, this.interval = 60});
+  const _Ntp({this.enable = true, @JsonKey(name: 'write-to-system') this.writeToSystem = false, this.server = 'time.apple.com', this.port = 123, this.interval = 60});
   factory _Ntp.fromJson(Map<String, dynamic> json) => _$NtpFromJson(json);
 
 @override@JsonKey() final  bool enable;

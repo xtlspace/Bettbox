@@ -79,6 +79,9 @@ func handleAction(action *Action, result ActionResult) {
 		data := []byte(action.Data.(string))
 		result.success(handleSetupConfig(data))
 		return
+	case getModeMethod:
+		result.success(handleGetMode())
+		return
 	case getProxiesMethod:
 		result.success(handleGetProxies())
 		return

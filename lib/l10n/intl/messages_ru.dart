@@ -48,7 +48,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "${label} должен быть от 1024 до 49151, 0 для отключения";
 
   static String m11(statusCode) =>
-      "Не удалось импортировать профиль. Проверьте подключение к сети и попробуйте сбросить ссылку подписки (код ошибки HTTP: ${statusCode})";
+      "Не удалось импортировать профиль. Проверьте состояние сети или попробуйте сбросить ссылку подписки ( код ошибки HTTP: ${statusCode} )";
 
   static String m12(count) => "Выбрано: ${count}";
 
@@ -238,6 +238,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clearCacheTitle": MessageLookupByLibrary.simpleMessage("Очистить кэш"),
     "clearData": MessageLookupByLibrary.simpleMessage("Очистить данные"),
+    "clearDataTipDesc": MessageLookupByLibrary.simpleMessage(
+      "Это действие сбросит настройки приложения. Пожалуйста, сделайте резервную копию. Вы уверены, что хотите продолжить?",
+    ),
+    "clearDataTipTitle": MessageLookupByLibrary.simpleMessage(
+      "Опасная операция",
+    ),
     "clipboard": MessageLookupByLibrary.simpleMessage("Буфер обмена"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage(
       "Автоматически получать ссылки из буфера обмена",
@@ -258,7 +264,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Максимальное количество параллельных тестов задержки",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("Подтвердить"),
-    "connection": MessageLookupByLibrary.simpleMessage("Активные соединения"),
+    "connection": MessageLookupByLibrary.simpleMessage("Соединения"),
     "connections": MessageLookupByLibrary.simpleMessage("Соединения"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
       "Просмотр текущих соединений",
@@ -295,7 +301,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "customUrl": MessageLookupByLibrary.simpleMessage("Пользовательский URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Вырезать"),
     "dark": MessageLookupByLibrary.simpleMessage("Тёмная"),
-    "dashboard": MessageLookupByLibrary.simpleMessage("Главная"),
+    "dashboard": MessageLookupByLibrary.simpleMessage("Обзор"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "DNS по умолчанию",
@@ -393,8 +399,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "Улучшенный NAT",
     ),
+    "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "Включение функции Endpoint-Independent NAT может незначительно снизить производительность. Рекомендуется включать её только в случае необходимости и если вы с ней знакомы.",
+    ),
     "endpointIndependentNatDesc": MessageLookupByLibrary.simpleMessage(
-      "Оптимизация работы приложений UDP/P2P",
+      "Оптимизация работы UDP/P2P приложений",
     ),
     "entries": MessageLookupByLibrary.simpleMessage(" записей"),
     "exclude": MessageLookupByLibrary.simpleMessage("Скрыть из недавних"),
@@ -493,7 +502,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("Фруктовый микс"),
     "general": MessageLookupByLibrary.simpleMessage("Общие"),
     "generalDesc": MessageLookupByLibrary.simpleMessage(
-      "Изменить общие настройки",
+      "Изменить глобальные настройки",
     ),
     "generateFromPrivateKey": MessageLookupByLibrary.simpleMessage(
       "Создать из закрытого ключа",
@@ -624,7 +633,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Максимальная"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Обновить IP"),
-    "memoryInfo": MessageLookupByLibrary.simpleMessage("Расход памяти"),
+    "memoryInfo": MessageLookupByLibrary.simpleMessage("Память"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
       "Текущее значение памяти — это динамическое потребление стека ядра во время выполнения, а не полная статистика памяти приложения, только для справки.",
     ),
@@ -661,9 +670,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "navBarHapticFeedbackDesc": MessageLookupByLibrary.simpleMessage(
       "Вибрация при переключении нижней панели навигации",
     ),
+    "navConnections": MessageLookupByLibrary.simpleMessage("Связи"),
+    "navTools": MessageLookupByLibrary.simpleMessage("Еще"),
     "network": MessageLookupByLibrary.simpleMessage("Сеть"),
     "networkDesc": MessageLookupByLibrary.simpleMessage("Настройки сети"),
-    "networkDetection": MessageLookupByLibrary.simpleMessage("Ваш IP адрес"),
+    "networkDetection": MessageLookupByLibrary.simpleMessage("IP сети"),
     "networkFix": MessageLookupByLibrary.simpleMessage("Исправление сети"),
     "networkFixDesc": MessageLookupByLibrary.simpleMessage(
       "Исправляет значок сети в системе",
@@ -833,7 +844,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Введите разные порты",
     ),
     "portTip": m10,
-    "powerSwitch": MessageLookupByLibrary.simpleMessage("Переключатель"),
+    "powerSwitch": MessageLookupByLibrary.simpleMessage("Запуск"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "Приоритет HTTP/3 для DoH",
     ),
@@ -862,7 +873,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileUrlNullValidationDesc": MessageLookupByLibrary.simpleMessage(
       "Введите URL профиля",
     ),
-    "profiles": MessageLookupByLibrary.simpleMessage("Профили"),
+    "profiles": MessageLookupByLibrary.simpleMessage("Конфиг"),
     "profilesSort": MessageLookupByLibrary.simpleMessage("Сортировка профилей"),
     "progress": MessageLookupByLibrary.simpleMessage("Прогресс"),
     "project": MessageLookupByLibrary.simpleMessage("Проект"),

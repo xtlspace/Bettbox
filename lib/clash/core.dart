@@ -129,6 +129,14 @@ class ClashCore {
     return await clashInterface.changeProxy(changeProxyParams);
   }
 
+  Future<Mode> getMode() async {
+    final modeStr = await clashInterface.getMode();
+    return Mode.values.firstWhere(
+      (m) => m.name == modeStr.toLowerCase(),
+      orElse: () => Mode.rule,
+    );
+  }
+
   Future<List<TrackerInfo>> getConnections() async {
     final res = await clashInterface.getConnections();
     if (res.isEmpty) {

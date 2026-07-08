@@ -101,7 +101,11 @@ class App {
   Future<bool?> initShortcuts() async {
     return await methodChannel.invokeMethod<bool>(
       'initShortcuts',
-      appLocalizations.toggle,
+      {
+        'toggle': appLocalizations.toggle,
+        'start': appLocalizations.start,
+        'stop': appLocalizations.stop,
+      },
     );
   }
 

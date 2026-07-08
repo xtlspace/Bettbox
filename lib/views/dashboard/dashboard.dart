@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:bett_box/state.dart';
@@ -106,6 +107,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         ),
       ),
+      const _DashboardStartSwitch(),
     ];
   }
 
@@ -409,6 +411,91 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
           ),
           onChanged: _validate,
         ),
+      ),
+    );
+  }
+}
+
+class _DashboardStartSwitch extends ConsumerStatefulWidget {
+  const _DashboardStartSwitch();
+
+  @override
+  ConsumerState<_DashboardStartSwitch> createState() =>
+      _DashboardStartSwitchState();
+}
+
+class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
+  bool _isDisabled = false;
+  bool? _optimisticStart;
+
+  void _handleStart() async {
+    if (_isDisabled) return;
+    final isStart = ref.read(runTimeProvider) != null;
+    final newState = !isStart;
+    setState(() {
+      _isDisabled = true;
+      _optimisticStart = newState;
+    });
+
+    try {
+      await globalState.appController.updateStatus(newState);
+    } catch (e) {
+      commonPrint.log('updateStatus failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDisabled = false;
+          _optimisticStart = null;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(startButtonSelectorStateProvider);
+    final isRestarting = ref.watch(isRestartingCoreProvider);
+    final runTime = ref.watch(runTimeProvider);
+    final isStart = runTime != null;
+    final displayStart = _optimisticStart ?? isStart;
+
+    final canPress =
+        state.isInit && state.hasProfile && !_isDisabled && !isRestarting;
+
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Switch(
+        value: displayStart,
+        onChanged: canPress ? (_) => _handleStart() : null,
+        thumbColor: WidgetStateProperty.resolveWith<Color?>((
+          Set<WidgetState> states,
+        ) {
+          if (states.contains(WidgetState.selected) &&
+              !states.contains(WidgetState.disabled)) {
+            return theme.colorScheme.primary;
+          }
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith<Color?>((
+          Set<WidgetState> states,
+        ) {
+          if (states.contains(WidgetState.selected) &&
+              !states.contains(WidgetState.disabled)) {
+            return theme.colorScheme.primary.withValues(alpha: 0.2);
+          }
+          return null;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((
+          Set<WidgetState> states,
+        ) {
+          if (states.contains(WidgetState.selected) &&
+              !states.contains(WidgetState.disabled)) {
+            return Colors.transparent;
+          }
+          return null;
+        }),
       ),
     );
   }

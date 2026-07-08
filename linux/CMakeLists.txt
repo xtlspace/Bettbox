@@ -46,6 +46,8 @@ endif()
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_14)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
+  # TODO: Delete this when https://github.com/leanflutter/tray_manager/issues/67 is resolved.
+  target_compile_options(${TARGET} PRIVATE -Wno-deprecated-declarations)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
 endfunction()
@@ -141,16 +143,7 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
-set(FLUTTER_JS_LIB "${CMAKE_CURRENT_SOURCE_DIR}/flutter/ephemeral/.plugin_symlinks/flutter_js/linux/shared/libquickjs_c_bridge_plugin.so")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
-  set(OVERRIDE_LIB "${CMAKE_CURRENT_SOURCE_DIR}/overrides/flutter_js/arm64/libquickjs_c_bridge_plugin.so")
-  if(EXISTS "${OVERRIDE_LIB}")
-    set(FLUTTER_JS_LIB "${OVERRIDE_LIB}")
-  endif()
-endif()
-if(EXISTS "${FLUTTER_JS_LIB}")
-  install(FILES "${FLUTTER_JS_LIB}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
-endif()
+
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

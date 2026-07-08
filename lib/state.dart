@@ -60,8 +60,6 @@ class GlobalState {
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
 
-  SetupParams? _lastSuccessfulSetupParams;
-
   bool isInit = false;
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
@@ -206,7 +204,9 @@ class GlobalState {
     }
     render?.pause();
 
-    final networkSpeedNotification = appController.ref.read(vpnSettingProvider).networkSpeedNotification;
+    final networkSpeedNotification = appController.ref
+        .read(vpnSettingProvider)
+        .networkSpeedNotification;
     if (!networkSpeedNotification) {
       stopUpdateTasks();
     }
@@ -253,9 +253,29 @@ class GlobalState {
     if (!isStart) {
       return;
     }
+
     await appController.updateRunTime();
-    await appController.updateTraffic();
     await startUpdateTasks([appController.updateTraffic]);
+
+    if (system.isDesktop && clashService != null) {
+      final service = clashService;
+      if (service == null) return;
+      service
+          .checkCoreHealth()
+          .then((healthy) async {
+            if (healthy || service.isStarting) return;
+            if (appController.ref.read(
+              providers_state.isRestartingCoreProvider,
+            )) {
+              return;
+            }
+            commonPrint.log('Core connection error on resume, force-restart');
+            await appController.restartCore();
+          })
+          .catchError((e) {
+            commonPrint.log('Resume health check failed: $e');
+          });
+    }
   }
 
   void _scheduleBackgroundCleanup() {
@@ -294,10 +314,7 @@ class GlobalState {
     await service?.startVpn();
     final prefs = await preferences.sharedPreferencesCompleter.future;
     await prefs?.setBool('is_vpn_running', true);
-    if (system.isDesktop) {
-      final tunEnabled = config.patchClashConfig.tun.enable;
-      await prefs?.setBool('is_tun_running', tunEnabled);
-    }
+
     if (system.isAndroid) {
       final conflictFreeQuickResponse =
           config.vpnProps.quickResponse && !config.vpnProps.smartAutoStop;
@@ -473,18 +490,6 @@ class GlobalState {
     return params;
   }
 
-  void backupSuccessfulConfig(SetupParams params) {
-    if (_lastSuccessfulSetupParams == params) {
-      return;
-    }
-    _lastSuccessfulSetupParams = params;
-    commonPrint.log('Current config protected');
-  }
-
-  SetupParams? getLastSuccessfulConfig() {
-    return _lastSuccessfulSetupParams;
-  }
-
   Future<Map<String, dynamic>> patchRawConfig({
     required ClashConfig patchConfig,
   }) async {
@@ -505,8 +510,10 @@ class GlobalState {
       ),
     );
     rawConfig['external-controller'] = realPatchConfig.allowLan
-        ? realPatchConfig.externalController.value
-            .replaceAll('127.0.0.1', '0.0.0.0')
+        ? realPatchConfig.externalController.value.replaceAll(
+            '127.0.0.1',
+            '0.0.0.0',
+          )
         : realPatchConfig.externalController.value;
     if (realPatchConfig.externalController == ExternalControllerStatus.open) {
       final secret = realPatchConfig.secret;
@@ -537,11 +544,13 @@ class GlobalState {
     rawConfig['tun']['enable'] = realPatchConfig.tun.enable;
     rawConfig['tun']['device'] = realPatchConfig.tun.device;
     final dnsHijack = realPatchConfig.tun.dnsHijack;
-    rawConfig['tun']['dns-hijack'] =
-        dnsHijack.isEmpty ? const ['any:53'] : dnsHijack;
+    rawConfig['tun']['dns-hijack'] = dnsHijack.isEmpty
+        ? const ['any:53']
+        : dnsHijack;
     rawConfig['tun']['stack'] = realPatchConfig.tun.stack.name;
     rawConfig['tun']['route-address'] = realPatchConfig.tun.routeAddress;
-    rawConfig['tun']['route-exclude-address'] = realPatchConfig.tun.routeExcludeAddress;
+    rawConfig['tun']['route-exclude-address'] =
+        realPatchConfig.tun.routeExcludeAddress;
     rawConfig['tun']['auto-route'] = true;
     rawConfig['tun']['auto-detect-interface'] = true;
     rawConfig['tun']['strict-route'] = realPatchConfig.tun.strictRoute;
@@ -632,7 +641,8 @@ class GlobalState {
       }
     }
 
-    if (rawConfig['dns'] != null && rawConfig['dns']['fallback-filter'] != null) {
+    if (rawConfig['dns'] != null &&
+        rawConfig['dns']['fallback-filter'] != null) {
       if (rawConfig['dns']['fallback-filter'] is Map) {
         (rawConfig['dns']['fallback-filter'] as Map).remove('geosite');
       }
@@ -784,18 +794,48 @@ class GlobalState {
       }
     }
 
-
-
     if (config.vpnProps.disableQuic) {
-      final isRussian = config.appSetting.locale?.toLowerCase().startsWith('ru') ?? false;
+      final isRussian =
+          config.appSetting.locale?.toLowerCase().startsWith('ru') ?? false;
       final quicRules = config.vpnProps.excludeChina && !isRussian
-          ? ['AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT']
+          ? [
+              'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((GEOSITE,geolocation-cn),(GEOIP,CN,no-resolve)))))),REJECT',
+            ]
           : ['AND,((NETWORK,UDP),(DST-PORT,443)),REJECT'];
       rules = [...quicRules, ...rules];
     }
 
     if (rawConfig['proxy-groups'] == null && originalProxyGroups != null) {
       rawConfig['proxy-groups'] = originalProxyGroups;
+    }
+
+    final globalClientFingerprint = rawConfig['global-client-fingerprint'];
+    if (rawConfig['proxies'] is List) {
+      final proxiesList = rawConfig['proxies'] as List;
+      for (final proxy in proxiesList) {
+        if (proxy is! Map) continue;
+
+        final type = proxy['type']?.toString().toLowerCase();
+        final isTls = proxy['tls'] == true;
+
+        bool supportClientFingerprint = false;
+        if (type == 'trojan' || type == 'anytls') {
+          supportClientFingerprint = true;
+        } else if ((type == 'vmess' || type == 'vless') && isTls) {
+          supportClientFingerprint = true;
+        }
+
+        if (supportClientFingerprint) {
+          if (globalClientFingerprint != null &&
+              proxy['client-fingerprint'] == null) {
+            proxy['client-fingerprint'] = globalClientFingerprint;
+          }
+
+          if (proxy['client-fingerprint'] == 'chrome') {
+            proxy['client-fingerprint'] = 'firefox';
+          }
+        }
+      }
     }
 
     rawConfig['rule'] = rules;
@@ -826,10 +866,18 @@ class GlobalState {
 
       config['proxy-providers'] ??= {};
 
-      return JavaScriptRuntimeManager.evaluateScript(
-        currentScript.content,
-        config,
-      );
+      try {
+        return await JavaScriptRuntimeManager.evaluateScript(
+          currentScript.content,
+          config,
+        );
+      } catch (e) {
+        commonPrint.log('Script execution failed: $e');
+        globalState.showNotifier(
+          '${appLocalizations.profileParseErrorDesc}: $e',
+        );
+        return config;
+      }
     });
   }
 }
@@ -1034,7 +1082,10 @@ class DetectionState {
     final isStateChanged = _preIsStart != isStart;
     _preIsStart = isStart;
 
-    if (!isStart && state.value.ipInfo != null && !state.value.isLoading && !isStateChanged) {
+    if (!isStart &&
+        state.value.ipInfo != null &&
+        !state.value.isLoading &&
+        !isStateChanged) {
       return;
     }
 

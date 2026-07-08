@@ -354,7 +354,7 @@ const _$FilterModeEnumMap = {
 _Ntp _$NtpFromJson(Map<String, dynamic> json) => _Ntp(
   enable: json['enable'] as bool? ?? true,
   writeToSystem: json['write-to-system'] as bool? ?? false,
-  server: json['server'] as String? ?? 'ntp.aliyun.com',
+  server: json['server'] as String? ?? 'time.apple.com',
   port: (json['port'] as num?)?.toInt() ?? 123,
   interval: (json['interval'] as num?)?.toInt() ?? 60,
 );

@@ -61,8 +61,9 @@ suspend fun Service.createBettboxNotificationBuilder(): NotificationCompat.Build
                 foregroundServiceBehavior = FOREGROUND_SERVICE_IMMEDIATE
             }
             setOngoing(true)
-            setShowWhen(false)
+            setShowWhen(true)
             setOnlyAlertOnce(true)
+            setPriority(NotificationCompat.PRIORITY_HIGH)
         }
     }
 

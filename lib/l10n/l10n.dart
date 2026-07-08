@@ -69,9 +69,9 @@ class AppLocalizations {
     return Intl.message('Direct', name: 'direct', desc: '', args: []);
   }
 
-  /// `Dashboard`
+  /// `Dash`
   String get dashboard {
-    return Intl.message('Dashboard', name: 'dashboard', desc: '', args: []);
+    return Intl.message('Dash', name: 'dashboard', desc: '', args: []);
   }
 
   /// `Custom Dashboard Title`
@@ -234,10 +234,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Network Detection`
+  /// `Network`
   String get networkDetection {
     return Intl.message(
-      'Network Detection',
+      'Network',
       name: 'networkDetection',
       desc: '',
       args: [],
@@ -2114,9 +2114,9 @@ class AppLocalizations {
     );
   }
 
-  /// `Intranet IP`
+  /// `Local IP`
   String get intranetIP {
-    return Intl.message('Intranet IP', name: 'intranetIP', desc: '', args: []);
+    return Intl.message('Local IP', name: 'intranetIP', desc: '', args: []);
   }
 
   /// `View`
@@ -2614,14 +2614,9 @@ class AppLocalizations {
     return Intl.message('Stop', name: 'stop', desc: '', args: []);
   }
 
-  /// `Power Switch`
+  /// `Power`
   String get powerSwitch {
-    return Intl.message(
-      'Power Switch',
-      name: 'powerSwitch',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Power', name: 'powerSwitch', desc: '', args: []);
   }
 
   /// `Uptime`
@@ -3994,6 +3989,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Enabling Endpoint-Independent NAT feature may slightly degrade performance. It is recommended to enable it only if necessary and you are familiar with it.`
+  String get endpointIndependentNatConfirmDesc {
+    return Intl.message(
+      'Enabling Endpoint-Independent NAT feature may slightly degrade performance. It is recommended to enable it only if necessary and you are familiar with it.',
+      name: 'endpointIndependentNatConfirmDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Network`
   String get network {
     return Intl.message('Network', name: 'network', desc: '', args: []);
@@ -4144,9 +4149,9 @@ class AppLocalizations {
     );
   }
 
-  /// `Memory Info`
+  /// `Memory`
   String get memoryInfo {
-    return Intl.message('Memory Info', name: 'memoryInfo', desc: '', args: []);
+    return Intl.message('Memory', name: 'memoryInfo', desc: '', args: []);
   }
 
   /// `The current memory information value displayed is the dynamic stack memory usage of the core during runtime, not the complete APP memory statistics, for reference only.`
@@ -4192,6 +4197,16 @@ class AppLocalizations {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Active`
+  String get navConnections {
+    return Intl.message('Active', name: 'navConnections', desc: '', args: []);
+  }
+
+  /// `More`
+  String get navTools {
+    return Intl.message('More', name: 'navTools', desc: '', args: []);
   }
 
   /// `Copy Successful`
@@ -4444,10 +4459,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Modify general settings`
+  /// `Modify global settings`
   String get generalDesc {
     return Intl.message(
-      'Modify general settings',
+      'Modify global settings',
       name: 'generalDesc',
       desc: '',
       args: [],
@@ -4632,6 +4647,26 @@ class AppLocalizations {
   /// `Clear Data`
   String get clearData {
     return Intl.message('Clear Data', name: 'clearData', desc: '', args: []);
+  }
+
+  /// `Dangerous Operation`
+  String get clearDataTipTitle {
+    return Intl.message(
+      'Dangerous Operation',
+      name: 'clearDataTipTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This operation will reset the application. Please make backups. Are you sure you want to continue?`
+  String get clearDataTipDesc {
+    return Intl.message(
+      'This operation will reset the application. Please make backups. Are you sure you want to continue?',
+      name: 'clearDataTipDesc',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Text Scaling`
@@ -5059,14 +5094,9 @@ class AppLocalizations {
     return Intl.message('Log', name: 'log', desc: '', args: []);
   }
 
-  /// `Active Connections`
+  /// `Active`
   String get connection {
-    return Intl.message(
-      'Active Connections',
-      name: 'connection',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Active', name: 'connection', desc: '', args: []);
   }
 
   /// `Request`
@@ -5204,10 +5234,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Failed to import profile. Please check your network and try resetting the subscription link (HTTP error code: {statusCode})`
+  /// `Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: {statusCode} )`
   String profileImportFailed(Object statusCode) {
     return Intl.message(
-      'Failed to import profile. Please check your network and try resetting the subscription link (HTTP error code: $statusCode)',
+      'Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: $statusCode )',
       name: 'profileImportFailed',
       desc: '',
       args: [statusCode],

@@ -436,7 +436,7 @@ abstract class Ntp with _$Ntp {
   const factory Ntp({
     @Default(true) bool enable,
     @Default(false) @JsonKey(name: 'write-to-system') bool writeToSystem,
-    @Default('ntp.aliyun.com') String server,
+    @Default('time.apple.com') String server,
     @Default(123) int port,
     @Default(60) int interval,
   }) = _Ntp;

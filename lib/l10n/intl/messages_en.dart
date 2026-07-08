@@ -47,7 +47,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "${label} must be between 1024 and 49151, 0 to disable";
 
   static String m11(statusCode) =>
-      "Failed to import profile. Please check your network and try resetting the subscription link (HTTP error code: ${statusCode})";
+      "Failed to import profile. Please check your network status or try resetting the subscription link ( HTTP error code: ${statusCode} )";
 
   static String m12(count) => "${count} items selected";
 
@@ -235,6 +235,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "clearCacheTitle": MessageLookupByLibrary.simpleMessage("Clear Cache"),
     "clearData": MessageLookupByLibrary.simpleMessage("Clear Data"),
+    "clearDataTipDesc": MessageLookupByLibrary.simpleMessage(
+      "This operation will reset the application. Please make backups. Are you sure you want to continue?",
+    ),
+    "clearDataTipTitle": MessageLookupByLibrary.simpleMessage(
+      "Dangerous Operation",
+    ),
     "clipboard": MessageLookupByLibrary.simpleMessage("Clipboard"),
     "clipboardDesc": MessageLookupByLibrary.simpleMessage(
       "Get profile link from clipboard",
@@ -259,7 +265,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Maximum concurrent delay tests",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("Confirm"),
-    "connection": MessageLookupByLibrary.simpleMessage("Active Connections"),
+    "connection": MessageLookupByLibrary.simpleMessage("Active"),
     "connections": MessageLookupByLibrary.simpleMessage("Connections"),
     "connectionsDesc": MessageLookupByLibrary.simpleMessage(
       "View active connections",
@@ -294,7 +300,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "customUrl": MessageLookupByLibrary.simpleMessage("Custom URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Cut"),
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
-    "dashboard": MessageLookupByLibrary.simpleMessage("Dashboard"),
+    "dashboard": MessageLookupByLibrary.simpleMessage("Dash"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "Default Nameserver",
@@ -389,6 +395,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "enableOverride": MessageLookupByLibrary.simpleMessage("Enable Override"),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "NAT Enhancement",
+    ),
+    "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "Enabling Endpoint-Independent NAT feature may slightly degrade performance. It is recommended to enable it only if necessary and you are familiar with it.",
     ),
     "endpointIndependentNatDesc": MessageLookupByLibrary.simpleMessage(
       "Optimize UDP/P2P application experience",
@@ -488,7 +497,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fruitSaladScheme": MessageLookupByLibrary.simpleMessage("Fruit Salad"),
     "general": MessageLookupByLibrary.simpleMessage("General"),
     "generalDesc": MessageLookupByLibrary.simpleMessage(
-      "Modify general settings",
+      "Modify global settings",
     ),
     "generateFromPrivateKey": MessageLookupByLibrary.simpleMessage(
       "Generate from Age private key",
@@ -563,7 +572,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("Smart Select"),
     "internet": MessageLookupByLibrary.simpleMessage("Internet"),
     "interval": MessageLookupByLibrary.simpleMessage("Interval"),
-    "intranetIP": MessageLookupByLibrary.simpleMessage("Intranet IP"),
+    "intranetIP": MessageLookupByLibrary.simpleMessage("Local IP"),
     "invalidIpFormat": MessageLookupByLibrary.simpleMessage(
       "Invalid IP or CIDR format",
     ),
@@ -615,7 +624,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "loose": MessageLookupByLibrary.simpleMessage("Loose"),
     "manualRefreshIp": MessageLookupByLibrary.simpleMessage("Refresh IP"),
-    "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory Info"),
+    "memoryInfo": MessageLookupByLibrary.simpleMessage("Memory"),
     "memoryInfoDesc": MessageLookupByLibrary.simpleMessage(
       "The current memory information value displayed is the dynamic stack memory usage of the core during runtime, not the complete APP memory statistics, for reference only.",
     ),
@@ -652,13 +661,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "navBarHapticFeedbackDesc": MessageLookupByLibrary.simpleMessage(
       "Vibrate on navigation tab switch",
     ),
+    "navConnections": MessageLookupByLibrary.simpleMessage("Active"),
+    "navTools": MessageLookupByLibrary.simpleMessage("More"),
     "network": MessageLookupByLibrary.simpleMessage("Network"),
     "networkDesc": MessageLookupByLibrary.simpleMessage(
       "Modify network-related settings",
     ),
-    "networkDetection": MessageLookupByLibrary.simpleMessage(
-      "Network Detection",
-    ),
+    "networkDetection": MessageLookupByLibrary.simpleMessage("Network"),
     "networkFix": MessageLookupByLibrary.simpleMessage("Network Fix"),
     "networkFixDesc": MessageLookupByLibrary.simpleMessage(
       "Fix system network globe icon issue",
@@ -818,7 +827,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Please enter a different port",
     ),
     "portTip": m10,
-    "powerSwitch": MessageLookupByLibrary.simpleMessage("Power Switch"),
+    "powerSwitch": MessageLookupByLibrary.simpleMessage("Power"),
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "Prioritize DoH HTTP/3",
     ),

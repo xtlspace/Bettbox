@@ -133,14 +133,43 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
         scope.launch(Dispatchers.IO) { cleanIconCache() }
     }
 
-    private fun initShortcuts(label: String) {
-        val iconRes = if (isSystemInDarkMode()) R.mipmap.ic_launcher_round else R.mipmap.ic_launcher_round_light
-        val shortcut = ShortcutInfoCompat.Builder(BettboxApplication.getAppContext(), "toggle")
-            .setShortLabel(label)
-            .setIcon(IconCompat.createWithResource(BettboxApplication.getAppContext(), iconRes))
+    private fun createBitmapIcon(context: Context, resId: Int): IconCompat {
+        val drawable = androidx.core.content.ContextCompat.getDrawable(context, resId)
+            ?: return IconCompat.createWithResource(context, resId)
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            if (drawable.intrinsicWidth <= 0) 108 else drawable.intrinsicWidth,
+            if (drawable.intrinsicHeight <= 0) 108 else drawable.intrinsicHeight,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val canvas = android.graphics.Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return IconCompat.createWithBitmap(bitmap)
+    }
+
+    private fun initShortcuts(labels: Map<*, *>) {
+        val toggleShortcut = ShortcutInfoCompat.Builder(BettboxApplication.getAppContext(), "toggle")
+            .setShortLabel(labels["toggle"]?.toString() ?: "Toggle")
+            .setIcon(createBitmapIcon(BettboxApplication.getAppContext(), R.drawable.ic_shortcut_toggle))
             .setIntent(BettboxApplication.getAppContext().getActionIntent("CHANGE"))
             .build()
-        ShortcutManagerCompat.setDynamicShortcuts(BettboxApplication.getAppContext(), listOf(shortcut))
+
+        val startShortcut = ShortcutInfoCompat.Builder(BettboxApplication.getAppContext(), "start")
+            .setShortLabel(labels["start"]?.toString() ?: "Start")
+            .setIcon(createBitmapIcon(BettboxApplication.getAppContext(), R.drawable.ic_shortcut_start))
+            .setIntent(BettboxApplication.getAppContext().getActionIntent("START"))
+            .build()
+
+        val stopShortcut = ShortcutInfoCompat.Builder(BettboxApplication.getAppContext(), "stop")
+            .setShortLabel(labels["stop"]?.toString() ?: "Stop")
+            .setIcon(createBitmapIcon(BettboxApplication.getAppContext(), R.drawable.ic_shortcut_stop))
+            .setIntent(BettboxApplication.getAppContext().getActionIntent("STOP"))
+            .build()
+
+        ShortcutManagerCompat.setDynamicShortcuts(
+            BettboxApplication.getAppContext(), 
+            listOf(startShortcut, stopShortcut, toggleShortcut)
+        )
     }
 
     private fun isSystemInDarkMode(): Boolean {
@@ -176,7 +205,8 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 result.success(true)
             }
             "initShortcuts" -> {
-                initShortcuts(call.arguments as String)
+                val labels = call.arguments as? Map<String, String> ?: emptyMap()
+                initShortcuts(labels)
                 result.success(true)
             }
             "getPackages" -> scope.launch {

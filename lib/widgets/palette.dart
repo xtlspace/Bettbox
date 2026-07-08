@@ -37,6 +37,31 @@ class _PaletteState extends State<Palette> {
     colorSaturation = color.saturation;
     colorValue = color.value;
     _focusNode = FocusNode();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    final hsv = HSVColor.fromColor(widget.controller.value);
+    if (hsv.hue != colorHue ||
+        hsv.saturation != colorSaturation ||
+        hsv.value != colorValue) {
+      setState(() {
+        colorHue = hsv.hue;
+        colorSaturation = hsv.saturation;
+        colorValue = hsv.value;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(Palette oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+      _onControllerChanged();
+    }
   }
 
   void _handleChange() {
@@ -50,6 +75,7 @@ class _PaletteState extends State<Palette> {
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
     _focusNode.dispose();
     super.dispose();
   }

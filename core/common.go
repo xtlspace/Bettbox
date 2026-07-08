@@ -23,6 +23,8 @@ import (
 	rp "github.com/metacubex/mihomo/rules/provider"
 	"github.com/metacubex/mihomo/tunnel"
 	"os"
+	"runtime"
+	"runtime/debug"
 	"sync"
 )
 
@@ -136,8 +138,21 @@ func stopListeners() {
 	listener.StopListener()
 }
 
+func getProxiesWithProviders() map[string]constant.Proxy {
+	allProxies := make(map[string]constant.Proxy)
+	for name, proxy := range tunnel.Proxies() {
+		allProxies[name] = proxy
+	}
+	for _, p := range tunnel.Providers() {
+		for _, proxy := range p.Proxies() {
+			allProxies[proxy.Name()] = proxy
+		}
+	}
+	return allProxies
+}
+
 func patchSelectGroup(mapping map[string]string) {
-	for name, proxy := range tunnel.ProxiesWithProviders() {
+	for name, proxy := range getProxiesWithProviders() {
 		outbound, ok := proxy.(*adapter.Proxy)
 		if !ok {
 			continue
@@ -302,12 +317,14 @@ func setupConfig(params *SetupParams) error {
 	var err error
 	currentConfig, err = config.ParseRawConfig(params.Config)
 	if err != nil {
-		currentConfig, _ = config.ParseRawConfig(config.DefaultRawConfig())
+		return err
 	}
 	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
 	updateListeners()
-	return err
+	runtime.GC()
+	debug.FreeOSMemory()
+	return nil
 }
 
 func UnmarshalJson(data []byte, v any) error {

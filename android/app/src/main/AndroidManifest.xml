@@ -83,6 +83,17 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
+            <!-- Clash link scheme import intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="clash" android:host="install-config" />
+                <data android:scheme="clashmeta" android:host="install-config" />
+                <data android:scheme="bettbox" android:host="install-config" />
+            </intent-filter>
         </activity-alias>
 
         <activity

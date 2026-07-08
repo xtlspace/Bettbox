@@ -11,6 +11,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Parcel
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.appshub.bettbox.GlobalState
@@ -41,20 +42,27 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     @Volatile
     private var isSpeedNotificationEnabled = false
 
+    @Volatile
+    private var lastNotificationText: String? = null
+
     override fun onCreate() {
         super.onCreate()
         GlobalState.initServiceEngine()
-        
+
         unlockReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (isSpeedNotificationEnabled) {
-                    cachedBuilder?.build()?.let {
-                        getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, it)
-                    }
+                lastNotificationText = null
+                resetNotificationBuilder()
+                CoroutineScope(Dispatchers.Main).launch {
+                    startForeground()
                 }
             }
         }
-        registerReceiver(unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Context.RECEIVER_NOT_EXPORTED else 0)
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_USER_PRESENT)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        registerReceiver(unlockReceiver, filter, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Context.RECEIVER_NOT_EXPORTED else 0)
     }
 
     override suspend fun start(options: VpnOptions): Int = with(Builder()) {
@@ -138,6 +146,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         if (isStopped) return
         isStopped = true
         hasStartedForeground = false
+        lastNotificationText = null
 
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -183,6 +192,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             content = getString(R.string.service_running)
         }
 
+        lastNotificationText = null
         val builder = notificationBuilder()
 
         val separator = " ︙ "
@@ -204,20 +214,26 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             .build()
 
         if (!hasStartedForeground) {
-            this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
             hasStartedForeground = true
-        } else {
-            runCatching {
-                getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
-            }.onFailure { Log.e(TAG, "startForeground notify error: ${it.message}") }
         }
+        this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
     }
 
     @SuppressLint("ForegroundServiceType")
-    private suspend fun updateNotificationSpeed(profileName: String, speedInfo: String) {
-        val builder = notificationBuilder()
+    internal suspend fun updateNotificationSpeed(profileName: String, speedInfo: String) {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager?.isInteractive == false) {
+            return
+        }
+
         val separator = " ︙ "
         val combinedText = "$profileName$separator$speedInfo"
+        if (combinedText == lastNotificationText) {
+            return
+        }
+        lastNotificationText = combinedText
+
+        val builder = notificationBuilder()
         val spannable = android.text.SpannableString(combinedText)
         val startIndex = profileName.length + separator.length
         if (startIndex in 1..combinedText.length) {
@@ -233,11 +249,11 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             .setStyle(null)
             .setTicker(combinedText)
             .build()
-            
+
         if (hasStartedForeground) {
             runCatching {
-                getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)
-            }.onFailure { Log.e(TAG, "updateNotificationSpeed notify error: ${it.message}") }
+                this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
+            }.onFailure { Log.e(TAG, "updateNotificationSpeed startForeground error: ${it.message}") }
         }
     }
 

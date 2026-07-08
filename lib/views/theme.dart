@@ -634,7 +634,41 @@ class _PaletteDialog extends StatefulWidget {
 }
 
 class _PaletteDialogState extends State<_PaletteDialog> {
-  final _controller = ValueNotifier<ui.Color>(Colors.transparent);
+  final _controller = ValueNotifier<ui.Color>(const Color(defaultPrimaryColor));
+
+  ui.Color? _parseColor(String input) {
+    final cleanInput = input.trim().replaceAll(' ', '').toLowerCase();
+    
+    // Hex: #RRGGBB or RRGGBB
+    if (RegExp(r'^#?[0-9a-f]{6}$').hasMatch(cleanInput)) {
+      final hexString = cleanInput.startsWith('#') ? cleanInput.substring(1) : cleanInput;
+      return ui.Color(int.parse('FF$hexString', radix: 16));
+    }
+    
+    // Hex with alpha: #AARRGGBB or AARRGGBB
+    if (RegExp(r'^#?[0-9a-f]{8}$').hasMatch(cleanInput)) {
+      final hexString = cleanInput.startsWith('#') ? cleanInput.substring(1) : cleanInput;
+      return ui.Color(int.parse(hexString, radix: 16));
+    }
+    
+    // RGB/RGBA: rgb(255,255,255) or rgba(255,255,255,1.0)
+    final rgbMatch = RegExp(r'^rgba?\((\d+),(\d+),(\d+)(?:,([\d.]+))?\)$').firstMatch(cleanInput);
+    if (rgbMatch != null) {
+      final r = int.parse(rgbMatch.group(1)!);
+      final g = int.parse(rgbMatch.group(2)!);
+      final b = int.parse(rgbMatch.group(3)!);
+      final aStr = rgbMatch.group(4);
+      final a = aStr != null ? double.parse(aStr) : 1.0;
+      
+      final alphaVal = (a * 255).round().clamp(0, 255);
+      final rVal = r.clamp(0, 255);
+      final gVal = g.clamp(0, 255);
+      final bVal = b.clamp(0, 255);
+      return ui.Color.fromARGB(alphaVal, rVal, gVal, bVal);
+    }
+    
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -666,12 +700,36 @@ class _PaletteDialogState extends State<_PaletteDialog> {
           ValueListenableBuilder(
             valueListenable: _controller,
             builder: (_, color, _) {
-              return PrimaryColorBox(
-                primaryColor: color,
-                child: FilledButton(
-                  onPressed: () {},
-                  child: Text(_controller.value.hex),
+              return FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
                 ),
+                onPressed: () async {
+                  final customColorStr = await globalState.showCommonDialog<String>(
+                    child: InputDialog(
+                      title: appLocalizations.color,
+                      value: _controller.value.hex,
+                      hintText: '#000000 / rgb(0,0,0)',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return appLocalizations.emptyTip(appLocalizations.color);
+                        }
+                        if (_parseColor(value) == null) {
+                          return appLocalizations.formatError;
+                        }
+                        return null;
+                      },
+                    ),
+                  );
+                  if (customColorStr != null) {
+                    final newColor = _parseColor(customColorStr);
+                    if (newColor != null) {
+                      _controller.value = newColor;
+                    }
+                  }
+                },
+                child: Text(color.hex),
               );
             },
           ),
