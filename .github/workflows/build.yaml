@@ -114,7 +114,7 @@ jobs:
           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.4' }}
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.44.5' }}
 
 
       - name: Clean Gradle (Android)

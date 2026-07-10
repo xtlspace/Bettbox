@@ -7,6 +7,7 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:bett_box/views/profiles/add_profile.dart';
 
 class StartButton extends ConsumerStatefulWidget {
   const StartButton({super.key});
@@ -73,10 +74,26 @@ class _StartButtonState extends ConsumerState<StartButton> {
     }
   }
 
+  void _handleShowAddProfile() {
+    showExtend(
+      context,
+      builder: (_, type) {
+        return AdaptiveSheetScaffold(
+          type: type,
+          body: AddProfileView(
+            context: context,
+          ),
+          title: appLocalizations.add,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(startButtonSelectorStateProvider);
     final canPress = state.isInit && state.hasProfile && !_isDisabled;
+    final hasNoProfile = state.isInit && !state.hasProfile && !_isDisabled;
     final isRestarting = ref.watch(isRestartingCoreProvider);
 
     return ValueListenableBuilder<int>(
@@ -96,7 +113,11 @@ class _StartButtonState extends ConsumerState<StartButton> {
                   : appLocalizations.powerSwitch,
               iconData: Icons.power_settings_new,
             ),
-            onPressed: canPress ? _handleStart : null,
+            onPressed: canPress
+                ? _handleStart
+                : hasNoProfile
+                    ? _handleShowAddProfile
+                    : null,
             onLongPress: canPress ? _handleLongPress : null,
             child: Container(
               padding: baseInfoEdgeInsets.copyWith(top: 0),
@@ -138,12 +159,15 @@ class _StartButtonState extends ConsumerState<StartButton> {
   ) {
     if (!state.isInit || isDisabled) {
       return Container(
-        padding: EdgeInsets.all(2),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: SpinKitThreeBounce(
-            color: context.colorScheme.primary,
-            size: 16,
+        padding: const EdgeInsets.all(2),
+        child: Center(
+          child: OverflowBox(
+            maxWidth: 30,
+            maxHeight: 16,
+            child: SpinKitThreeBounce(
+              color: context.colorScheme.primary,
+              size: 16,
+            ),
           ),
         ),
       );
@@ -164,9 +188,13 @@ class _StartButtonState extends ConsumerState<StartButton> {
         child: SizedBox(
           width: 16,
           height: 16,
-          child: SpinKitThreeBounce(
-            color: context.colorScheme.primary,
-            size: 16,
+          child: OverflowBox(
+            maxWidth: 30,
+            maxHeight: 16,
+            child: SpinKitThreeBounce(
+              color: context.colorScheme.primary,
+              size: 16,
+            ),
           ),
         ),
       );

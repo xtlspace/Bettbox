@@ -86,6 +86,7 @@ type ExternalProvider struct {
 	Path             string                     `json:"path"`
 	UpdateAt         time.Time                  `json:"update-at"`
 	SubscriptionInfo *provider.SubscriptionInfo `json:"subscription-info"`
+	Proxies          []constant.Proxy           `json:"proxies"`
 }
 
 const (

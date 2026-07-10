@@ -190,7 +190,9 @@ class _GeoDataListItemState extends State<GeoDataListItem> {
                   child: snapshot.data == null
                       ? SizedBox(width: height, height: height)
                       : Text(
-                          snapshot.data!.desc,
+                          isBundleMRS
+                              ? '${TrafficValue(value: snapshot.data!.size).show}  ·  Bundled'
+                              : snapshot.data!.desc,
                           style: context.textTheme.bodyMedium,
                         ),
                 );

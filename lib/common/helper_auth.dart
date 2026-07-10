@@ -8,7 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 
-import 'path.dart';
+import 'package:win32_registry/win32_registry.dart';
+import 'common.dart';
 
 const _cryptProtectUiForbidden = 0x1;
 
@@ -22,15 +23,49 @@ class HelperAuthManager {
       return false;
     }
 
+    if (Platform.isWindows) {
+      commonPrint.log('[HelperAuth] Trying to sync auth key from registry for service: $appHelperService');
+      RegistryKey? key;
+      try {
+        final keyPath = 'SYSTEM\\CurrentControlSet\\Services\\$appHelperService';
+        key = Registry.openPath(
+          RegistryHive.localMachine,
+          path: keyPath,
+          desiredAccessRights: AccessRights.readOnly,
+        );
+        final list = key.getStringArrayValue('Environment');
+        if (list != null) {
+          for (final item in list) {
+            if (item.startsWith('HELPER_AUTH_KEY=')) {
+              final val = item.substring('HELPER_AUTH_KEY='.length);
+              if (_isValidHexKey(val)) {
+                _authKey = val;
+                final file = File(await appPath.helperAuthKeyPath);
+                await _persistAuthKey(file, _authKey!);
+                commonPrint.log('[HelperAuth] Successfully synced auth key from registry.');
+                return false;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        commonPrint.log('[HelperAuth] Failed to read registry: $e');
+      } finally {
+        key?.close();
+      }
+    }
+
     final file = File(await appPath.helperAuthKeyPath);
     final existingKey = await _readPersistedAuthKey(file);
     if (existingKey != null) {
       _authKey = existingKey;
+      commonPrint.log('[HelperAuth] Loaded auth key from file.');
       return false;
     }
 
     _authKey = _generateRandomKey();
     await _persistAuthKey(file, _authKey!);
+    commonPrint.log('[HelperAuth] Generated new random auth key.');
     return true;
   }
 

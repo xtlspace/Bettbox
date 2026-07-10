@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"time"
@@ -65,6 +66,10 @@ func handleStopListener() bool {
 	defer runLock.Unlock()
 	isRunning = false
 	listener.StopListener()
+	go func() {
+		runtime.GC()
+		debug.FreeOSMemory()
+	}()
 	return true
 }
 
@@ -72,10 +77,13 @@ func handleGetIsInit() bool {
 	return isInit
 }
 
-func handleForceGc() {
+func handleForceGc(forceFreeOSMemory bool) {
 	go func() {
-		log.Infoln("[APP] request force GC")
+		log.Infoln("[APP] Request force GC", forceFreeOSMemory)
 		runtime.GC()
+		if forceFreeOSMemory {
+			debug.FreeOSMemory()
+		}
 	}()
 }
 
@@ -83,6 +91,7 @@ func handleShutdown() bool {
 	stopListeners()
 	executor.Shutdown()
 	runtime.GC()
+	debug.FreeOSMemory()
 	isInit = false
 	return true
 }
@@ -117,7 +126,7 @@ func handleDecryptAgeConfig(params *DecryptAgeConfigParams) string {
 func handleGetProxies() map[string]constant.Proxy {
 	runLock.Lock()
 	defer runLock.Unlock()
-	return getProxiesWithProviders()
+	return tunnel.Proxies()
 }
 
 func handleChangeProxy(data string, fn func(string string)) {
@@ -132,8 +141,7 @@ func handleChangeProxy(data string, fn func(string string)) {
 		}
 		groupName := *params.GroupName
 		proxyName := *params.ProxyName
-		proxies := getProxiesWithProviders()
-		group, ok := proxies[groupName]
+		group, ok := tunnel.Proxies()[groupName]
 		if !ok {
 			fn("Not found group")
 			return
@@ -209,8 +217,7 @@ func handleAsyncTestDelay(paramsString string, fn func(string)) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(params.Timeout))
 		defer cancel()
 
-		proxies := getProxiesWithProviders()
-		proxy := proxies[params.ProxyName]
+		proxy := tunnel.ProxiesWithProviders()[params.ProxyName]
 
 		delayData := &Delay{
 			Name: params.ProxyName,

@@ -27,21 +27,22 @@
 
 ---
 
-### ☕ Спонсорская поддержка
-
-**Если этот проект был вам полезен, вы можете поддержать разработку следующими способами:**
-
-* TRON (TRC-20): <code>TCkTtZfF2WrciZLaJj3e1aqrh3zdTnCkDa</code>
-* EVM Compatible: <code>0xF8B1B39431013359D83F38a4e403087624618E67</code>
-* Solana: <code>C2YQPcKR2YmrPtBvkE13wckjgescUfMA5HzUioR4rQUd</code>
-* Bitcoin: <code>bc1qu950cl6035qvllmzk6cfw3l30j2lg3cq9n6g6h</code>
-
----
-
 
 ## 🛠️ Установка и загрузка
 
-Пожалуйста, посетите страницу [Releases](https://github.com/appshubcc/Bettbox/releases), чтобы заг---
+Пожалуйста, перейдите на страницу **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**, чтобы скачать подходящий для вашей платформы установочный пакет.
+
+Другие способы установки:</br>
+**ArchLinux:** <code>yay -S bettbox-bin или paru -S bettbox-bin</code>
+**Совместимая версия:** <code>yay -S bettbox-compatible-bin или paru -S bettbox-compatible-bin</code>
+
+* **Популярные настольные платформы**: **Windows** (x64/arm64), **macOS** (Intel/Apple Silicon), **Linux** (x64/arm64)
+* **Windows 7**: Пожалуйста, используйте совместно с [[VxKex]](https://github.com/i486/VxKex/releases).
+* **Android**: **Android** (ARMv8/ ARMv7/ x86_64/ Universal)
+* **Android TV**: Полностью поддерживается, ARMv7 32-bit опционально.
+* **HarmonyOS NEXT**: Пожалуйста, используйте совместно с [[ZhuoYiTong]](https://harmonyos.cool/android-app).
+
+---
 </div>
 
 ## 🚀 Основные особенности
@@ -93,14 +94,22 @@
 
 ---
 
+### ☕ Спонсорская поддержка
+
+**Если этот проект был вам полезен, вы можете поддержать разработку следующими способами:**
+
+* TRON (TRC-20): <code>TCkTtZfF2WrciZLaJj3e1aqrh3zdTnCkDa</code>
+* EVM Compatible: <code>0xF8B1B39431013359D83F38a4e403087624618E67</code>
+* Solana: <code>C2YQPcKR2YmrPtBvkE13wckjgescUfMA5HzUioR4rQUd</code>
+* Bitcoin: <code>bc1qu950cl6035qvllmzk6cfw3l30j2lg3cq9n6g6h</code>
+
+---
+
 ## ❤️ Благодарности
 
-Создание Bettbox опирается на следующие базовые проекты:
+* [FlClash](https://github.com/chen08209/FlClash) - [Mihomo](https://github.com/MetaCubeX/mihomo)
 
-* [FlClash](https://github.com/chen08209/FlClash) — Отличный графический интерфейс (GUI) с открытым исходным кодом от разработчика Chen.
-* [Mihomo](https://github.com/MetaCubeX/mihomo) — Мощное, гибкое и стабильное прокси-ядро.
-
-Во время разработки мы также черпали вдохновение из следующих проектов (в порядке использования):
+Другие проекты (в хронологическом порядке):
 
 [CMFA](https://github.com/MetaCubeX/ClashMetaForAndroid), [Sparkle](https://github.com/xishang0128/sparkle), [SFA](https://github.com/SagerNet/sing-box-for-android), [HUSI](https://github.com/xchacha20-poly1305/husi), [V2rayN](https://github.com/2dust/v2rayN)
 

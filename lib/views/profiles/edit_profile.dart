@@ -97,7 +97,7 @@ class EditProfileViewState extends State<EditProfileView> {
       await appController.safeRun(() async {
         final updatedProfile = await profile.update();
         await appController.addProfile(updatedProfile);
-      }, silence: false);
+      }, silence: false, needLoading: true);
     } else {
       final hasUpdate = widget.profile.url != profile.url;
       if (fileData != null) {

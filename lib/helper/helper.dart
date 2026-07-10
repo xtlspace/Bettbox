@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:bett_box/common/helper_auth.dart';
 import 'package:bett_box/common/identity.dart';
 import 'package:bett_box/common/print.dart';
+import 'package:bett_box/common/win32_kernel.dart';
 import 'package:ffi/ffi.dart';
 
 const helperProtocolVersion = 1;
@@ -310,12 +311,12 @@ class _NamedPipeClient {
       final response = _readExactly(handle, length);
       return utf8.decode(response);
     } finally {
-      _Kernel32.instance.closeHandle(handle);
+      Kernel32.instance.closeHandle(handle);
     }
   }
 
   int _connect() {
-    final kernel32 = _Kernel32.instance;
+    final kernel32 = Kernel32.instance;
     final pipeNamePtr = pipeName.toNativeUtf16();
     final stopwatch = Stopwatch()..start();
 
@@ -323,14 +324,14 @@ class _NamedPipeClient {
       while (true) {
         final handle = kernel32.createFile(
           pipeNamePtr,
-          _genericRead | _genericWrite,
+          genericRead | genericWrite,
           0,
           nullptr,
-          _openExisting,
+          openExisting,
           0,
           0,
         );
-        if (handle != _invalidHandleValue) {
+        if (handle != invalidHandleValue) {
           return handle;
         }
 
@@ -340,9 +341,9 @@ class _NamedPipeClient {
           throw StateError('Helper pipe connection timed out: $error');
         }
 
-        if (error == _errorPipeBusy) {
+        if (error == errorPipeBusy) {
           kernel32.waitNamedPipe(pipeNamePtr, remainingMs);
-        } else if (error == _errorFileNotFound) {
+        } else if (error == errorFileNotFound) {
           sleep(const Duration(milliseconds: 50));
         } else {
           throw StateError('Helper pipe connection failed: $error');
@@ -354,7 +355,7 @@ class _NamedPipeClient {
   }
 
   void _writeAll(int handle, Uint8List data) {
-    final kernel32 = _Kernel32.instance;
+    final kernel32 = Kernel32.instance;
     final buffer = calloc<Uint8>(data.length);
     final written = calloc<Uint32>();
 
@@ -384,7 +385,7 @@ class _NamedPipeClient {
   }
 
   Uint8List _readExactly(int handle, int length) {
-    final kernel32 = _Kernel32.instance;
+    final kernel32 = Kernel32.instance;
     final buffer = calloc<Uint8>(length);
     final bytesRead = calloc<Uint32>();
 
@@ -413,115 +414,3 @@ class _NamedPipeClient {
     }
   }
 }
-
-class _Kernel32 {
-  _Kernel32._();
-
-  static final instance = _Kernel32._();
-
-  final DynamicLibrary _kernel32 = DynamicLibrary.open('kernel32.dll');
-
-  late final int Function(
-    Pointer<Utf16> lpFileName,
-    int dwDesiredAccess,
-    int dwShareMode,
-    Pointer<Void> lpSecurityAttributes,
-    int dwCreationDisposition,
-    int dwFlagsAndAttributes,
-    int hTemplateFile,
-  )
-  createFile = _kernel32
-      .lookupFunction<
-        IntPtr Function(
-          Pointer<Utf16> lpFileName,
-          Uint32 dwDesiredAccess,
-          Uint32 dwShareMode,
-          Pointer<Void> lpSecurityAttributes,
-          Uint32 dwCreationDisposition,
-          Uint32 dwFlagsAndAttributes,
-          IntPtr hTemplateFile,
-        ),
-        int Function(
-          Pointer<Utf16> lpFileName,
-          int dwDesiredAccess,
-          int dwShareMode,
-          Pointer<Void> lpSecurityAttributes,
-          int dwCreationDisposition,
-          int dwFlagsAndAttributes,
-          int hTemplateFile,
-        )
-      >('CreateFileW');
-
-  late final int Function(
-    int hFile,
-    Pointer<Uint8> lpBuffer,
-    int nNumberOfBytesToRead,
-    Pointer<Uint32> lpNumberOfBytesRead,
-    Pointer<Void> lpOverlapped,
-  )
-  readFile = _kernel32
-      .lookupFunction<
-        Int32 Function(
-          IntPtr hFile,
-          Pointer<Uint8> lpBuffer,
-          Uint32 nNumberOfBytesToRead,
-          Pointer<Uint32> lpNumberOfBytesRead,
-          Pointer<Void> lpOverlapped,
-        ),
-        int Function(
-          int hFile,
-          Pointer<Uint8> lpBuffer,
-          int nNumberOfBytesToRead,
-          Pointer<Uint32> lpNumberOfBytesRead,
-          Pointer<Void> lpOverlapped,
-        )
-      >('ReadFile');
-
-  late final int Function(
-    int hFile,
-    Pointer<Uint8> lpBuffer,
-    int nNumberOfBytesToWrite,
-    Pointer<Uint32> lpNumberOfBytesWritten,
-    Pointer<Void> lpOverlapped,
-  )
-  writeFile = _kernel32
-      .lookupFunction<
-        Int32 Function(
-          IntPtr hFile,
-          Pointer<Uint8> lpBuffer,
-          Uint32 nNumberOfBytesToWrite,
-          Pointer<Uint32> lpNumberOfBytesWritten,
-          Pointer<Void> lpOverlapped,
-        ),
-        int Function(
-          int hFile,
-          Pointer<Uint8> lpBuffer,
-          int nNumberOfBytesToWrite,
-          Pointer<Uint32> lpNumberOfBytesWritten,
-          Pointer<Void> lpOverlapped,
-        )
-      >('WriteFile');
-
-  late final int Function(Pointer<Utf16> lpNamedPipeName, int nTimeOut)
-  waitNamedPipe = _kernel32
-      .lookupFunction<
-        Int32 Function(Pointer<Utf16> lpNamedPipeName, Uint32 nTimeOut),
-        int Function(Pointer<Utf16> lpNamedPipeName, int nTimeOut)
-      >('WaitNamedPipeW');
-
-  late final int Function(int hObject) closeHandle = _kernel32
-      .lookupFunction<
-        Int32 Function(IntPtr hObject),
-        int Function(int hObject)
-      >('CloseHandle');
-
-  late final int Function() getLastError = _kernel32
-      .lookupFunction<Uint32 Function(), int Function()>('GetLastError');
-}
-
-const _genericRead = 0x80000000;
-const _genericWrite = 0x40000000;
-const _openExisting = 3;
-const _invalidHandleValue = -1;
-const _errorFileNotFound = 2;
-const _errorPipeBusy = 231;

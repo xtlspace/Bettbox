@@ -18,7 +18,7 @@ class Vpn {
     methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'gc':
-          clashCore.requestGc();
+          clashCore.requestGc(forceFreeOSMemory: true);
           break;
         case 'closeConnections':
           clashCore.closeConnections();

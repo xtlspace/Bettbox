@@ -14,32 +14,46 @@ class FrameCodec {
 }
 
 class FrameDecoder {
-  Uint8List _buffer = Uint8List(0);
+  final BytesBuilder _builder = BytesBuilder();
 
   List<String> decode(Uint8List data) {
     final results = <String>[];
-    _buffer = Uint8List.fromList([..._buffer, ...data]);
+    _builder.add(data);
+
+    final Uint8List buffer = _builder.takeBytes();
+    int offset = 0;
 
     try {
-      while (_buffer.length >= 4) {
-        final buffer = ByteData.sublistView(_buffer);
-        final length = buffer.getUint32(0, Endian.little);
+      while (buffer.length - offset >= 4) {
+        final view = ByteData.view(buffer.buffer, buffer.offsetInBytes + offset, 4);
+        final length = view.getUint32(0, Endian.little);
 
         if (length > 10 * 1024 * 1024 || length < 0) {
-          _buffer = Uint8List(0);
           throw FormatException('Invalid or too large frame length: $length');
         }
 
-        if (_buffer.length < 4 + length) {
+        if (buffer.length - offset < 4 + length) {
           break;
         }
 
-        final frame = _buffer.sublist(4, 4 + length);
+        final frame = Uint8List.view(
+          buffer.buffer,
+          buffer.offsetInBytes + offset + 4,
+          length,
+        );
         results.add(utf8.decode(frame));
-        _buffer = _buffer.sublist(4 + length);
+        offset += 4 + length;
+      }
+
+      if (offset < buffer.length) {
+        _builder.add(Uint8List.view(
+          buffer.buffer,
+          buffer.offsetInBytes + offset,
+          buffer.length - offset,
+        ));
       }
     } catch (e) {
-      _buffer = Uint8List(0);
+      _builder.clear();
       rethrow;
     }
 
@@ -47,7 +61,7 @@ class FrameDecoder {
   }
 
   void reset() {
-    _buffer = Uint8List(0);
+    _builder.clear();
   }
 }
 

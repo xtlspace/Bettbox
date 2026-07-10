@@ -344,6 +344,13 @@ class Utils {
             return 0;
           });
     for (final interface in interfaces) {
+      final nameLower = interface.name.toLowerCase();
+      if (nameLower.contains('tun') ||
+          nameLower.contains('vpn') ||
+          nameLower.contains('tap') ||
+          nameLower.contains('ppp')) {
+        continue;
+      }
       final addresses = interface.addresses;
       if (addresses.isEmpty) {
         continue;

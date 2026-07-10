@@ -60,12 +60,8 @@ class ProxyCard extends StatelessWidget {
             proxiesStyleSettingProvider.select((s) => s.delayAnimation),
           );
 
-          // REJECT, REJECT-DROP, PASS 节点不显示测试按钮
           if (_isNonTestableProxy) {
-            return const SizedBox(
-              height: 0,
-              width: 0,
-            );
+            return const SizedBox(height: 0, width: 0);
           }
 
           if (delay == 0) {
@@ -117,47 +113,76 @@ class ProxyCard extends StatelessWidget {
   ) {
     return switch (animationType) {
       DelayAnimationType.none => Icon(Icons.bolt, size: size),
-      DelayAnimationType.rotatingCircle =>
-        SpinKitRotatingCircle(color: color, size: size),
+      DelayAnimationType.rotatingCircle => SpinKitRotatingCircle(
+        color: color,
+        size: size,
+      ),
       DelayAnimationType.pulse => SpinKitPulse(color: color, size: size),
-      DelayAnimationType.spinningLines =>
-        SpinKitSpinningLines(color: color, size: size),
-      DelayAnimationType.threeInOut =>
-        SpinKitThreeInOut(color: color, size: size),
-      DelayAnimationType.threeBounce =>
-        SpinKitThreeBounce(color: color, size: size),
+      DelayAnimationType.spinningLines => SpinKitSpinningLines(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.threeInOut => SpinKitThreeInOut(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.threeBounce => SpinKitThreeBounce(
+        color: color,
+        size: size,
+      ),
       DelayAnimationType.circle => SpinKitCircle(color: color, size: size),
-      DelayAnimationType.fadingCircle =>
-        SpinKitFadingCircle(color: color, size: size),
-      DelayAnimationType.fadingFour =>
-        SpinKitFadingFour(color: color, size: size),
+      DelayAnimationType.fadingCircle => SpinKitFadingCircle(
+        color: color,
+        size: size,
+      ),
+      DelayAnimationType.fadingFour => SpinKitFadingFour(
+        color: color,
+        size: size,
+      ),
       DelayAnimationType.wave => SpinKitWave(color: color, size: size),
-      DelayAnimationType.doubleBounce =>
-        SpinKitDoubleBounce(color: color, size: size),
+      DelayAnimationType.doubleBounce => SpinKitDoubleBounce(
+        color: color,
+        size: size,
+      ),
     };
   }
 
   Widget _buildProxyNameWithIcon(BuildContext context, WidgetRef ref) {
     final nameWidget = _buildProxyNameText(context);
 
+    final showComputedMark = groupType.isComputedSelected &&
+        ref.watch(getProxyNameProvider(groupName)) == proxy.name;
+
+    Widget wrapPadding(Widget child) {
+      if (showComputedMark) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 28),
+          child: child,
+        );
+      }
+      return child;
+    }
+
     if (_emojiRegex.hasMatch(proxy.name)) {
-      return nameWidget;
+      return wrapPadding(nameWidget);
     }
 
     final subGroupIcon = ref.watch(
       groupIconMapProvider.select((map) => map[proxy.name] ?? ''),
     );
     if (subGroupIcon.isEmpty) {
-      return nameWidget;
+      return wrapPadding(nameWidget);
     }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CommonTargetIcon(src: subGroupIcon, size: measure.bodyMediumHeight),
-        const SizedBox(width: 4),
-        Flexible(child: nameWidget),
-      ],
+    return wrapPadding(
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CommonTargetIcon(src: subGroupIcon, size: measure.bodyMediumHeight),
+          const SizedBox(width: 4),
+          Flexible(child: nameWidget),
+        ],
+      ),
     );
   }
 
@@ -271,14 +296,15 @@ class ProxyCard extends StatelessWidget {
                                 child: TooltipText(
                                   text: Text(
                                     proxy.type,
-                                    style: context.textTheme.bodySmall?.copyWith(
-                                      overflow: TextOverflow.ellipsis,
-                                      color: context
-                                          .textTheme
-                                          .bodySmall
-                                          ?.color
-                                          ?.opacity80,
-                                    ),
+                                    style: context.textTheme.bodySmall
+                                        ?.copyWith(
+                                          overflow: TextOverflow.ellipsis,
+                                          color: context
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color
+                                              ?.opacity80,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -365,7 +391,11 @@ class _ProxyComputedMark extends ConsumerWidget {
           shape: BoxShape.circle,
           color: Theme.of(context).colorScheme.secondaryContainer,
         ),
-        child: const SelectIcon(),
+        child: Icon(
+          Icons.lock_outline,
+          size: 18,
+          color: Theme.of(context).colorScheme.onSecondaryContainer,
+        ),
       ),
     );
   }

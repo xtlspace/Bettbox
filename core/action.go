@@ -47,7 +47,15 @@ func handleAction(action *Action, result ActionResult) {
 		result.success(handleGetIsInit())
 		return
 	case forceGcMethod:
-		handleForceGc()
+		var forceFreeOSMemory bool
+		if action.Data != nil {
+			if strVal, ok := action.Data.(string); ok {
+				forceFreeOSMemory = (strVal == "true")
+			} else if boolVal, ok := action.Data.(bool); ok {
+				forceFreeOSMemory = boolVal
+			}
+		}
+		handleForceGc(forceFreeOSMemory)
 		result.success(true)
 		return
 	case shutdownMethod:

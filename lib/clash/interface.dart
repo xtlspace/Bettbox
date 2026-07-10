@@ -16,7 +16,7 @@ mixin ClashInterface {
 
   Future<bool> get isInit;
 
-  Future<bool> forceGc();
+  Future<bool> forceGc({bool forceFreeOSMemory = false});
 
   FutureOr<String> validateConfig(String data, {String? ageSecretKey});
 
@@ -199,8 +199,11 @@ abstract class ClashHandlerInterface with ClashInterface {
   }
 
   @override
-  Future<bool> forceGc() {
-    return invoke<bool>(method: ActionMethod.forceGc);
+  Future<bool> forceGc({bool forceFreeOSMemory = false}) {
+    return invoke<bool>(
+      method: ActionMethod.forceGc,
+      data: forceFreeOSMemory ? 'true' : 'false',
+    );
   }
 
   @override

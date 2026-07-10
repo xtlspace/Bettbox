@@ -38,6 +38,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
     private var hasStartedForeground = false
 
     private var unlockReceiver: BroadcastReceiver? = null
+    private val fairMemoryHelper = FairMemoryHelper(TAG)
     
     @Volatile
     private var isSpeedNotificationEnabled = false
@@ -63,6 +64,12 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             addAction(Intent.ACTION_SCREEN_ON)
         }
         registerReceiver(unlockReceiver, filter, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Context.RECEIVER_NOT_EXPORTED else 0)
+
+        fairMemoryHelper.register(
+            context = this,
+            onTrim = { GlobalState.getCurrentVPNPlugin()?.requestGc() },
+            onKill = { /* system will kill process; service has no extra state to save */ }
+        )
     }
 
     override suspend fun start(options: VpnOptions): Int = with(Builder()) {
@@ -259,7 +266,9 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        GlobalState.getCurrentVPNPlugin()?.requestGc()
+        if (level == 10 || level == 15 || level >= 40) {
+            GlobalState.getCurrentVPNPlugin()?.requestGc()
+        }
     }
 
     private val binder = LocalBinder()
@@ -302,6 +311,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             unregisterReceiver(it)
             unlockReceiver = null
         }
+        fairMemoryHelper.unregister(this)
         super.onDestroy()
     }
 }

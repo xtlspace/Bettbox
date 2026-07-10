@@ -262,6 +262,7 @@ _ExternalProvider _$ExternalProviderFromJson(Map<String, dynamic> json) =>
       isUpdating: json['isUpdating'] as bool? ?? false,
       vehicleType: json['vehicle-type'] as String,
       updateAt: DateTime.parse(json['update-at'] as String),
+      proxies: json['proxies'] as List<dynamic>?,
     );
 
 Map<String, dynamic> _$ExternalProviderToJson(_ExternalProvider instance) =>
@@ -274,6 +275,7 @@ Map<String, dynamic> _$ExternalProviderToJson(_ExternalProvider instance) =>
       'isUpdating': instance.isUpdating,
       'vehicle-type': instance.vehicleType,
       'update-at': instance.updateAt.toIso8601String(),
+      'proxies': instance.proxies,
     };
 
 _Action _$ActionFromJson(Map<String, dynamic> json) => _Action(

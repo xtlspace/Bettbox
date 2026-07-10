@@ -222,6 +222,7 @@ abstract class ExternalProvider with _$ExternalProvider {
     @Default(false) bool isUpdating,
     @JsonKey(name: 'vehicle-type') required String vehicleType,
     @JsonKey(name: 'update-at') required DateTime updateAt,
+    List<dynamic>? proxies,
   }) = _ExternalProvider;
 
   factory ExternalProvider.fromJson(Map<String, Object?> json) =>

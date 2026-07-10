@@ -95,8 +95,25 @@ class ClashCore {
     final proxies = await clashInterface.getProxies();
     if (proxies.isEmpty) return [];
 
+    final providers = await getExternalProviders();
+
     return Isolate.run<List<Group>>(() {
-      final globalProxy = proxies[UsedProxy.GLOBAL.name];
+      final allProxies = Map<String, dynamic>.from(proxies);
+      for (final provider in providers) {
+        if (provider.proxies != null) {
+          for (final proxy in provider.proxies!) {
+            if (proxy is Map) {
+              final proxyMap = Map<String, dynamic>.from(proxy);
+              final name = proxyMap['name'];
+              if (name != null) {
+                allProxies[name] = proxyMap;
+              }
+            }
+          }
+        }
+      }
+
+      final globalProxy = allProxies[UsedProxy.GLOBAL.name];
       if (globalProxy == null) return [];
 
       final allList = globalProxy['all'] as List?;
@@ -105,18 +122,18 @@ class ClashCore {
       final groupNames = [
         UsedProxy.GLOBAL.name,
         ...allList.where((e) {
-          final proxy = proxies[e] as Map<String, dynamic>?;
+          final proxy = allProxies[e] as Map<String, dynamic>?;
           return GroupTypeExtension.valueList.contains(proxy?['type']);
         }),
       ];
       final groupsRaw = groupNames.map((groupName) {
-        final proxyData = proxies[groupName] as Map?;
+        final proxyData = allProxies[groupName] as Map?;
         if (proxyData == null) return null;
         final group = Map<String, dynamic>.from(
           proxyData.cast<String, dynamic>(),
         );
         group['all'] = ((group['all'] ?? []) as List)
-            .map((name) => proxies[name])
+            .map((name) => allProxies[name])
             .whereType<Map<String, dynamic>>()
             .toList();
         return group;
@@ -304,8 +321,8 @@ class ClashCore {
     clashInterface.stopLog();
   }
 
-  Future<void> requestGc() async {
-    await clashInterface.forceGc();
+  Future<void> requestGc({bool forceFreeOSMemory = false}) async {
+    await clashInterface.forceGc(forceFreeOSMemory: forceFreeOSMemory);
   }
 
   Future<void> flushFakeIP() async {

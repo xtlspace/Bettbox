@@ -157,11 +157,14 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                                     )
                                   : Container(
                                       padding: const EdgeInsets.all(2),
-                                      child: AspectRatio(
-                                        aspectRatio: 1,
-                                        child: SpinKitThreeBounce(
-                                          color: context.colorScheme.primary,
-                                          size: 16,
+                                      child: Center(
+                                        child: OverflowBox(
+                                          maxWidth: 30,
+                                          maxHeight: 16,
+                                          child: SpinKitThreeBounce(
+                                            color: context.colorScheme.primary,
+                                            size: 16,
+                                          ),
                                         ),
                                       ),
                                     ),

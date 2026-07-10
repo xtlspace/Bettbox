@@ -22,6 +22,17 @@ class BettboxService : Service(), BaseServiceInterface {
     @Volatile
     private var hasStartedForeground = false
 
+    private val fairMemoryHelper = FairMemoryHelper("BettboxService")
+
+    override fun onCreate() {
+        super.onCreate()
+        fairMemoryHelper.register(
+            context = this,
+            onTrim = { GlobalState.getCurrentVPNPlugin()?.requestGc() },
+            onKill = { /* system will kill process; service has no extra state to save */ }
+        )
+    }
+
     inner class LocalBinder : Binder() {
         fun getService() = this@BettboxService
     }
@@ -98,13 +109,16 @@ class BettboxService : Service(), BaseServiceInterface {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        GlobalState.getCurrentVPNPlugin()?.requestGc()
+        if (level == 10 || level == 15 || level >= 40) {
+            GlobalState.getCurrentVPNPlugin()?.requestGc()
+        }
     }
 
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onDestroy() {
         stop()
+        fairMemoryHelper.unregister(this)
         super.onDestroy()
     }
 }

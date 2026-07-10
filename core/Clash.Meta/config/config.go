@@ -276,7 +276,7 @@ type RawTun struct {
 	Stack               C.TUNStack `yaml:"stack" json:"stack"`
 	DNSHijack           []string   `yaml:"dns-hijack" json:"dns-hijack"`
 	AutoRoute           bool       `yaml:"auto-route" json:"auto-route"`
-	AutoDetectInterface bool       `yaml:"auto-detect-interface"`
+	AutoDetectInterface bool       `yaml:"auto-detect-interface" json:"auto-detect-interface"`
 
 	MTU        uint32 `yaml:"mtu" json:"mtu,omitempty"`
 	GSO        bool   `yaml:"gso" json:"gso,omitempty"`
@@ -349,10 +349,10 @@ type RawIPTables struct {
 }
 
 type RawExperimental struct {
-	Fingerprints     []string `yaml:"fingerprints"`
-	QUICGoDisableGSO bool     `yaml:"quic-go-disable-gso"`
-	QUICGoDisableECN bool     `yaml:"quic-go-disable-ecn"`
-	IP4PEnable       bool     `yaml:"dialer-ip4p-convert"`
+	Fingerprints     []string `yaml:"fingerprints" json:"fingerprints"`
+	QUICGoDisableGSO bool     `yaml:"quic-go-disable-gso" json:"quic-go-disable-gso"`
+	QUICGoDisableECN bool     `yaml:"quic-go-disable-ecn" json:"quic-go-disable-ecn"`
+	IP4PEnable       bool     `yaml:"dialer-ip4p-convert" json:"dialer-ip4p-convert"`
 }
 
 type RawProfile struct {
@@ -496,7 +496,7 @@ func DefaultRawConfig() *RawConfig {
 		ProxyGroup:        []map[string]any{},
 		TCPConcurrent:     false,
 		FindProcessMode:   process.FindProcessStrict,
-		GlobalUA:          "ClashMetaForAndroid/2.11.30.Meta",
+		GlobalUA:          "FlClash/ClashMetaForAndroid/2.11.31.Meta",
 		ETagSupport:       true,
 		DNS: RawDNS{
 			Enable:         false,
@@ -754,7 +754,7 @@ func temporaryUpdateGeneral(general *General) func()
 
 func parseGeneral(cfg *RawConfig) (*General, error) {
 	if cfg.GlobalClientFingerprint != "" {
-		log.Infoln("The `global-client-fingerprint` configuration is removed, please set `client-fingerprint` directly on the proxy instead")
+		log.Warnln("The `global-client-fingerprint` configuration is removed, please set `client-fingerprint` directly on the proxy instead")
 	}
 	return &General{
 		Inbound: Inbound{
@@ -997,11 +997,11 @@ func parseListeners(cfg *RawConfig) (listeners map[string]C.InboundListener, err
 	for index, mapping := range cfg.Listeners {
 		inboundListener, err := listener.ParseListener(mapping)
 		if err != nil {
-			return nil, fmt.Errorf("proxy %d: %w", index, err)
+			return nil, fmt.Errorf("listener %d: %w", index, err)
 		}
 
 		name := inboundListener.Name()
-		if _, exist := mapping[name]; exist {
+		if _, exist := listeners[name]; exist {
 			return nil, fmt.Errorf("listener %s is the duplicate name", name)
 		}
 

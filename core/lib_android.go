@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -54,11 +55,12 @@ func (t *TunHandler) handleProtect(fd int) {
 	_ = t.limit.Acquire(context.Background(), 1)
 	defer t.limit.Release(1)
 
-	if t.listener == nil {
+	cb := t.callback
+	if cb == nil {
 		return
 	}
 
-	Protect(t.callback, fd)
+	Protect(cb, fd)
 }
 
 func (t *TunHandler) handleResolveProcess(source, target net.Addr) string {
@@ -86,15 +88,31 @@ var (
 	tunLock    sync.Mutex
 	runTime    *time.Time
 	errBlocked = errors.New("blocked")
-	tunHandler *TunHandler
+	tunHandler atomic.Pointer[TunHandler]
 )
+
+func init() {
+	dialer.DefaultSocketHook = func(network, address string, conn syscall.RawConn) error {
+		if platform.ShouldBlockConnection() {
+			return errBlocked
+		}
+		handler := tunHandler.Load()
+		if handler != nil {
+			return conn.Control(func(fd uintptr) {
+				handler.handleProtect(int(fd))
+			})
+		}
+		return nil
+	}
+}
 
 func handleStopTun() {
 	tunLock.Lock()
 	defer tunLock.Unlock()
 	runTime = nil
-	if tunHandler != nil {
-		tunHandler.close()
+	handler := tunHandler.Swap(nil)
+	if handler != nil {
+		handler.close()
 	}
 }
 
@@ -105,17 +123,19 @@ func handleStartTun(fd int, callback unsafe.Pointer) {
 	now := time.Now()
 	runTime = &now
 	if fd != 0 {
-		tunHandler = &TunHandler{
+		handler := &TunHandler{
 			callback: callback,
 			limit:    semaphore.NewWeighted(4),
 		}
+		tunHandler.Store(handler)
 		initTunHook()
 		tunListener, _ := t.Start(fd, currentConfig.General.Tun.Device, currentConfig.General.Tun.Stack, currentConfig.General.Tun.DisableICMPForwarding, uint32(currentConfig.General.Tun.MTU), currentConfig.General.IPv6)
 		if tunListener != nil {
 			log.Infoln("TUN address: %v", tunListener.Address())
-			tunHandler.listener = tunListener
+			handler.listener = tunListener
 		} else {
 			removeTunHook()
+			tunHandler.Store(nil)
 		}
 	}
 }
@@ -128,25 +148,20 @@ func handleGetRunTime() string {
 }
 
 func initTunHook() {
-	dialer.DefaultSocketHook = func(network, address string, conn syscall.RawConn) error {
-		if platform.ShouldBlockConnection() {
-			return errBlocked
-		}
-		return conn.Control(func(fd uintptr) {
-			tunHandler.handleProtect(int(fd))
-		})
-	}
 	process.DefaultPackageNameResolver = func(metadata *constant.Metadata) (string, error) {
 		src, dst := metadata.RawSrcAddr, metadata.RawDstAddr
 		if src == nil || dst == nil {
 			return "", process.ErrInvalidNetwork
 		}
-		return tunHandler.handleResolveProcess(src, dst), nil
+		handler := tunHandler.Load()
+		if handler == nil {
+			return "", errors.New("tun is closed")
+		}
+		return handler.handleResolveProcess(src, dst), nil
 	}
 }
 
 func removeTunHook() {
-	dialer.DefaultSocketHook = nil
 	process.DefaultPackageNameResolver = nil
 }
 
@@ -234,9 +249,7 @@ func quickStart(initParamsChar *C.char, paramsChar *C.char, stateParamsChar *C.c
 
 //export startTUN
 func startTUN(fd C.int, callback unsafe.Pointer) bool {
-	go func() {
-		handleStartTun(int(fd), callback)
-	}()
+	handleStartTun(int(fd), callback)
 	return true
 }
 
@@ -247,9 +260,7 @@ func getRunTime() *C.char {
 
 //export stopTun
 func stopTun() {
-	go func() {
-		handleStopTun()
-	}()
+	handleStopTun()
 }
 
 //export getCurrentProfileName

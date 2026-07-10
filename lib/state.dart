@@ -522,7 +522,9 @@ class GlobalState {
       }
     }
     rawConfig['external-ui'] = await appPath.uiPath;
-    rawConfig['interface-name'] = '';
+    if (rawConfig['interface-name'] == null) {
+      rawConfig['interface-name'] = '';
+    }
     rawConfig['tcp-concurrent'] = realPatchConfig.tcpConcurrent;
     rawConfig['unified-delay'] = realPatchConfig.unifiedDelay;
     rawConfig['ipv6'] = realPatchConfig.ipv6;
@@ -551,8 +553,8 @@ class GlobalState {
     rawConfig['tun']['route-address'] = realPatchConfig.tun.routeAddress;
     rawConfig['tun']['route-exclude-address'] =
         realPatchConfig.tun.routeExcludeAddress;
-    rawConfig['tun']['auto-route'] = true;
-    rawConfig['tun']['auto-detect-interface'] = true;
+    rawConfig['tun']['auto-route'] = !system.isAndroid;
+    rawConfig['tun']['auto-detect-interface'] = !system.isAndroid;
     rawConfig['tun']['strict-route'] = realPatchConfig.tun.strictRoute;
     rawConfig['tun']['endpoint-independent-nat'] =
         realPatchConfig.tun.endpointIndependentNat;
@@ -606,7 +608,12 @@ class GlobalState {
       }
     }
 
-    rawConfig['profile']['store-selected'] = true;
+    if (rawConfig['profile']['store-selected'] == null) {
+      rawConfig['profile']['store-selected'] = true;
+    }
+    if (rawConfig['profile']['store-fake-ip'] == null) {
+      rawConfig['profile']['store-fake-ip'] = true;
+    }
     rawConfig['geox-url'] = realPatchConfig.geoXUrl.toJson();
     rawConfig['global-ua'] = realPatchConfig.globalUa;
     if (rawConfig['hosts'] == null) {

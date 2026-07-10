@@ -126,7 +126,7 @@ class _MemoryInfoState extends State<MemoryInfo> {
 
           // Execute force GC after user confirms
           if (result == true) {
-            await clashCore.requestGc();
+            await clashCore.requestGc(forceFreeOSMemory: true);
             globalState.showNotifier(appLocalizations.success);
           }
         },

@@ -16,7 +16,7 @@ class SingleInstanceLock {
   }
 
   Future<bool> acquire() async {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 15; i++) {
       try {
         final lockFilePath = await appPath.lockFilePath;
         commonPrint.log(
@@ -31,8 +31,8 @@ class SingleInstanceLock {
         commonPrint.log(
           'SingleInstanceLock acquire attempt ${i + 1} failed: $e',
         );
-        if (i < 2) {
-          await Future.delayed(const Duration(milliseconds: 500));
+        if (i < 14) {
+          await Future.delayed(const Duration(milliseconds: 1000));
         }
       }
     }

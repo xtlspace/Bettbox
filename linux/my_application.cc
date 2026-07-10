@@ -5,7 +5,39 @@
 #include <gdk/gdkx.h>
 #endif
 
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #include "flutter/generated_plugin_registrant.h"
+
+static void _send_control_command(const char* command) {
+  const gchar* user_data_dir = g_get_user_data_dir();
+  const char* names[] = {"BettboxDev.control.sock", "Bettbox.control.sock"};
+  for (int i = 0; i < 2; i++) {
+    gchar* socket_path = g_build_filename(user_data_dir, "com.appshub.bettbox", names[i], nullptr);
+    
+    int client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (client_fd >= 0) {
+      struct sockaddr_un addr;
+      memset(&addr, 0, sizeof(addr));
+      addr.sun_family = AF_UNIX;
+      strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
+      
+      if (connect(client_fd, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
+        gchar* payload = g_strdup_printf("%s\n", command);
+        ssize_t bytes_written = write(client_fd, payload, strlen(payload));
+        (void)bytes_written; // Suppress unused result warning
+        g_free(payload);
+        close(client_fd);
+        g_free(socket_path);
+        break;
+      }
+      close(client_fd);
+    }
+    g_free(socket_path);
+  }
+}
 
 // App method channel related
 static FlMethodChannel* app_channel = nullptr;
@@ -90,6 +122,16 @@ static gboolean my_application_local_command_line(GApplication* application, gch
   MyApplication* self = MY_APPLICATION(application);
   // Strip out the first argument as it is the binary name.
   self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
+
+  // Check for --exit or --restart before GApplication registration
+  for (gchar** arg = self->dart_entrypoint_arguments; arg && *arg; arg++) {
+    if (g_strcmp0(*arg, "--exit") == 0 || g_strcmp0(*arg, "--restart") == 0) {
+      const gchar* command = g_strcmp0(*arg, "--exit") == 0 ? "exit" : "restart";
+      _send_control_command(command);
+      *exit_status = 0;
+      return TRUE; // Skip registration/activation and exit immediately
+    }
+  }
 
   g_autoptr(GError) error = nullptr;
   if (!g_application_register(application, nullptr, &error)) {
