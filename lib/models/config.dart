@@ -230,6 +230,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(ThemeMode.system) ThemeMode themeMode,
     @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
     @Default(false) bool pureBlack,
+    @Default(false) bool classicTheme,
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useLightIcon,
     @Default(false) bool useHarmonyFont,
