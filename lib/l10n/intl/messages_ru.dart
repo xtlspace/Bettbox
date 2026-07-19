@@ -328,7 +328,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Удалить перенаправление",
     ),
     "desc": MessageLookupByLibrary.simpleMessage(
-      "Bettbox основан на мощном и гибком прокси-ядре Mihomo (Clash.Meta) и стремится к созданию лучшего пользовательского опыта. Форк от FlClash: Улучшенный опыт, готов к работе «из коробки»",
+      "XTLS修改版Bettbox，针对网站微调，增加易用性，致力于更好的体验",
     ),
     "destination": MessageLookupByLibrary.simpleMessage("Адрес назначения"),
     "destinationGeoIP": MessageLookupByLibrary.simpleMessage(
