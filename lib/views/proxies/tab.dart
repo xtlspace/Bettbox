@@ -9,6 +9,7 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../models/common.dart';
 import 'card.dart';
@@ -263,7 +264,10 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                         Tab(
                           child: Padding(
                             padding: globalState.isAndroidTV
-                                ? const EdgeInsets.symmetric(horizontal: 12, vertical: 6)
+                                ? const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  )
                                 : EdgeInsets.zero,
                             child: EmojiText(group.name),
                           ),
@@ -365,6 +369,10 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   @override
   Widget build(BuildContext context) {
     ref.watch(themeSettingProvider.select((state) => state.textScale));
+    final isMobileView = ref.watch(isMobileViewProvider);
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => state.classicTheme),
+    );
     final group = widget.group;
     final proxies = group.all;
     final sortedProxies = globalState.appController.getSortProxies(
@@ -383,11 +391,18 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
           key: _getPageStorageKey(),
           controller: _controller,
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-          padding: const EdgeInsets.only(
+          padding: EdgeInsets.only(
             top: 16,
             left: 16,
             right: 16,
-            bottom: 96,
+            bottom:
+                (sortedProxies.isNotEmpty &&
+                        sortedProxies.length % widget.columns == 0
+                    ? 88
+                    : 16) +
+                (isMobileView && !classicTheme
+                    ? getFloatingBottomBarReserveHeight(context)
+                    : 0),
           ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: widget.columns,
@@ -425,14 +440,21 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scale;
+  bool _isTesting = false;
 
   Future<void> _healthcheck() async {
-    if (_controller.isAnimating) {
+    if (_isTesting) {
       return;
     }
+    setState(() {
+      _isTesting = true;
+    });
     _controller.forward();
     await widget.onClick();
     if (mounted) {
+      setState(() {
+        _isTesting = false;
+      });
       _controller.reverse();
     }
   }
@@ -461,14 +483,41 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     return AnimatedBuilder(
       animation: _controller.view,
       builder: (_, child) {
-        return Transform.scale(scale: _scale.value, child: child);
+        final showLoading = _isTesting && _controller.isCompleted;
+        final contentScale = showLoading ? 0.0 : _scale.value;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            FloatingActionButton.extended(
+              heroTag: null,
+              onPressed: _healthcheck,
+              icon: Transform.scale(
+                scale: contentScale,
+                child: const Icon(Icons.network_ping),
+              ),
+              label: Transform.scale(
+                scale: contentScale,
+                child: Text(appLocalizations.startTest),
+              ),
+            ),
+            if (showLoading)
+              IgnorePointer(
+                child: SizedBox(
+                  width: 30,
+                  height: 16,
+                  child: OverflowBox(
+                    maxWidth: 30,
+                    maxHeight: 16,
+                    child: SpinKitThreeBounce(
+                      color: context.colorScheme.onPrimaryContainer,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
       },
-      child: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: _healthcheck,
-        icon: const Icon(Icons.network_ping),
-        label: Text(appLocalizations.startTest),
-      ),
     );
   }
 }

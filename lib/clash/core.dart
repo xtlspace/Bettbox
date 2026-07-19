@@ -107,6 +107,10 @@ class ClashCore {
               final name = proxyMap['name'];
               if (name != null) {
                 allProxies[name] = proxyMap;
+                final suffix = '[${provider.name}]';
+                if (!name.endsWith(suffix)) {
+                  allProxies['$name$suffix'] = proxyMap;
+                }
               }
             }
           }
@@ -173,8 +177,8 @@ class ClashCore {
     clashInterface.closeConnection(id);
   }
 
-  void closeConnections() {
-    clashInterface.closeConnections();
+  Future<void> closeConnections() async {
+    await clashInterface.closeConnections();
   }
 
   void resetConnections() {

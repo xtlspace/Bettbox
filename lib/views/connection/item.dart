@@ -65,8 +65,9 @@ class TrackerInfoItem extends ConsumerWidget {
     final progress = trackerInfo.progressText.isNotEmpty
         ? '${trackerInfo.progressText} · '
         : '';
-    final traffic = Traffic(up: trackerInfo.upload, down: trackerInfo.download);
-    return '$progress${traffic.toString()}';
+    final up = TrafficValue(value: trackerInfo.upload).toString();
+    final down = TrafficValue(value: trackerInfo.download).toString();
+    return '$progress$up↑ $down↓';
   }
 
   @override

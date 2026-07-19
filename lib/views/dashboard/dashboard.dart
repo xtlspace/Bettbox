@@ -175,6 +175,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final dashboardState = ref.watch(dashboardStateProvider);
     final columns = max(4 * ((dashboardState.viewWidth / 320).ceil()), 8);
     final spacing = 16.ap;
+    final isMobileView = ref.watch(isMobileViewProvider);
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => state.classicTheme),
+    );
     final children = [
       ...dashboardState.dashboardWidgets
           .where(
@@ -199,7 +203,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16).copyWith(bottom: 16),
+          padding: EdgeInsets.all(16).copyWith(
+            bottom:
+                16 +
+                (isMobileView && !classicTheme
+                    ? getFloatingBottomBarReserveHeight(context)
+                    : 0),
+          ),
           child: _buildIsEdit((isEdit) {
             if (isEdit) {
               return SystemBackBlock(

@@ -6,6 +6,7 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/pages/editor.dart';
+import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -51,11 +52,13 @@ class EditProfileViewState extends State<EditProfileView> {
     autoUpdateDurationController = TextEditingController(
       text: widget.profile.autoUpdateDuration.inMinutes.toString(),
     );
-    ageSecretKeyController = TextEditingController(text: widget.profile.ageSecretKey);
+    ageSecretKeyController = TextEditingController(
+      text: widget.profile.ageSecretKey,
+    );
     if (widget.isNew) {
       urlFocusNode = FocusNode();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () {
+        Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             urlFocusNode?.requestFocus();
           }
@@ -94,10 +97,22 @@ class EditProfileViewState extends State<EditProfileView> {
       ),
     );
     if (widget.isNew) {
-      await appController.safeRun(() async {
+      final ref = appController.ref;
+      ref.read(loadingProvider.notifier).value = true;
+      try {
         final updatedProfile = await profile.update();
         await appController.addProfile(updatedProfile);
-      }, silence: false, needLoading: true);
+      } on Object catch (e) {
+        if (mounted) {
+          await globalState.showMessage(
+            title: appLocalizations.tip,
+            message: TextSpan(text: e.formatError),
+          );
+        }
+        return;
+      } finally {
+        ref.read(loadingProvider.notifier).value = false;
+      }
     } else {
       final hasUpdate = widget.profile.url != profile.url;
       if (fileData != null) {
@@ -165,8 +180,18 @@ class EditProfileViewState extends State<EditProfileView> {
 
   Future<void> _handleSaveEdit(BuildContext context, String data) async {
     final message = await globalState.appController.safeRun<String>(() async {
-      final message = await clashCore.validateConfig(data, ageSecretKey: ageSecretKeyController.text.trim());
-      return message;
+      final originalMessage = await clashCore.validateConfig(
+        data,
+        ageSecretKey: ageSecretKeyController.text.trim(),
+      );
+      if (originalMessage.isEmpty) return '';
+      final patched = utils.patchValidateConfig(data);
+      if (patched == data) return originalMessage;
+      final patchedMessage = await clashCore.validateConfig(
+        patched,
+        ageSecretKey: ageSecretKeyController.text.trim(),
+      );
+      return patchedMessage.isEmpty ? '' : originalMessage;
     }, silence: false);
     if (message?.isNotEmpty == true) {
       globalState.showMessage(
@@ -176,7 +201,7 @@ class EditProfileViewState extends State<EditProfileView> {
       return;
     }
     if (context.mounted) {
-      Navigator.of(context).pop(data);
+      Navigator.of(context).pop(utils.patchValidateConfig(data));
     }
   }
 
@@ -251,9 +276,7 @@ class EditProfileViewState extends State<EditProfileView> {
   }
 
   void showAgeKeyGenerator() {
-    globalState.showCommonDialog(
-      child: const _AgeKeyGeneratorDialog(),
-    );
+    globalState.showCommonDialog(child: const _AgeKeyGeneratorDialog());
   }
 
   @override
@@ -279,7 +302,6 @@ class EditProfileViewState extends State<EditProfileView> {
         ListItem(
           title: TextFormField(
             focusNode: urlFocusNode,
-            autofocus: widget.isNew,
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.url,
             controller: urlController,
@@ -289,6 +311,9 @@ class EditProfileViewState extends State<EditProfileView> {
               border: const OutlineInputBorder(),
               labelText: appLocalizations.url,
             ),
+            onEditingComplete: widget.isNew
+                ? () => FocusManager.instance.primaryFocus?.unfocus()
+                : null,
             validator: (String? value) {
               if (value == null || value.isEmpty) {
                 return appLocalizations.profileUrlNullValidationDesc;
@@ -313,7 +338,9 @@ class EditProfileViewState extends State<EditProfileView> {
               hintText: 'AGE-SECRET-KEY-...',
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureAgeSecretKey ? Icons.visibility : Icons.visibility_off,
+                  _obscureAgeSecretKey
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                 ),
                 onPressed: () {
                   setState(() {
@@ -368,42 +395,48 @@ class EditProfileViewState extends State<EditProfileView> {
         ValueListenableBuilder<FileInfo?>(
           valueListenable: fileInfoNotifier,
           builder: (_, fileInfo, _) {
-          return FadeThroughBox(
-            child: fileInfo == null
-                ? Container()
-                : ListItem(
-                    title: Text(appLocalizations.profile),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(fileInfo.desc),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          runSpacing: 6,
-                          spacing: 12,
-                          children: [
-                            CommonChip(
-                              avatar: const Icon(Icons.edit),
-                              label: appLocalizations.edit,
-                              onPressed: _editProfileFile,
-                            ),
-                            CommonChip(
-                              avatar: const Icon(Icons.upload),
-                              label: appLocalizations.upload,
-                              onPressed: _uploadProfileFile,
-                            ),
-                          ],
-                        ),
-                      ],
+            return FadeThroughBox(
+              child: fileInfo == null
+                  ? Container()
+                  : ListItem(
+                      title: Text(appLocalizations.profile),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(fileInfo.desc),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            runSpacing: 6,
+                            spacing: 12,
+                            children: [
+                              CommonChip(
+                                avatar: const Icon(Icons.edit),
+                                label: appLocalizations.edit,
+                                onPressed: _editProfileFile,
+                              ),
+                              CommonChip(
+                                avatar: const Icon(Icons.upload),
+                                label: appLocalizations.upload,
+                                onPressed: _uploadProfileFile,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-          );
-        },
-      ),
+            );
+          },
+        ),
     ];
     return CommonPopScope(
       onPop: () {
+        final primaryFocus = FocusManager.instance.primaryFocus;
+        if (primaryFocus != null &&
+            primaryFocus.context?.widget is EditableText) {
+          primaryFocus.unfocus();
+          return false;
+        }
         if (fileData == null) {
           return true;
         }
@@ -488,8 +521,12 @@ class _AgeKeyGeneratorDialogState extends State<_AgeKeyGeneratorDialog> {
       });
 
       try {
-        final result = await clashCore.convertAgeSecretKeyToPublicKey(privateKey);
-        if (result.isSuccess && result.data != null && result.data!.isNotEmpty) {
+        final result = await clashCore.convertAgeSecretKeyToPublicKey(
+          privateKey,
+        );
+        if (result.isSuccess &&
+            result.data != null &&
+            result.data!.isNotEmpty) {
           setState(() {
             _publicKeyController.text = result.data!;
             _helperText = null;
@@ -596,8 +633,8 @@ class _AgeKeyGeneratorDialogState extends State<_AgeKeyGeneratorDialog> {
               helperStyle: _helperText == appLocalizations.agePrivateKeyRequired
                   ? TextStyle(color: context.colorScheme.error)
                   : (_helperText == appLocalizations.ageKeyPairGeneratedSuccess
-                      ? TextStyle(color: context.colorScheme.primary)
-                      : null),
+                        ? TextStyle(color: context.colorScheme.primary)
+                        : null),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.copy),
                 onPressed: () => _copyToClipboard(_publicKeyController.text),

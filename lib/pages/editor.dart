@@ -55,6 +55,8 @@ class _EditorPageState extends ConsumerState<EditorPage> {
   late CodeFindController _findController;
   late TextEditingController _titleController;
   final _focusNode = FocusNode();
+  CodeEditorStyle? _style;
+  CodeHighlightTheme? _highlightTheme;
 
   @override
   void initState() {
@@ -291,10 +293,10 @@ class _EditorPageState extends ConsumerState<EditorPage> {
               },
           shortcutsActivatorsBuilder: DefaultCodeShortcutsActivatorsBuilder(),
           controller: _controller,
-          style: CodeEditorStyle(
+          style: _style ??= CodeEditorStyle(
             fontSize: context.textTheme.bodyLarge?.fontSize?.ap,
             fontFamily: FontFamily.jetBrainsMono.value,
-            codeTheme: CodeHighlightTheme(
+            codeTheme: _highlightTheme ??= CodeHighlightTheme(
               languages: {
                 if (widget.languages.contains(Language.yaml))
                   'yaml': CodeHighlightThemeMode(mode: langYaml),

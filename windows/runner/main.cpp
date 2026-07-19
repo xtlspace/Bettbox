@@ -2,6 +2,10 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "flutter_window.h"
 #include "utils.h"
 
@@ -22,6 +26,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
+  const bool is_control_command =
+      std::find(command_line_arguments.begin(),
+                command_line_arguments.end(), "--exit") !=
+          command_line_arguments.end() ||
+      std::find(command_line_arguments.begin(),
+                command_line_arguments.end(), "--restart") !=
+          command_line_arguments.end();
+
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);
@@ -32,7 +44,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 #else
   const wchar_t *window_title = L"Bettbox";
 #endif
-  if (!window.Create(window_title, origin, size)) {
+  if (!window.Create(window_title, origin, size, !is_control_command)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

@@ -9,67 +9,77 @@ import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SmartAutoStopItem extends ConsumerWidget {
-  const SmartAutoStopItem({super.key});
+class SmartAutoStopSection extends ConsumerWidget {
+  const SmartAutoStopSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final smartAutoStop = ref.watch(
       vpnSettingProvider.select((state) => state.smartAutoStop),
     );
-
-    return ListItem.switchItem(
-      title: Text(appLocalizations.smartAutoStop),
-      subtitle: Text(appLocalizations.smartAutoStopDesc),
-      delegate: SwitchDelegate(
-        value: smartAutoStop,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState((state) => state.copyWith(smartAutoStop: value));
-        },
-      ),
-    );
-  }
-}
-
-class NetworkMatchItem extends ConsumerWidget {
-  const NetworkMatchItem({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
     final smartAutoStopNetworks = ref.watch(
       vpnSettingProvider.select((state) => state.smartAutoStopNetworks),
     );
 
-    return ListItem.input(
-      title: Text(appLocalizations.networkMatch),
-      subtitle: Text(
-        smartAutoStopNetworks.isEmpty
-            ? appLocalizations.networkMatchHint
-            : smartAutoStopNetworks,
-      ),
-      delegate: InputDelegate(
-        title: appLocalizations.networkMatch,
-        value: smartAutoStopNetworks,
-        onChanged: (String? value) {
-          if (value != null) {
-            ref
-                .read(vpnSettingProvider.notifier)
-                .updateState(
-                  (state) => state.copyWith(smartAutoStopNetworks: value),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListItem.switchItem(
+          title: Text(appLocalizations.smartAutoStop),
+          subtitle: Text(appLocalizations.smartAutoStopDesc),
+          delegate: SwitchDelegate(
+            value: smartAutoStop,
+            onChanged: (bool value) async {
+              ref
+                  .read(vpnSettingProvider.notifier)
+                  .updateState((state) => state.copyWith(smartAutoStop: value));
+            },
+          ),
+        ),
+        if (smartAutoStop) ...[
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: context.colorScheme.outlineVariant.withValues(
+              alpha: context.colorScheme.brightness == Brightness.light
+                  ? 0.3
+                  : 0.2,
+            ),
+            indent: 16,
+            endIndent: 16,
+          ),
+          ListItem.input(
+            title: Text(appLocalizations.networkMatch),
+            subtitle: Text(
+              smartAutoStopNetworks.isEmpty
+                  ? appLocalizations.networkMatchHint
+                  : smartAutoStopNetworks,
+            ),
+            delegate: InputDelegate(
+              title: appLocalizations.networkMatch,
+              value: smartAutoStopNetworks,
+              onChanged: (String? value) {
+                if (value != null) {
+                  ref
+                      .read(vpnSettingProvider.notifier)
+                      .updateState(
+                        (state) =>
+                            state.copyWith(smartAutoStopNetworks: value),
+                      );
+                }
+              },
+              validator: (String? value) {
+                if (value == null || value.isEmpty) return null;
+                return NetworkMatcher.getValidationError(
+                  value,
+                  invalidFormatMsg: appLocalizations.invalidIpFormat,
+                  tooManyRulesMsg: appLocalizations.tooManyRules,
                 );
-          }
-        },
-        validator: (String? value) {
-          if (value == null || value.isEmpty) return null;
-          return NetworkMatcher.getValidationError(
-            value,
-            invalidFormatMsg: appLocalizations.invalidIpFormat,
-            tooManyRulesMsg: appLocalizations.tooManyRules,
-          );
-        },
-      ),
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -384,26 +394,65 @@ class _BatteryOptimizationItemState extends ConsumerState<BatteryOptimizationIte
   }
 }
 
-class DisableQuicItem extends ConsumerWidget {
-  const DisableQuicItem({super.key});
+class DisableQuicSection extends ConsumerWidget {
+  const DisableQuicSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final disableQuic = ref.watch(
       vpnSettingProvider.select((state) => state.disableQuic),
     );
-    return ListItem.switchItem(
-      title: Text(appLocalizations.disableQuic),
-      subtitle: Text(appLocalizations.disableQuicDesc),
-      delegate: SwitchDelegate(
-        value: disableQuic,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState((state) => state.copyWith(disableQuic: value));
-          globalState.appController.setupClashConfigDebounce();
-        },
-      ),
+    final excludeChina = ref.watch(
+      vpnSettingProvider.select((state) => state.excludeChina),
+    );
+    final locale = ref.watch(
+      appSettingProvider.select((state) => state.locale),
+    );
+    final isRussian = locale?.toLowerCase().startsWith('ru') ?? false;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListItem.switchItem(
+          title: Text(appLocalizations.disableQuic),
+          subtitle: Text(appLocalizations.disableQuicDesc),
+          delegate: SwitchDelegate(
+            value: disableQuic,
+            onChanged: (bool value) async {
+              ref
+                  .read(vpnSettingProvider.notifier)
+                  .updateState((state) => state.copyWith(disableQuic: value));
+              globalState.appController.setupClashConfigDebounce();
+            },
+          ),
+        ),
+        if (disableQuic && !isRussian) ...[
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: context.colorScheme.outlineVariant.withValues(
+              alpha: context.colorScheme.brightness == Brightness.light
+                  ? 0.3
+                  : 0.2,
+            ),
+            indent: 16,
+            endIndent: 16,
+          ),
+          ListItem.switchItem(
+            title: Text(appLocalizations.excludeChina),
+            subtitle: Text(appLocalizations.excludeChinaDesc),
+            delegate: SwitchDelegate(
+              value: excludeChina,
+              onChanged: (bool value) async {
+                ref
+                    .read(vpnSettingProvider.notifier)
+                    .updateState((state) => state.copyWith(excludeChina: value));
+                globalState.appController.setupClashConfigDebounce();
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -460,56 +509,19 @@ class TrayEnhancementItem extends ConsumerWidget {
   }
 }
 
-class ExcludeChinaItem extends ConsumerWidget {
-  const ExcludeChinaItem({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final excludeChina = ref.watch(
-      vpnSettingProvider.select((state) => state.excludeChina),
-    );
-    return ListItem.switchItem(
-      title: Text(appLocalizations.excludeChina),
-      subtitle: Text(appLocalizations.excludeChinaDesc),
-      delegate: SwitchDelegate(
-        value: excludeChina,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState((state) => state.copyWith(excludeChina: value));
-          globalState.appController.setupClashConfigDebounce();
-        },
-      ),
-    );
-  }
-}
-
 class OtherSettingView extends ConsumerWidget {
   const OtherSettingView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final smartAutoStop = ref.watch(
-      vpnSettingProvider.select((state) => state.smartAutoStop),
-    );
-    final disableQuic = ref.watch(
-      vpnSettingProvider.select((state) => state.disableQuic),
-    );
-    final locale = ref.watch(
-      appSettingProvider.select((state) => state.locale),
-    );
-    final isRussian = locale?.toLowerCase().startsWith('ru') ?? false;
-
     List<Widget> items = [
-      const SmartAutoStopItem(),
-      if (smartAutoStop) const NetworkMatchItem(),
+      const SmartAutoStopSection(),
       if (system.isAndroid) const DozeSuspendItem(),
       if (system.isAndroid) const QuickResponseItem(),
       const StoreFixItem(),
-      const DisableQuicItem(),
+      const DisableQuicSection(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),
       if (!system.isAndroid) const TrayEnhancementItem(),
-      if (disableQuic && !isRussian) const ExcludeChinaItem(),
       if (system.isWindows) const HighPriorityItem(),
       if (system.isWindows) const NetworkFixItem(),
       if (system.isAndroid) const BatteryOptimizationItem(),
@@ -519,15 +531,6 @@ class OtherSettingView extends ConsumerWidget {
       return const Center(child: Text('No settings available'));
     }
 
-    return ListView.separated(
-      itemBuilder: (_, index) {
-        final item = items[index];
-        return item;
-      },
-      separatorBuilder: (_, _) {
-        return const Divider(height: 0);
-      },
-      itemCount: items.length,
-    );
+    return generateListView(items);
   }
 }

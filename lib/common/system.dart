@@ -122,9 +122,7 @@ class System {
             'Failed to authorize BettboxCore. Try: xattr -dr com.apple.quarantine /Applications/Bettbox.app',
           );
         } else {
-          globalState.showNotifier(
-            'Failed to authorize BettboxCore. Please grant administrator privileges.',
-          );
+          globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);
         }
         return AuthorizeCode.error;
       }
@@ -144,6 +142,7 @@ class System {
           return AuthorizeCode.success;
         }
         if (pkexecResult.exitCode != 127) {
+          globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);
           return AuthorizeCode.error;
         }
       } catch (e) {
@@ -160,6 +159,7 @@ class System {
         ),
       );
       if (password == null || password.isEmpty) {
+        globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);
         return AuthorizeCode.error;
       }
       final escapedPassword = _shellEscape(password);
@@ -167,6 +167,9 @@ class System {
         '-c',
         'echo $escapedPassword | sudo -S chown root:root $escapedCorePath && echo $escapedPassword | sudo -S chmod u+s $escapedCorePath && sync',
       ]);
+      if (result.exitCode != 0) {
+        globalState.showNotifier(appLocalizations.tunEnableRequireAdmin);
+      }
       return result.exitCode == 0 ? AuthorizeCode.success : AuthorizeCode.error;
     }
 

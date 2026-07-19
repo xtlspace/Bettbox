@@ -29,7 +29,9 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
   }
 
   void addLog(Log value) {
-    state = state.copyWith()..add(value);
+    Future.microtask(() {
+      state = state.copyWith()..add(value);
+    });
   }
 
   @override
@@ -80,7 +82,9 @@ class Requests extends _$Requests with AutoDisposeNotifierMixin {
   }
 
   void addRequest(TrackerInfo value) {
-    state = state.copyWith()..add(value);
+    Future.microtask(() {
+      state = state.copyWith()..add(value);
+    });
   }
 
   void clearRequests() {

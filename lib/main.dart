@@ -33,6 +33,18 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
 
+  if (system.isDesktop) {
+    final acquire = await singleInstanceLock.acquire();
+    if (!acquire) {
+      commonPrint.log(
+        'SingleInstanceLock: another instance detected or lock failed, exiting',
+      );
+      await _sendControlCommand('show');
+      await Future.delayed(const Duration(milliseconds: 100));
+      exit(0);
+    }
+  }
+
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
   final version = await system.version;
@@ -49,11 +61,18 @@ Future<void> main(List<String> args) async {
 }
 
 Future<void> _sendControlCommand(String command) async {
-  try {
-    await ExternalControl.sendCommand(command);
-    commonPrint.log('Sent $command command to running instance');
-  } catch (e) {
-    commonPrint.log('Failed to send $command command: $e');
+  for (int i = 0; i < 5; i++) {
+    try {
+      await ExternalControl.sendCommand(command);
+      commonPrint.log('Sent $command command to running instance');
+      return;
+    } catch (e) {
+      if (i == 4) {
+        commonPrint.log('Failed to send $command command: $e');
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
   }
 }
 
@@ -123,6 +142,8 @@ Future<void> _service(List<String> flags) async {
       _handleMainIpc(clashLibHandler);
       return;
     }
+
+    _handleMainIpc(clashLibHandler);
 
     commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
     await ClashCore.initGeo();

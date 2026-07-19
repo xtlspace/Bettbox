@@ -388,6 +388,17 @@ class Utils {
     final secret = 10000000 + random.nextInt(90000000);
     return secret.toString();
   }
+
+  String patchValidateConfig(String content) {
+    final regExp = RegExp(
+      r'^(\s*geodata-mode\s*:\s*)(true|\x27true\x27|\x22true\x22)(.*)$',
+      multiLine: true,
+      caseSensitive: false,
+    );
+    return content.replaceAllMapped(regExp, (match) {
+      return '${match.group(1)}false${match.group(3)}';
+    });
+  }
 }
 
 final utils = Utils();

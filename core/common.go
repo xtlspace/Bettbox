@@ -26,6 +26,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
+	"time"
 )
 
 var (
@@ -45,14 +46,10 @@ func (a ExternalProviders) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func getExternalProvidersRaw() map[string]cp.Provider {
 	eps := make(map[string]cp.Provider)
 	for n, p := range tunnel.Providers() {
-		if p.VehicleType() != cp.Compatible {
-			eps[n] = p
-		}
+		eps[n] = p
 	}
 	for n, p := range tunnel.RuleProviders() {
-		if p.VehicleType() != cp.Compatible {
-			eps[n] = p
-		}
+		eps[n] = p
 	}
 	return eps
 }
@@ -70,6 +67,18 @@ func toExternalProvider(p cp.Provider) (*ExternalProvider, error) {
 			Path:             psp.Vehicle().Path(),
 			SubscriptionInfo: psp.GetSubscriptionInfo(),
 			Proxies:          psp.Proxies(),
+		}, nil
+	case *provider.InlineProvider:
+		ip := p.(*provider.InlineProvider)
+		return &ExternalProvider{
+			Name:             ip.Name(),
+			Type:             ip.Type().String(),
+			VehicleType:      ip.VehicleType().String(),
+			Count:            ip.Count(),
+			UpdateAt:         time.Now(),
+			Path:             "",
+			SubscriptionInfo: nil,
+			Proxies:          ip.Proxies(),
 		}, nil
 	case *rp.RuleSetProvider:
 		rsp := p.(*rp.RuleSetProvider)
@@ -94,6 +103,8 @@ func sideUpdateExternalProvider(p cp.Provider, bytes []byte) error {
 		if err == nil {
 			return err
 		}
+		return nil
+	case *provider.InlineProvider:
 		return nil
 	case rp.RuleSetProvider:
 		rsp := p.(*rp.RuleSetProvider)

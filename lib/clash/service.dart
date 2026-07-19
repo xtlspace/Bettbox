@@ -87,6 +87,7 @@ class ClashService extends ClashHandlerInterface {
                   handleResult(ActionResult.fromJson(json.decode(data)));
                 },
                 onError: (error) {
+                  if (_isDestroying || globalState.isExiting) return;
                   commonPrint.log('Frame decode error: $error');
                 },
                 onDone: () {
@@ -96,6 +97,7 @@ class ClashService extends ClashHandlerInterface {
         }
       },
       (error, stack) {
+        if (_isDestroying || globalState.isExiting) return;
         commonPrint.log(error.toString());
         if (error is SocketException &&
             !_isDestroying &&
@@ -174,6 +176,15 @@ class ClashService extends ClashHandlerInterface {
         if (started) {
           await _waitForCoreReady();
           isStarting = false;
+          if (globalState.config.appSetting.enableHighPriority) {
+            unawaited(helperClient.setProcessPriority(
+              '${AppIdentity.coreExecutableName}.exe',
+              true,
+            ).catchError((e) {
+              commonPrint.log('Failed to set core process priority: $e');
+              return false;
+            }));
+          }
           return;
         }
         commonPrint.log(
@@ -192,6 +203,15 @@ class ClashService extends ClashHandlerInterface {
     });
     await _waitForCoreReady();
     isStarting = false;
+    if (globalState.config.appSetting.enableHighPriority) {
+      unawaited(helperClient.setProcessPriority(
+        '${AppIdentity.coreExecutableName}.exe',
+        true,
+      ).catchError((e) {
+        commonPrint.log('Failed to set core process priority: $e');
+        return false;
+      }));
+    }
   }
 
   Future<void> _waitForCoreReady() async {

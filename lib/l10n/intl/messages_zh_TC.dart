@@ -163,6 +163,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("目前的應用程式已經是最新版了"),
     "checking": MessageLookupByLibrary.simpleMessage("檢測中..."),
     "circle": MessageLookupByLibrary.simpleMessage("圓環流轉"),
+    "classicTheme": MessageLookupByLibrary.simpleMessage("經典主題"),
+    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
+      "使用更加經典質樸的Flutter主題",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "是否需要清理 FakeIP & DNS 快取？",
     ),
@@ -804,7 +808,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tun": MessageLookupByLibrary.simpleMessage("虛擬網卡"),
     "tunDesc": MessageLookupByLibrary.simpleMessage("使用 TUN 接管裝置流量"),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
-      "啟用虛擬網卡需要管理員權限，請以管理員身分執行程式",
+      "啟用TUN虛擬網卡功能需要管理員或ROOT權限",
     ),
     "tunnel": MessageLookupByLibrary.simpleMessage("Tunnel"),
     "tunnelAddress": MessageLookupByLibrary.simpleMessage("監聽地址"),

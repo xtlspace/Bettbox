@@ -64,6 +64,7 @@ class Tray {
     required TrayState trayState,
     bool focus = false,
     bool silent = false,
+    bool force = false,
   }) async {
     if (system.isAndroid) {
       return;
@@ -78,7 +79,7 @@ class Tray {
       return;
     }
 
-    if (focus) {
+    if (force || focus) {
       await _doUpdate(trayState: trayState, focus: focus, silent: silent);
     } else if (silent) {
       _debounceTimer = Timer(const Duration(milliseconds: 50), () async {

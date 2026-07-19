@@ -233,6 +233,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "checking": MessageLookupByLibrary.simpleMessage("Проверка..."),
     "circle": MessageLookupByLibrary.simpleMessage("Круг"),
+    "classicTheme": MessageLookupByLibrary.simpleMessage("Классическая тема"),
+    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
+      "Использовать более классическую и простую тему Flutter",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Очистить кэш FakeIP и DNS?",
     ),
@@ -1148,7 +1152,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Использовать TUN для перехвата трафика устройства",
     ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
-      "Для включения виртуального адаптера требуются права администратора. Запустите программу от имени администратора.",
+      "Для включения виртуального адаптера TUN требуются права администратора или ROOT.",
     ),
     "tunnel": MessageLookupByLibrary.simpleMessage("Туннель"),
     "tunnelAddress": MessageLookupByLibrary.simpleMessage(

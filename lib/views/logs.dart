@@ -22,10 +22,14 @@ class _LogsViewState extends ConsumerState<LogsView> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     final logs = globalState.appState.logs.list;
-    _scrollController = ScrollController(
-      initialScrollOffset: logs.length * LogItem.height,
-    );
+    if (logs.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      });
+    }
   }
 
   @override
@@ -40,6 +44,14 @@ class _LogsViewState extends ConsumerState<LogsView> {
 
   void _onKeywordsUpdate(List<String> keywords) {
     ref.read(logsKeywordsProvider.notifier).state = keywords;
+    _scrollToTop();
+  }
+
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(0);
+    });
   }
 
   void _toggleAutoScroll() {
@@ -101,6 +113,11 @@ class _LogsViewState extends ConsumerState<LogsView> {
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredLogsProvider);
     final hasLogs = logs.isNotEmpty;
+    final classicTheme = ref.watch(
+      themeSettingProvider.select(
+        (state) => (state.classicTheme as dynamic) == true,
+      ),
+    );
 
     return CommonScaffold(
       actions: [
@@ -134,58 +151,63 @@ class _LogsViewState extends ConsumerState<LogsView> {
       searchState: AppBarSearchState(onSearch: _onSearch),
       title: appLocalizations.logs,
       body: !hasLogs
-          ? NullStatus(
-              label: appLocalizations.nullTip(appLocalizations.logs),
-            )
-          : Align(
-              alignment: Alignment.topCenter,
-              child: ScrollToEndBox(
-                onCancelToEnd: _cancelAutoScroll,
+          ? NullStatus(label: appLocalizations.nullTip(appLocalizations.logs))
+          : ScrollToEndBox(
+              onCancelToEnd: _cancelAutoScroll,
+              controller: _scrollController,
+              enable: _autoScrollToEnd,
+              dataSource: logs,
+              child: CommonScrollBar(
                 controller: _scrollController,
-                enable: _autoScrollToEnd,
-                dataSource: logs,
-                child: CommonScrollBar(
-                  controller: _scrollController,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final contentHeight = logs.length * LogItem.height;
-                      final listViewHeight = contentHeight < constraints.maxHeight
-                          ? contentHeight
-                          : constraints.maxHeight;
-
-                      return SizedBox(
-                        height: listViewHeight,
-                        child: ListView.builder(
-                          physics: const NextClampingScrollPhysics(),
-                          reverse: true,
-                          controller: _scrollController,
-                          itemBuilder: (_, index) {
-                            if (index.isOdd) {
-                              return const Divider(height: 0);
-                            }
-                            final itemIndex = index ~/ 2;
-                            if (itemIndex >= logs.length) {
-                              return const SizedBox.shrink();
-                            }
-                            final log = logs[itemIndex];
-                            return LogItem(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ListView.builder(
+                    physics: const NextClampingScrollPhysics(),
+                    reverse: true,
+                    shrinkWrap: logs.length < 20,
+                    controller: _scrollController,
+                    padding: EdgeInsets.only(
+                      bottom: classicTheme ? 0 : 16,
+                      top: classicTheme ? 0 : 8,
+                    ),
+                    itemBuilder: (context, index) {
+                      if (classicTheme) {
+                        if (index.isOdd) {
+                          return const Divider(height: 0);
+                        }
+                        final itemIndex = index ~/ 2;
+                        if (itemIndex >= logs.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final log = logs[itemIndex];
+                        return LogItem(
+                          key: ValueKey(log.dateTime),
+                          log: log,
+                          onClick: (value) {
+                            context.commonScaffoldState?.addKeyword(value);
+                          },
+                        );
+                      } else {
+                        final log = logs[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: CommonCard(
+                            type: CommonCardType.filled,
+                            child: LogItem(
                               key: ValueKey(log.dateTime),
                               log: log,
                               onClick: (value) {
                                 context.commonScaffoldState?.addKeyword(value);
                               },
-                            );
-                          },
-                          itemExtentBuilder: (index, _) {
-                            if (index.isOdd) {
-                              return 0;
-                            }
-                            return LogItem.height;
-                          },
-                          itemCount: logs.length * 2 - 1,
-                        ),
-                      );
+                            ),
+                          ),
+                        );
+                      }
                     },
+                    itemCount: classicTheme ? logs.length * 2 - 1 : logs.length,
                   ),
                 ),
               ),
@@ -198,16 +220,6 @@ class LogItem extends StatelessWidget {
   final Log log;
   final Function(String)? onClick;
 
-  static double get height {
-    final measure = globalState.measure;
-    return measure.bodyLargeHeight * 2 +
-        8 +
-        24 +
-        globalState.measure.labelMediumHeight +
-        16 +
-        16;
-  }
-
   const LogItem({super.key, required this.log, this.onClick});
 
   @override
@@ -216,11 +228,9 @@ class LogItem extends StatelessWidget {
       child: ListItem(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         onTap: () {
-        globalState.showCommonDialog(child: LogDetailDialog(log: log));
-      },
-      title: SizedBox(
-        height: globalState.measure.bodyLargeHeight * 2,
-        child: Text(
+          globalState.showCommonDialog(child: LogDetailDialog(log: log));
+        },
+        title: Text(
           log.payload,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -228,11 +238,9 @@ class LogItem extends StatelessWidget {
             color: log.logLevel.color,
           ),
         ),
-      ),
-      subtitle: Column(
-        children: [
-          const SizedBox(height: 16),
-          Row(
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CommonChip(
@@ -249,8 +257,7 @@ class LogItem extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
+        ),
       ),
     );
   }

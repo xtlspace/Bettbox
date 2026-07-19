@@ -5,6 +5,7 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/state.dart';
+import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,14 +24,14 @@ class GeoItem {
   });
 }
 
-class ResourcesView extends StatefulWidget {
+class ResourcesView extends ConsumerStatefulWidget {
   const ResourcesView({super.key});
 
   @override
-  State<ResourcesView> createState() => _ResourcesViewState();
+  ConsumerState<ResourcesView> createState() => _ResourcesViewState();
 }
 
-class _ResourcesViewState extends State<ResourcesView> {
+class _ResourcesViewState extends ConsumerState<ResourcesView> {
   final isUpdatingAll = ValueNotifier<bool>(false);
 
   static const geoItems = <GeoItem>[
@@ -80,6 +81,10 @@ class _ResourcesViewState extends State<ResourcesView> {
 
   @override
   Widget build(BuildContext context) {
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+    );
+
     return CommonScaffold(
       title: appLocalizations.resources,
       actions: [
@@ -100,16 +105,31 @@ class _ResourcesViewState extends State<ResourcesView> {
           },
         ),
       ],
-      body: ListView.separated(
-        itemBuilder: (_, index) {
-          final geoItem = geoItems[index];
-          return GeoDataListItem(geoItem: geoItem);
-        },
-        separatorBuilder: (BuildContext context, int index) {
-          return const Divider(height: 0);
-        },
-        itemCount: geoItems.length,
-      ),
+      body: classicTheme
+          ? ListView.separated(
+              itemBuilder: (_, index) {
+                final geoItem = geoItems[index];
+                return GeoDataListItem(geoItem: geoItem);
+              },
+              separatorBuilder: (BuildContext context, int index) {
+                return const Divider(height: 0);
+              },
+              itemCount: geoItems.length,
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.only(bottom: 24, top: 8),
+              itemBuilder: (_, index) {
+                final geoItem = geoItems[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                  child: CommonCard(
+                    type: CommonCardType.filled,
+                    child: GeoDataListItem(geoItem: geoItem),
+                  ),
+                );
+              },
+              itemCount: geoItems.length,
+            ),
     );
   }
 }

@@ -141,8 +141,8 @@ const _$AccessSortTypeEnumMap = {
 };
 
 _WindowProps _$WindowPropsFromJson(Map<String, dynamic> json) => _WindowProps(
-  width: (json['width'] as num?)?.toDouble() ?? 750,
-  height: (json['height'] as num?)?.toDouble() ?? 600,
+  width: (json['width'] as num?)?.toDouble() ?? 910,
+  height: (json['height'] as num?)?.toDouble() ?? 620,
   top: (json['top'] as num?)?.toDouble(),
   left: (json['left'] as num?)?.toDouble(),
 );
@@ -168,7 +168,7 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   disableQuic: json['disableQuic'] as bool? ?? false,
   networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
-  trayEnhancement: json['trayEnhancement'] as bool? ?? true,
+  trayEnhancement: json['trayEnhancement'] as bool? ?? false,
   alwaysShowTitleBar: json['alwaysShowTitleBar'] as bool? ?? true,
   quickResponse: json['quickResponse'] as bool? ?? true,
   accessControl: json['accessControl'] == null
@@ -323,6 +323,7 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
       ) ??
       DynamicSchemeVariant.content,
   pureBlack: json['pureBlack'] as bool? ?? false,
+  classicTheme: json['classicTheme'] as bool? ?? false,
   textScale: json['textScale'] == null
       ? const TextScale()
       : TextScale.fromJson(json['textScale'] as Map<String, dynamic>),
@@ -338,6 +339,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'themeMode': _$ThemeModeEnumMap[instance.themeMode]!,
       'schemeVariant': _$DynamicSchemeVariantEnumMap[instance.schemeVariant]!,
       'pureBlack': instance.pureBlack,
+      'classicTheme': instance.classicTheme,
       'textScale': instance.textScale,
       'useLightIcon': instance.useLightIcon,
       'useHarmonyFont': instance.useHarmonyFont,

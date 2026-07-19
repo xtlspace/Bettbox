@@ -2,6 +2,8 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/widgets/fade_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bett_box/providers/config.dart';
 
 import 'text.dart';
 
@@ -80,7 +82,7 @@ class CommonCard extends StatelessWidget {
     this.onPressed,
     this.onLongPress,
     this.selectWidget,
-    this.radius = 12,
+    this.radius,
     required this.child,
     this.padding,
     this.enterAnimated = false,
@@ -96,7 +98,7 @@ class CommonCard extends StatelessWidget {
   final EdgeInsets? padding;
   final Info? info;
   final CommonCardType type;
-  final double radius;
+  final double? radius;
 
   // final WidgetStateProperty<Color?>? backgroundColor;
   // final WidgetStateProperty<BorderSide?>? borderSide;
@@ -137,53 +139,67 @@ class CommonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var childWidget = child;
+    return Consumer(
+      builder: (context, ref, _) {
+        final classicTheme = ref.watch(
+          themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+        );
+        final actualRadius = radius ?? (classicTheme ? 12.0 : 20.0);
+        var childWidget = child;
 
-    if (info != null) {
-      childWidget = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InfoHeader(
-            padding: baseInfoEdgeInsets.copyWith(bottom: 0),
-            info: info!,
+        if (info != null) {
+          childWidget = Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InfoHeader(
+                padding: baseInfoEdgeInsets.copyWith(bottom: 0),
+                info: info!,
+              ),
+              Flexible(flex: 1, child: child),
+            ],
+          );
+        }
+
+        if (selectWidget != null && isSelected) {
+          final List<Widget> children = [];
+          children.add(childWidget);
+          children.add(Positioned.fill(child: selectWidget!));
+          childWidget = Stack(children: children);
+        }
+
+        final isInteractive = onPressed != null || onLongPress != null;
+        final card = OutlinedButton(
+          onLongPress: onLongPress,
+          clipBehavior: Clip.hardEdge,
+          style: ButtonStyle(
+            padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(actualRadius)),
+            ),
+            iconColor: WidgetStatePropertyAll(context.colorScheme.primary),
+            iconSize: WidgetStateProperty.all(20),
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) => getBackgroundColor(context, states),
+            ),
+            side: WidgetStateProperty.resolveWith(
+              (states) => getBorderSide(context, states),
+            ),
+            minimumSize: WidgetStatePropertyAll(
+              isInteractive ? null : Size.zero,
+            ),
+            tapTargetSize:
+                isInteractive ? null : MaterialTapTargetSize.shrinkWrap,
           ),
-          Flexible(flex: 1, child: child),
-        ],
-      );
-    }
+          onPressed: onPressed,
+          child: childWidget,
+        );
 
-    if (selectWidget != null && isSelected) {
-      final List<Widget> children = [];
-      children.add(childWidget);
-      children.add(Positioned.fill(child: selectWidget!));
-      childWidget = Stack(children: children);
-    }
-
-    final card = OutlinedButton(
-      onLongPress: onLongPress,
-      clipBehavior: Clip.antiAlias,
-      style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-        ),
-        iconColor: WidgetStatePropertyAll(context.colorScheme.primary),
-        iconSize: WidgetStateProperty.all(20),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) => getBackgroundColor(context, states),
-        ),
-        side: WidgetStateProperty.resolveWith(
-          (states) => getBorderSide(context, states),
-        ),
-      ),
-      onPressed: onPressed,
-      child: childWidget,
+        return switch (enterAnimated) {
+          true => FadeScaleEnterBox(child: card),
+          false => card,
+        };
+      },
     );
-
-    return switch (enterAnimated) {
-      true => FadeScaleEnterBox(child: card),
-      false => card,
-    };
   }
 }
 

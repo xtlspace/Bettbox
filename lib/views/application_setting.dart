@@ -245,35 +245,22 @@ class ApplicationSettingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        List<Widget> items = [
-          AutoLaunchItem(),
-          if (system.isDesktop) ...[SilentLaunchItem()],
-          AutoRunItem(),
-          if (system.isAndroid) ...[HiddenItem()],
-          if (system.isDesktop) ...[
-            if (system.isWindows || system.isLinux)
-              const AlwaysShowTitleBarItem(),
-          ] else ...[
-            const AnimateTabItem(),
-          ],
-          if (system.isAndroid) ...[NavBarHapticFeedbackItem()],
-          CloseConnectionsItem(),
-          UsageItem(),
-          AutoCheckUpdateItem(),
-        ];
-        return ListView.separated(
-          itemBuilder: (_, index) {
-            final item = items[index];
-            return item;
-          },
-          separatorBuilder: (_, _) {
-            return const Divider(height: 0);
-          },
-          itemCount: items.length,
-        );
-      },
-    );
+    List<Widget> items = [
+      AutoLaunchItem(),
+      if (system.isDesktop) ...[SilentLaunchItem()],
+      AutoRunItem(),
+      if (system.isAndroid) ...[HiddenItem()],
+      if (system.isDesktop) ...[
+        if (system.isWindows || system.isLinux)
+          const AlwaysShowTitleBarItem(),
+      ] else ...[
+        const AnimateTabItem(),
+      ],
+      if (system.isAndroid) ...[NavBarHapticFeedbackItem()],
+      CloseConnectionsItem(),
+      UsageItem(),
+      AutoCheckUpdateItem(),
+    ];
+    return generateListView(items);
   }
 }

@@ -25,21 +25,21 @@ class _ConfigViewState extends State<ConfigView> {
   @override
   Widget build(BuildContext context) {
     List<Widget> items = [
-      ListItem.open(
+      ListItem.next(
         title: Text(appLocalizations.general),
         subtitle: Text(appLocalizations.generalDesc),
         leading: const Icon(Icons.build),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: appLocalizations.general,
-          widget: generateListView(generalItems),
+          builder: (_) => generateListView(generalItems),
           blur: false,
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: Text(appLocalizations.network),
         subtitle: Text(appLocalizations.networkDesc),
         leading: const Icon(Icons.vpn_key),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: appLocalizations.network,
           blur: false,
           actions: [
@@ -73,14 +73,14 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const NetworkListView(),
+          builder: (_) => const NetworkListView(),
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: const Text('DNS'),
         subtitle: Text(appLocalizations.dnsDesc),
         leading: const Icon(Icons.dns),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: 'DNS',
           actions: [
             Consumer(
@@ -106,15 +106,15 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const DnsListView(),
+          builder: (_) => const DnsListView(),
           blur: false,
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: const Text('NTP'),
         subtitle: Text(appLocalizations.ntpDesc),
         leading: const Icon(Icons.access_time),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: 'NTP',
           actions: [
             Consumer(
@@ -140,18 +140,18 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const NtpListView(),
+          builder: (_) => const NtpListView(),
           blur: false,
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: const Text('Hosts'),
         subtitle: Text(appLocalizations.hostsDesc),
         leading: const Icon(Icons.view_list_outlined),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           blur: false,
           title: 'Hosts',
-          widget: Consumer(
+          builder: (_) => Consumer(
             builder: (_, ref, _) {
               final hosts = ref.watch(
                 patchClashConfigProvider.select((state) => state.hosts),
@@ -180,11 +180,11 @@ class _ConfigViewState extends State<ConfigView> {
           ),
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: Text(appLocalizations.sniffer),
         subtitle: Text(appLocalizations.snifferDesc),
         leading: const Icon(Icons.radar),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: appLocalizations.sniffer,
           actions: [
             Consumer(
@@ -210,15 +210,15 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const SnifferListView(),
+          builder: (_) => const SnifferListView(),
           blur: false,
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: Text(appLocalizations.tunnel),
         subtitle: Text(appLocalizations.tunnelDesc),
         leading: const Icon(Icons.swap_horiz),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: appLocalizations.tunnel,
           actions: [
             Consumer(
@@ -244,15 +244,15 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const TunnelListView(),
+          builder: (_) => const TunnelListView(),
           blur: false,
         ),
       ),
-      ListItem.open(
+      ListItem.next(
         title: Text(appLocalizations.experimental),
         subtitle: Text(appLocalizations.experimentalDesc),
         leading: const Icon(Icons.science),
-        delegate: OpenDelegate(
+        delegate: NextDelegate(
           title: appLocalizations.experimental,
           actions: [
             Consumer(
@@ -279,11 +279,12 @@ class _ConfigViewState extends State<ConfigView> {
               },
             ),
           ],
-          widget: const ExperimentalListView(),
+          builder: (_) => const ExperimentalListView(),
           blur: false,
         ),
       ),
     ];
+
     return generateListView(items.separated(const Divider(height: 0)).toList());
   }
 }

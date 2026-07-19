@@ -230,6 +230,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "checking": MessageLookupByLibrary.simpleMessage("Checking..."),
     "circle": MessageLookupByLibrary.simpleMessage("Circle"),
+    "classicTheme": MessageLookupByLibrary.simpleMessage("Classic Theme"),
+    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
+      "Use a more classic and simple Flutter theme",
+    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Clear FakeIP and DNS cache?",
     ),
@@ -1123,7 +1127,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Use TUN to take over device traffic",
     ),
     "tunEnableRequireAdmin": MessageLookupByLibrary.simpleMessage(
-      "TUN requires admin privileges. Please run as Administrator.",
+      "Enabling the TUN virtual network adapter requires Administrator or ROOT privileges.",
     ),
     "tunnel": MessageLookupByLibrary.simpleMessage("Tunnel"),
     "tunnelAddress": MessageLookupByLibrary.simpleMessage("Listen Address"),

@@ -304,14 +304,19 @@ class GlobalState {
     await clashCore.requestGc();
   }
 
-  Future<void> handleStart([UpdateTasks? tasks]) async {
+  Future<void> handleStart([
+    UpdateTasks? tasks,
+    bool includeVpnService = true,
+  ]) async {
     startTime ??= DateTime.now();
     if (system.isAndroid && isService) {
       await clashLibHandler?.startListener();
     } else {
       await clashCore.startListener();
     }
-    await service?.startVpn();
+    if (includeVpnService) {
+      await service?.startVpn();
+    }
     final prefs = await preferences.sharedPreferencesCompleter.future;
     await prefs?.setBool('is_vpn_running', true);
 
@@ -343,12 +348,16 @@ class GlobalState {
     }
   }
 
-  Future handleStop() async {
+  Future handleStop([bool includeVpnService = true]) async {
     startTime = null;
     if (system.isAndroid && isService) {
       await clashLibHandler?.stopListener();
     } else {
       await clashCore.stopListener();
+    }
+    if (!includeVpnService) {
+      stopUpdateTasks();
+      return;
     }
     await service?.stopVpn();
     final prefs = await preferences.sharedPreferencesCompleter.future;
@@ -408,7 +417,9 @@ class GlobalState {
     required Widget child,
     bool dismissible = true,
   }) async {
-    final context = navigatorKey.currentState!.context;
+    final state = navigatorKey.currentState;
+    if (state == null) return null;
+    final context = state.context;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return await showModal<T>(
       context: context,
@@ -670,6 +681,9 @@ class GlobalState {
       final ntp = realPatchConfig.ntp;
       rawConfig['ntp'] = ntp.toJson();
     }
+    if (system.isAndroid) {
+      rawConfig['ntp']['enable'] = false;
+    }
     if (rawConfig['sniffer'] == null) {
       rawConfig['sniffer'] = {};
     }
@@ -837,9 +851,13 @@ class GlobalState {
               proxy['client-fingerprint'] == null) {
             proxy['client-fingerprint'] = globalClientFingerprint;
           }
+        }
 
-          if (proxy['client-fingerprint'] == 'chrome') {
-            proxy['client-fingerprint'] = 'firefox';
+        final realityOpts = proxy['reality-opts'];
+        if (realityOpts is Map) {
+          final shortId = realityOpts['short-id'];
+          if (shortId is num) {
+            realityOpts['short-id'] = shortId.toString();
           }
         }
       }

@@ -50,21 +50,13 @@ class ThemeView extends ConsumerWidget {
       _ThemeModeItem(),
       _PrimaryColorItem(),
       if (brightness == Brightness.dark) _PrueBlackItem(),
+      const _ClassicThemeItem(),
       if (shouldShowHarmonyFont) _HarmonyFontItem(),
       _LightIconItem(),
       if (system.isWindows) _TrayIconInvertItem(),
       _TextScaleFactorItem(),
-      const SizedBox(height: 64),
     ];
-    return ListView.separated(
-      itemCount: items.length,
-      itemBuilder: (_, index) {
-        return items[index];
-      },
-      separatorBuilder: (_, _) {
-        return SizedBox(height: 24);
-      },
-    );
+    return generateListView(items);
   }
 }
 
@@ -82,12 +74,35 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      runSpacing: 16,
-      children: [
-        InfoHeader(info: info, actions: actions),
-        child,
-      ],
+    return Consumer(
+      builder: (context, ref, _) {
+        final classicTheme = ref.watch(
+          themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+        );
+
+        if (classicTheme) {
+          return Wrap(
+            runSpacing: 16,
+            children: [
+              InfoHeader(info: info, actions: actions),
+              child,
+            ],
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InfoHeader(info: info, actions: actions),
+              const SizedBox(height: 12),
+              child,
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -405,6 +420,41 @@ class _PrimaryColorItemState extends ConsumerState<_PrimaryColorItem> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ClassicThemeItem extends ConsumerWidget {
+  const _ClassicThemeItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+    );
+    return ListItem.switchItem(
+      leading: Icon(Icons.style_outlined),
+      horizontalTitleGap: 12,
+      title: Text(
+        appLocalizations.classicTheme,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: context.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        appLocalizations.classicThemeDesc,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: context.colorScheme.outline,
+        ),
+      ),
+      delegate: SwitchDelegate(
+        value: classicTheme,
+        onChanged: (value) {
+          ref
+              .read(themeSettingProvider.notifier)
+              .updateState((state) => state.copyWith(classicTheme: value));
+        },
       ),
     );
   }

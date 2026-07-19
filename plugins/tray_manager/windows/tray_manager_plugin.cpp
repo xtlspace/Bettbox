@@ -342,7 +342,7 @@ std::optional<LRESULT> TrayManagerPlugin::HandleWindowProc(HWND hWnd,
                               std::make_unique<flutter::EncodableValue>());
         break;
       default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        break;
     };
   } else if (message == WM_TIMER && wParam == 1001) {
     if (!tray_icon_setted && nid.hIcon != nullptr) {

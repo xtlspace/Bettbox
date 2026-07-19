@@ -4,6 +4,8 @@ import 'package:bett_box/models/models.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/open_container.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bett_box/providers/providers.dart';
 
 import 'card.dart';
 import 'input.dart';
@@ -41,7 +43,8 @@ class CheckboxDelegate<T> extends Delegate {
 }
 
 class OpenDelegate extends Delegate {
-  final Widget widget;
+  final Widget? widget;
+  final WidgetBuilder? builder;
   final String title;
   final double? maxWidth;
   final List<Widget> actions;
@@ -51,31 +54,36 @@ class OpenDelegate extends Delegate {
 
   const OpenDelegate({
     required this.title,
-    required this.widget,
+    this.widget,
+    this.builder,
     this.maxWidth,
     this.actions = const [],
     this.blur = false,
     this.wrap = true,
     this.forceFull = true,
-  });
+  }) : assert(widget != null || builder != null);
 }
 
 class NextDelegate extends Delegate {
-  final Widget widget;
+  final Widget? widget;
+  final WidgetBuilder? builder;
   final String title;
   final double? maxWidth;
   final List<Widget> actions;
   final bool blur;
   final bool wrap;
+  final bool forceFull;
 
   const NextDelegate({
     required this.title,
-    required this.widget,
+    this.widget,
+    this.builder,
     this.maxWidth,
     this.actions = const [],
     this.blur = false,
     this.wrap = true,
-  });
+    this.forceFull = true,
+  }) : assert(widget != null || builder != null);
 }
 
 class OptionsDelegate<T> extends Delegate {
@@ -277,7 +285,10 @@ class ListItem<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     if (delegate is OpenDelegate) {
       final openDelegate = delegate as OpenDelegate;
-      final child = openDelegate.widget;
+      Widget buildChild(BuildContext context) {
+        return openDelegate.builder?.call(context) ?? openDelegate.widget!;
+      }
+
       return OpenContainer(
         closedBuilder: (_, action) {
           openAction() {
@@ -291,6 +302,7 @@ class ListItem<T> extends StatelessWidget {
                   forceFull: openDelegate.forceFull,
                 ),
                 builder: (_, type) {
+                  final child = buildChild(context);
                   return openDelegate.wrap
                       ? AdaptiveSheetScaffold(
                           actions: openDelegate.actions,
@@ -308,7 +320,8 @@ class ListItem<T> extends StatelessWidget {
 
           return _buildListTile(onTap: openAction);
         },
-        openBuilder: (_, action) {
+        openBuilder: (context, action) {
+          final child = buildChild(context);
           return openDelegate.wrap
               ? CommonScaffold(
                   key: Key(openDelegate.title),
@@ -322,7 +335,9 @@ class ListItem<T> extends StatelessWidget {
     }
     if (delegate is NextDelegate) {
       final nextDelegate = delegate as NextDelegate;
-      final child = nextDelegate.widget;
+      Widget buildChild(BuildContext context) {
+        return nextDelegate.builder?.call(context) ?? nextDelegate.widget!;
+      }
 
       return _buildListTile(
         onTap: () {
@@ -331,8 +346,10 @@ class ListItem<T> extends StatelessWidget {
             props: ExtendProps(
               blur: nextDelegate.blur,
               maxWidth: nextDelegate.maxWidth,
+              forceFull: nextDelegate.forceFull,
             ),
             builder: (_, type) {
+              final child = buildChild(context);
               return nextDelegate.wrap
                   ? AdaptiveSheetScaffold(
                       actions: nextDelegate.actions,
@@ -513,19 +530,96 @@ class ListHeader extends StatelessWidget {
   }
 }
 
+class SectionContainer extends ConsumerWidget {
+  final String? title;
+  final List<Widget> items;
+  final List<Widget>? actions;
+  final bool separated;
+  final bool plain;
+
+  const SectionContainer({
+    super.key,
+    this.title,
+    required this.items,
+    this.actions,
+    this.separated = true,
+    this.plain = false,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+    );
+
+    if (classicTheme || plain) {
+      final genItems = separated
+          ? items.separated(const Divider(height: 0))
+          : items;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (items.isNotEmpty && title != null)
+            ListHeader(title: title!, actions: actions),
+          ...genItems,
+        ],
+      );
+    }
+
+    final cleanItems = items.where((widget) => widget is! Divider).toList();
+    if (cleanItems.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (title != null)
+          ListHeader(title: title!, actions: actions),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: CommonCard(
+            type: CommonCardType.filled,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < cleanItems.length; i++) ...[
+                  cleanItems[i],
+                  if (i != cleanItems.length - 1)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: context.colorScheme.outlineVariant.withValues(
+                        alpha: context.colorScheme.brightness == Brightness.light ? 0.3 : 0.2,
+                      ),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 List<Widget> generateSection({
   String? title,
   required Iterable<Widget> items,
   List<Widget>? actions,
   bool separated = true,
+  bool plain = false,
 }) {
-  final genItems = separated
-      ? items.separated(const Divider(height: 0))
-      : items;
   return [
-    if (items.isNotEmpty && title != null)
-      ListHeader(title: title, actions: actions),
-    ...genItems,
+    SectionContainer(
+      title: title,
+      items: items.toList(),
+      actions: actions,
+      separated: separated,
+      plain: plain,
+    ),
   ];
 }
 
@@ -564,9 +658,51 @@ List<Widget> generateInfoSection({
 }
 
 Widget generateListView(List<Widget> items) {
-  return ListView.builder(
-    itemCount: items.length,
-    itemBuilder: (_, index) => items[index],
-    padding: const EdgeInsets.only(bottom: 16),
+  return Consumer(
+    builder: (context, ref, _) {
+      final classicTheme = ref.watch(
+        themeSettingProvider.select((state) => (state.classicTheme as dynamic) == true),
+      );
+      final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+      if (classicTheme) {
+        return ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (_, index) => items[index],
+          padding: EdgeInsets.only(bottom: 16 + bottomPadding),
+        );
+      }
+
+      final cleanItems = items.where((widget) => widget is! Divider).toList();
+      if (cleanItems.isEmpty) return const SizedBox.shrink();
+
+      return ListView.builder(
+        padding: EdgeInsets.only(bottom: 24 + bottomPadding, top: 12),
+        itemCount: cleanItems.length,
+        itemBuilder: (context, index) {
+          final item = cleanItems[index];
+
+          if (item is SectionContainer) {
+            return item;
+          }
+
+          if (item is ListHeader || item is InfoHeader) {
+            return item;
+          }
+
+          if (item is SizedBox) {
+            return item;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: CommonCard(
+              type: CommonCardType.filled,
+              child: item,
+            ),
+          );
+        },
+      );
+    },
   );
 }

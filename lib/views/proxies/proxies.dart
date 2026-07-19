@@ -115,13 +115,23 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
   }
 
   Widget? _buildFAB() {
-    return _isTab
-        ? DelayTestButton(
-            onClick: () async {
-              await _proxiesTabKey.currentState?.delayTestCurrentGroup();
-            },
-          )
-        : null;
+    if (!_isTab) return null;
+    final isMobileView = ref.watch(isMobileViewProvider);
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => state.classicTheme),
+    );
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: isMobileView && !classicTheme
+            ? getFloatingBottomBarFABReserveHeight(context)
+            : 0,
+      ),
+      child: DelayTestButton(
+        onClick: () async {
+          await _proxiesTabKey.currentState?.delayTestCurrentGroup();
+        },
+      ),
+    );
   }
 
   void _onSearch(String value) {

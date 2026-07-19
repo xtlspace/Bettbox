@@ -60,10 +60,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
       globalState.showMessage(
         title: appLocalizations.tip,
         message: TextSpan(
-          children: [
-            for (final message in messages)
-              TextSpan(text: message),
-          ],
+          children: [for (final message in messages) TextSpan(text: message)],
         ),
       );
     }
@@ -115,11 +112,22 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
   }
 
   Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      heroTag: null,
-      onPressed: _handleShowAddExtendPage,
-      icon: const Icon(Icons.add),
-      label: Text(appLocalizations.addProfile),
+    final isMobileView = ref.watch(isMobileViewProvider);
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => state.classicTheme),
+    );
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: isMobileView && !classicTheme
+            ? getFloatingBottomBarFABReserveHeight(context)
+            : 0,
+      ),
+      child: FloatingActionButton.extended(
+        heroTag: null,
+        onPressed: _handleShowAddExtendPage,
+        icon: const Icon(Icons.add),
+        label: Text(appLocalizations.addProfile),
+      ),
     );
   }
 
@@ -135,28 +143,40 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
           final profilesSelectorState = ref.watch(
             profilesSelectorStateProvider,
           );
+          final isMobileView = ref.watch(isMobileViewProvider);
+          final classicTheme = ref.watch(
+            themeSettingProvider.select((state) => state.classicTheme),
+          );
           if (profilesSelectorState.profiles.isEmpty) {
             return NullStatus(label: appLocalizations.nullProfileDesc);
           }
+          final columns = system.isAndroid
+              ? 1
+              : profilesSelectorState.profiles.length <
+                    profilesSelectorState.columns
+              ? profilesSelectorState.profiles.length
+              : profilesSelectorState.columns;
           return Align(
             alignment: Alignment.topCenter,
             child: SingleChildScrollView(
               key: profilesStoreKey,
-              padding: const EdgeInsets.only(
+              padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
                 top: 16,
-                bottom: 88,
+                bottom:
+                    (profilesSelectorState.profiles.isNotEmpty &&
+                            profilesSelectorState.profiles.length % columns == 0
+                        ? 88
+                        : 16) +
+                    (isMobileView && !classicTheme
+                        ? getFloatingBottomBarReserveHeight(context)
+                        : 0),
               ),
               child: Grid(
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                crossAxisCount: system.isAndroid
-                    ? 1
-                    : profilesSelectorState.profiles.length <
-                          profilesSelectorState.columns
-                    ? profilesSelectorState.profiles.length
-                    : profilesSelectorState.columns,
+                crossAxisCount: columns,
                 children: [
                   for (
                     int i = 0;

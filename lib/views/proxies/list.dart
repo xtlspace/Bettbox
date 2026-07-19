@@ -98,7 +98,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     final measure = globalState.measure;
     final contentRowHeight = [40.0, measure.titleMediumHeight + 4 + measure.labelMediumHeight]
         .reduce((a, b) => a > b ? a : b);
-    return 24.0 + contentRowHeight;
+    return 28.0 + contentRowHeight;
   }
 
   void _scrollToSelected(String groupName) {
@@ -179,6 +179,10 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobileView = ref.watch(isMobileViewProvider);
+    final classicTheme = ref.watch(
+      themeSettingProvider.select((state) => state.classicTheme),
+    );
     final flatItems = _buildFlatItems();
     final headerHeight = _getHeaderHeight();
     final itemHeight = getItemHeight(widget.cardType);
@@ -189,7 +193,13 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
       trackVisibility: true,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).copyWith(
+          bottom:
+              16 +
+              (isMobileView && !classicTheme
+                  ? getFloatingBottomBarReserveHeight(context)
+                  : 0),
+        ),
         itemCount: flatItems.length,
         itemExtentBuilder: (index, _) {
           return flatItems[index].getHeight(headerHeight, itemHeight);

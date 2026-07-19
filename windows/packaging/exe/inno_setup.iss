@@ -57,13 +57,14 @@ begin
   { Try to elegantly exit the main app using --exit parameter }
   if FileExists(ExpandConstant('{app}\{{EXECUTABLE_NAME}}')) and IsProcessRunning('{{EXECUTABLE_NAME}}') then
   begin
+    WizardForm.StatusLabel.Caption := CustomMessage('ShuttingDownRunningApp');
     Exec(ExpandConstant('{app}\{{EXECUTABLE_NAME}}'), '--exit', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-    { Wait up to 3 seconds for the main app and core to exit }
+    { Wait up to 4 seconds for the main app and core to exit }
     WaitCount := 0;
-    while (WaitCount < 10) and (IsProcessRunning('{{EXECUTABLE_NAME}}') or IsProcessRunning('{{CORE_EXECUTABLE_NAME}}')) do
+    while (WaitCount < 8) and (IsProcessRunning('{{EXECUTABLE_NAME}}') or IsProcessRunning('{{CORE_EXECUTABLE_NAME}}')) do
     begin
-      Sleep(300);
+      Sleep(500);
       WaitCount := WaitCount + 1;
     end;
   end;
@@ -268,10 +269,12 @@ Name: "chineseSimplified"; MessagesFile: {% if locale.file %}{{ locale.file }}{%
 {% endif %}
 
 [CustomMessages]
+english.ShuttingDownRunningApp=Shutting down running {{DISPLAY_NAME}}...
 english.RemoveUserDataPrompt=Do you want to remove all user data?%n%nThis will remove:%n• Configuration files%n• Profiles and subscriptions%n• Settings and preferences%n• Registry entries%n%nThis action cannot be undone.
 {% if LOCALES %}
 {% for locale in LOCALES %}
 {% if locale.lang == 'zh' %}
+chineseSimplified.ShuttingDownRunningApp=正在关闭运行中的 {{DISPLAY_NAME}}...
 chineseSimplified.RemoveUserDataPrompt=是否要删除所有用户数据？%n%n这将删除：%n• 配置文件%n• 代理配置与订阅%n• 设置和偏好%n• 注册表记录%n%n此操作无法撤销。
 {% endif %}
 {% endfor %}
