@@ -58,7 +58,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "accessControlAllowDesc": MessageLookupByLibrary.simpleMessage(
       "只允许选中的应用进入VPN",
     ),
-    "accessControlDesc": MessageLookupByLibrary.simpleMessage("配置应用访问代理"),
+    "accessControlDesc": MessageLookupByLibrary.simpleMessage("配置应用访问黑白名单"),
     "accessControlNotAllowDesc": MessageLookupByLibrary.simpleMessage(
       "选中的应用将被排除在VPN之外",
     ),
@@ -161,10 +161,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "checkUpdateError": MessageLookupByLibrary.simpleMessage("当前应用已经是最新版了"),
     "checking": MessageLookupByLibrary.simpleMessage("检测中..."),
     "circle": MessageLookupByLibrary.simpleMessage("圆环流转"),
-    "classicTheme": MessageLookupByLibrary.simpleMessage("经典主题"),
-    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
-      "使用更加经典质朴的Flutter主题",
-    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "是否需要清理FakeIP&DNS缓存？",
     ),
@@ -417,6 +413,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "light": MessageLookupByLibrary.simpleMessage("浅色"),
     "lightIcon": MessageLookupByLibrary.simpleMessage("浅色图标"),
     "lightIconDesc": MessageLookupByLibrary.simpleMessage("手动切换浅色系桌面APP图标"),
+    "lineWrap": MessageLookupByLibrary.simpleMessage("自动换行"),
     "list": MessageLookupByLibrary.simpleMessage("列表"),
     "listen": MessageLookupByLibrary.simpleMessage("监听"),
     "local": MessageLookupByLibrary.simpleMessage("本地"),
@@ -686,6 +683,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("服务正在运行中"),
     "settings": MessageLookupByLibrary.simpleMessage("设置"),
     "show": MessageLookupByLibrary.simpleMessage("显示"),
+    "showStartSwitch": MessageLookupByLibrary.simpleMessage("联动开关"),
+    "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage("首页显示独立的开关按钮"),
     "shrink": MessageLookupByLibrary.simpleMessage("紧凑"),
     "silentLaunch": MessageLookupByLibrary.simpleMessage("静默启动"),
     "silentLaunchDesc": MessageLookupByLibrary.simpleMessage("不打开软件直接在后台启动"),
@@ -747,8 +746,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "systemProxy": MessageLookupByLibrary.simpleMessage("系统代理"),
     "systemProxyDesc": MessageLookupByLibrary.simpleMessage("设置系统代理"),
     "tab": MessageLookupByLibrary.simpleMessage("标签页"),
-    "tabAnimation": MessageLookupByLibrary.simpleMessage("切换动画"),
-    "tabAnimationDesc": MessageLookupByLibrary.simpleMessage("仅在部分移动视图中有效"),
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP并发"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage("开启后允许TCP并发连接"),
     "testUrl": MessageLookupByLibrary.simpleMessage("测试链接"),
@@ -824,7 +821,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "view": MessageLookupByLibrary.simpleMessage("查看"),
     "vpnDesc": MessageLookupByLibrary.simpleMessage("修改VPN相关设置"),
     "vpnEnableDesc": MessageLookupByLibrary.simpleMessage(
-      "通过VpnService自动路由系统所有流量",
+      "通过VpnService自动路由系统流量",
+    ),
+    "vpnSystemProxyConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "非桌面端通常不推荐使用HTTP代理，此功能仅建议您在必要且熟悉的情况下开启",
     ),
     "vpnSystemProxyDesc": MessageLookupByLibrary.simpleMessage(
       "为VpnService附加HTTP代理",

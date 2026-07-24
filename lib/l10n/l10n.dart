@@ -909,10 +909,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Configure per-app proxy access`
+  /// `Configure per-app access allowlist/blocklist`
   String get accessControlDesc {
     return Intl.message(
-      'Configure per-app proxy access',
+      'Configure per-app access allowlist/blocklist',
       name: 'accessControlDesc',
       desc: '',
       args: [],
@@ -1579,11 +1579,21 @@ class AppLocalizations {
     return Intl.message('Core', name: 'core', desc: '', args: []);
   }
 
-  /// `Tab Animation`
-  String get tabAnimation {
+  /// `Linkage Switch`
+  String get showStartSwitch {
     return Intl.message(
-      'Tab Animation',
-      name: 'tabAnimation',
+      'Linkage Switch',
+      name: 'showStartSwitch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Display independent switch button on the homepage`
+  String get showStartSwitchDesc {
+    return Intl.message(
+      'Display independent switch button on the homepage',
+      name: 'showStartSwitchDesc',
       desc: '',
       args: [],
     );
@@ -1974,6 +1984,16 @@ class AppLocalizations {
     return Intl.message(
       'Attach HTTP proxy to VpnService',
       name: 'vpnSystemProxyDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.`
+  String get vpnSystemProxyConfirmDesc {
+    return Intl.message(
+      'HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.',
+      name: 'vpnSystemProxyConfirmDesc',
       desc: '',
       args: [],
     );
@@ -2434,26 +2454,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Classic Theme`
-  String get classicTheme {
-    return Intl.message(
-      'Classic Theme',
-      name: 'classicTheme',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Use a more classic and simple Flutter theme`
-  String get classicThemeDesc {
-    return Intl.message(
-      'Use a more classic and simple Flutter theme',
-      name: 'classicThemeDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Pure Black Mode`
   String get pureBlackMode {
     return Intl.message(
@@ -2724,10 +2724,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Route all system traffic via VpnService`
+  /// `Route system traffic via VpnService`
   String get vpnEnableDesc {
     return Intl.message(
-      'Route all system traffic via VpnService',
+      'Route system traffic via VpnService',
       name: 'vpnEnableDesc',
       desc: '',
       args: [],
@@ -4499,16 +4499,6 @@ class AppLocalizations {
     );
   }
 
-  /// `Effective only in mobile view`
-  String get tabAnimationDesc {
-    return Intl.message(
-      'Effective only in mobile view',
-      name: 'tabAnimationDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Haptic Feedback`
   String get navBarHapticFeedback {
     return Intl.message(
@@ -5357,6 +5347,11 @@ class AppLocalizations {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Wrap Lines`
+  String get lineWrap {
+    return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
   }
 }
 

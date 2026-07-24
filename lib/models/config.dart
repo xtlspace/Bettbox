@@ -43,8 +43,19 @@ const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.tunButton,
   DashboardWidget.outboundMode,
   DashboardWidget.networkDetection,
-  DashboardWidget.trafficUsage,
   DashboardWidget.intranetIp,
+  DashboardWidget.trafficUsage,
+  DashboardWidget.memoryInfo,
+  DashboardWidget.connectionsCount,
+  DashboardWidget.startButton,
+];
+
+const List<DashboardWidget> defaultAndroidDashboardWidgets = [
+  DashboardWidget.networkSpeed,
+  DashboardWidget.outboundModeV2,
+  DashboardWidget.trafficUsage,
+  DashboardWidget.networkDetection,
+  DashboardWidget.connectionsCount,
   DashboardWidget.memoryInfo,
   DashboardWidget.startButton,
 ];
@@ -56,9 +67,13 @@ List<DashboardWidget> dashboardWidgetsSafeFormJson(
     return dashboardWidgets
             ?.map((e) => $enumDecode(_$DashboardWidgetEnumMap, e))
             .toList() ??
-        defaultDashboardWidgets;
+        (system.isAndroid
+            ? defaultAndroidDashboardWidgets
+            : defaultDashboardWidgets);
   } catch (_) {
-    return defaultDashboardWidgets;
+    return system.isAndroid
+        ? defaultAndroidDashboardWidgets
+        : defaultDashboardWidgets;
   }
 }
 
@@ -77,7 +92,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool openLogs,
     @Default(true) bool closeConnections,
     @Default(defaultTestUrl) String testUrl,
-    @Default(true) bool isAnimateToPage,
+    @Default(true) bool showStartSwitch,
     @Default(false) bool enableNavBarHapticFeedback,
     @Default(false) bool autoCheckUpdate,
     @Default(false) bool showLabel,
@@ -94,9 +109,13 @@ abstract class AppSettingProps with _$AppSettingProps {
       _$AppSettingPropsFromJson(json);
 
   factory AppSettingProps.safeFromJson(Map<String, Object?>? json) {
-    final props = json == null
+    var props = json == null
         ? defaultAppSettingProps
         : AppSettingProps.fromJson(json);
+
+    if (json == null && system.isAndroid) {
+      props = props.copyWith(dashboardWidgets: defaultAndroidDashboardWidgets);
+    }
 
     return props.copyWith(
       minimizeOnExit: true,
@@ -131,10 +150,11 @@ extension AccessControlExt on AccessControl {
 @freezed
 abstract class WindowProps with _$WindowProps {
   const factory WindowProps({
-    @Default(750) double width,
-    @Default(600) double height,
+    @Default(910) double width,
+    @Default(620) double height,
     double? top,
     double? left,
+    @Default(false) bool isPinned,
   }) = _WindowProps;
 
   factory WindowProps.fromJson(Map<String, Object?>? json) =>
@@ -168,10 +188,6 @@ abstract class VpnProps with _$VpnProps {
   factory VpnProps.safeFromJson(Map<String, Object?>? json) {
     final props = json == null ? defaultVpnProps : VpnProps.fromJson(json);
     var safeProps = props;
-
-    if (system.isAndroid) {
-      safeProps = safeProps.copyWith(systemProxy: false);
-    }
 
     if (safeProps.smartAutoStop && safeProps.quickResponse) {
       safeProps = safeProps.copyWith(quickResponse: false);
@@ -230,7 +246,6 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(ThemeMode.system) ThemeMode themeMode,
     @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
     @Default(false) bool pureBlack,
-    @Default(false) bool classicTheme,
     @Default(TextScale()) TextScale textScale,
     @Default(false) bool useLightIcon,
     @Default(false) bool useHarmonyFont,

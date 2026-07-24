@@ -255,6 +255,7 @@ enum ActionMethod {
   convertAgeSecretKeyToPublicKey,
   decryptAgeConfig,
   getMode,
+  parseExternalProviderContent,
 
   ///Android,
   setState,

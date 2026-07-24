@@ -52,6 +52,15 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
         unlockReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_SCREEN_OFF -> {
+                        GlobalState.getCurrentVPNPlugin()?.notifyScreenStateChanged(false)
+                        return
+                    }
+                    Intent.ACTION_SCREEN_ON -> {
+                        GlobalState.getCurrentVPNPlugin()?.notifyScreenStateChanged(true)
+                    }
+                }
                 lastNotificationText = null
                 resetNotificationBuilder()
                 CoroutineScope(Dispatchers.Main).launch {
@@ -62,6 +71,7 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_PRESENT)
             addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
         }
         registerReceiver(unlockReceiver, filter, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Context.RECEIVER_NOT_EXPORTED else 0)
 

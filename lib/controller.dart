@@ -152,10 +152,10 @@ class AppController {
     }
 
     if (wasRunning) {
-      await globalState.handleStart(
-        [updateRunTime, updateTraffic],
-        !keepVpnService,
-      );
+      await globalState.handleStart([
+        updateRunTime,
+        updateTraffic,
+      ], !keepVpnService);
       _scheduleCheckIpRefresh();
       _backgroundLoad();
     }
@@ -245,12 +245,12 @@ class AppController {
       return;
     }
 
-    await globalState.handleStart([updateRunTime, updateTraffic]);
-
     final needReapply = await _needsSetupConfig();
     if (needReapply) {
       await _quickSetupConfig();
     }
+
+    await globalState.handleStart([updateRunTime, updateTraffic]);
 
     _scheduleCheckIpRefresh();
 
@@ -364,7 +364,9 @@ class AppController {
 
   Future<bool> _shouldUpdateDashboardTick() async {
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
-    if (lifecycleState != AppLifecycleState.resumed) return false;
+    final isPinned = system.isDesktop &&
+        _ref.read(windowSettingProvider.select((s) => s.isPinned));
+    if (!isPinned && lifecycleState != AppLifecycleState.resumed) return false;
 
     if (system.isDesktop) {
       if (await window?.isVisible == false) return false;
@@ -384,6 +386,12 @@ class AppController {
         _ref.read(vpnSettingProvider).networkSpeedNotification;
 
     if (!shouldUpdateDashboard && !networkSpeedNotification) {
+      return;
+    }
+
+    if (networkSpeedNotification &&
+        !shouldUpdateDashboard &&
+        !globalState.appState.isScreenOn) {
       return;
     }
 
@@ -667,7 +675,7 @@ class AppController {
         continue;
       }
       try {
-        await updateProfile(profile);
+        await updateProfile(profile, validate: false);
       } catch (e) {
         commonPrint.log(
           '[AutoUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
@@ -698,7 +706,7 @@ class AppController {
         commonPrint.log(
           '[MissedUpdate] Updating profile: ${profile.label ?? profile.id}',
         );
-        await updateProfile(profile);
+        await updateProfile(profile, validate: false);
       } catch (e) {
         commonPrint.log(
           '[MissedUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
@@ -1164,9 +1172,13 @@ class AppController {
     await _handlePreference();
     await _handlerDisclaimer();
     if (system.isWindows) {
-      unawaited(setProcessPriority(_ref.read(appSettingProvider).enableHighPriority).catchError((e) {
-        commonPrint.log('Failed to set initial process priority: $e');
-      }));
+      unawaited(
+        setProcessPriority(
+          _ref.read(appSettingProvider).enableHighPriority,
+        ).catchError((e) {
+          commonPrint.log('Failed to set initial process priority: $e');
+        }),
+      );
     }
     _ref.read(initProvider.notifier).value = true;
   }
@@ -1194,7 +1206,8 @@ class AppController {
       }
     }
     final hasProfile = _ref.read(currentProfileProvider) != null;
-    final shouldStart = hasProfile &&
+    final shouldStart =
+        hasProfile &&
         (globalState.isStart || _ref.read(appSettingProvider).autoRun);
 
     if (shouldStart) {
@@ -1348,7 +1361,9 @@ class AppController {
         ageSecretKey: ageSecretKey,
       ).update();
       if (globalState.navigatorKey.currentState?.canPop() ?? false) {
-        globalState.navigatorKey.currentState?.popUntil((route) => route.isFirst);
+        globalState.navigatorKey.currentState?.popUntil(
+          (route) => route.isFirst,
+        );
       }
       toProfiles();
       await addProfile(profile);
@@ -1373,7 +1388,9 @@ class AppController {
     _ref.read(loadingProvider.notifier).value = true;
     try {
       await Future.delayed(const Duration(milliseconds: 500));
-      final profile = await Profile.normal(label: platformFile?.name).saveFile(bytes);
+      final profile = await Profile.normal(
+        label: platformFile?.name,
+      ).saveFile(bytes);
       globalState.navigatorKey.currentState?.popUntil((route) => route.isFirst);
       toProfiles();
       await addProfile(profile);
@@ -1701,9 +1718,18 @@ class AppController {
     });
   }
 
-  Future<void> updateTray([bool focus = false, bool silent = false, bool force = false]) async {
+  Future<void> updateTray([
+    bool focus = false,
+    bool silent = false,
+    bool force = false,
+  ]) async {
     final trayState = _ref.read(trayStateProvider);
-    await tray.update(trayState: trayState, focus: focus, silent: silent, force: force);
+    await tray.update(
+      trayState: trayState,
+      focus: focus,
+      silent: silent,
+      force: force,
+    );
   }
 
   Future<void> _processRecoveryArchive(
@@ -2241,7 +2267,9 @@ class AppController {
     // Use default widgets if merged is empty
     return mergedWidgets.isNotEmpty
         ? mergedWidgets
-        : defaultDashboardWidgets;
+        : (system.isAndroid
+              ? defaultAndroidDashboardWidgets
+              : defaultDashboardWidgets);
   }
 
   Future<T?> safeRun<T>(

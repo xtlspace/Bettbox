@@ -67,14 +67,9 @@ class _HomePageState extends State<HomePage> {
                     },
                   );
             if (isMobile) {
-              final classicTheme = ref.watch(
-                themeSettingProvider.select(
-                  (state) => (state.classicTheme as dynamic) == true,
-                ),
-              );
               final pageContent = MediaQuery.removePadding(
                 removeTop: false,
-                removeBottom: classicTheme,
+                removeBottom: false,
                 removeLeft: true,
                 removeRight: true,
                 context: context,
@@ -88,23 +83,14 @@ class _HomePageState extends State<HomePage> {
                 context: context,
                 child: bottomNavigationBar,
               );
-              if (classicTheme) {
-                return Column(
-                  children: [
-                    Flexible(flex: 1, child: pageContent),
-                    navBar,
-                  ],
-                );
-              }
               return Stack(
                 children: [
                   Positioned.fill(child: pageContent),
                   Positioned(left: 0, right: 0, bottom: 0, child: navBar),
                 ],
               );
-            } else {
-              return child!;
             }
+            return child!;
           },
           child: Consumer(
             builder: (_, ref, _) {
@@ -267,11 +253,13 @@ class _HomePageView extends ConsumerStatefulWidget {
 class _HomePageViewState extends ConsumerState<_HomePageView> {
   late PageController _pageController;
   late final ProviderSubscription<PageLabel> _pageLabelSubscription;
+  int _currentPageIndex = 0;
 
   @override
   initState() {
     super.initState();
-    _pageController = PageController(initialPage: _pageIndex);
+    _currentPageIndex = _pageIndex;
+    _pageController = PageController(initialPage: _currentPageIndex);
     _pageLabelSubscription = ref.listenManual(currentPageLabelProvider, (
       prev,
       next,
@@ -314,18 +302,16 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
       FocusManager.instance.primaryFocus?.unfocus();
     }
 
-    final isAnimateToPage =
-        system.isDesktop || ref.read(appSettingProvider).isAnimateToPage;
-    final isMobile = ref.read(isMobileViewProvider);
-    if (isAnimateToPage && isMobile && !ignoreAnimateTo) {
-      await _pageController.animateToPage(
-        index,
-        duration: kTabScrollDuration,
-        curve: Curves.easeOut,
-      );
-    } else {
-      _pageController.jumpToPage(index);
+    if (ref.read(isMobileViewProvider)) {
+      if (_currentPageIndex != index) {
+        setState(() {
+          _currentPageIndex = index;
+        });
+      }
+      return;
     }
+
+    _pageController.jumpToPage(index);
   }
 
   void _updatePageController() {
@@ -342,6 +328,20 @@ class _HomePageViewState extends ConsumerState<_HomePageView> {
 
   @override
   Widget build(BuildContext context) {
+    if (ref.watch(isMobileViewProvider)) {
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        child: KeyedSubtree(
+          key: ValueKey(widget.navigationItems[_currentPageIndex].label),
+          child: widget.pageBuilder(context, _currentPageIndex),
+        ),
+      );
+    }
     return PageView.builder(
       controller: _pageController,
       physics: const NeverScrollableScrollPhysics(),
@@ -374,16 +374,17 @@ class HomeBackScope extends ConsumerWidget {
         canPop: false,
         onPopInvokedWithResult: (didPop, _) async {
           if (didPop || backBlock) return;
+          final navigatorState = globalState.navigatorKey.currentState;
+          if (navigatorState?.userGestureInProgress == true) return;
           if (!isCurrentRootPage) {
             globalState.appController.toPage(PageLabel.dashboard);
             return;
           }
-          final canPop = Navigator.canPop(context);
-          if (canPop) {
-            Navigator.pop(context);
-          } else {
-            await globalState.appController.handleBackOrExit();
+          if (navigatorState != null && navigatorState.canPop()) {
+            navigatorState.pop();
+            return;
           }
+          await globalState.appController.handleBackOrExit();
         },
         child: child,
       );

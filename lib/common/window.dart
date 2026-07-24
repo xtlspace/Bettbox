@@ -21,6 +21,7 @@ class Window {
       minimumSize: const Size(380, 400),
     );
     await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+    await windowManager.setAlwaysOnTop(props.isPinned);
     if (!system.isMacOS) {
       final left = props.left ?? 0;
       final top = props.top ?? 0;

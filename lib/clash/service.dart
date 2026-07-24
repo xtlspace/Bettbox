@@ -176,14 +176,18 @@ class ClashService extends ClashHandlerInterface {
         if (started) {
           await _waitForCoreReady();
           isStarting = false;
-          if (globalState.config.appSetting.enableHighPriority) {
-            unawaited(helperClient.setProcessPriority(
-              '${AppIdentity.coreExecutableName}.exe',
-              true,
-            ).catchError((e) {
-              commonPrint.log('Failed to set core process priority: $e');
-              return false;
-            }));
+          if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
+            unawaited(
+              helperClient
+                  .setProcessPriority(
+                    '${AppIdentity.coreExecutableName}.exe',
+                    true,
+                  )
+                  .catchError((e) {
+                    commonPrint.log('Failed to set core process priority: $e');
+                    return false;
+                  }),
+            );
           }
           return;
         }
@@ -203,14 +207,15 @@ class ClashService extends ClashHandlerInterface {
     });
     await _waitForCoreReady();
     isStarting = false;
-    if (globalState.config.appSetting.enableHighPriority) {
-      unawaited(helperClient.setProcessPriority(
-        '${AppIdentity.coreExecutableName}.exe',
-        true,
-      ).catchError((e) {
-        commonPrint.log('Failed to set core process priority: $e');
-        return false;
-      }));
+    if (system.isWindows && globalState.config.appSetting.enableHighPriority) {
+      unawaited(
+        helperClient
+            .setProcessPriority('${AppIdentity.coreExecutableName}.exe', true)
+            .catchError((e) {
+              commonPrint.log('Failed to set core process priority: $e');
+              return false;
+            }),
+      );
     }
   }
 
@@ -241,8 +246,18 @@ class ClashService extends ClashHandlerInterface {
       final frame = FrameCodec.encode(message);
       socket.add(frame);
     } on SocketException catch (e) {
-      if (_isDestroying || globalState.isExiting) {
-        commonPrint.log('Ignore socket error during shutdown: $e');
+      if (_isDestroying || globalState.isExiting || isStarting) {
+        commonPrint.log(
+          'Ignored message send on closed socket during transition: $e',
+        );
+        return;
+      }
+      rethrow;
+    } on StateError catch (e) {
+      if (_isDestroying || globalState.isExiting || isStarting) {
+        commonPrint.log(
+          'Ignored message send on closed socket during transition: $e',
+        );
         return;
       }
       rethrow;

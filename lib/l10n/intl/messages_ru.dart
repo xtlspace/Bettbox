@@ -178,7 +178,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Резервное копирование",
     ),
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
-      "Синхронизация данных через WebDAV или файл",
+      "Синхронизация данных через WebDAV или локально",
     ),
     "backupSuccess": MessageLookupByLibrary.simpleMessage(
       "Резервное копирование успешно",
@@ -233,10 +233,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "checking": MessageLookupByLibrary.simpleMessage("Проверка..."),
     "circle": MessageLookupByLibrary.simpleMessage("Круг"),
-    "classicTheme": MessageLookupByLibrary.simpleMessage("Классическая тема"),
-    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
-      "Использовать более классическую и простую тему Flutter",
-    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Очистить кэш FakeIP и DNS?",
     ),
@@ -615,6 +611,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lightIconDesc": MessageLookupByLibrary.simpleMessage(
       "Переключить на светлый стиль рабочего стола вручную",
     ),
+    "lineWrap": MessageLookupByLibrary.simpleMessage("Перенос строк"),
     "list": MessageLookupByLibrary.simpleMessage("Список"),
     "listen": MessageLookupByLibrary.simpleMessage("Прослушивание"),
     "local": MessageLookupByLibrary.simpleMessage("Локальное хранилище"),
@@ -1010,6 +1007,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Служба запущена"),
     "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
     "show": MessageLookupByLibrary.simpleMessage("Показать"),
+    "showStartSwitch": MessageLookupByLibrary.simpleMessage(
+      "Связанный переключатель",
+    ),
+    "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "Отображать отдельную кнопку переключения на главной странице",
+    ),
     "shrink": MessageLookupByLibrary.simpleMessage("Стандарт"),
     "silentLaunch": MessageLookupByLibrary.simpleMessage("Тихий запуск"),
     "silentLaunchDesc": MessageLookupByLibrary.simpleMessage(
@@ -1099,10 +1102,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Настроить системный прокси",
     ),
     "tab": MessageLookupByLibrary.simpleMessage("Вкладки"),
-    "tabAnimation": MessageLookupByLibrary.simpleMessage("Анимация вкладок"),
-    "tabAnimationDesc": MessageLookupByLibrary.simpleMessage(
-      "Работает только в мобильном режиме",
-    ),
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP параллелизм"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "Разрешить параллельные TCP-соединения",
@@ -1211,6 +1210,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "vpnDesc": MessageLookupByLibrary.simpleMessage("Настройки VPN"),
     "vpnEnableDesc": MessageLookupByLibrary.simpleMessage(
       "Автоматическая маршрутизация всего трафика через VpnService",
+    ),
+    "vpnSystemProxyConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "HTTP-прокси обычно не рекомендуется на мобильных платформах. Включайте эту функцию только при необходимости и если вы осознаёте возможные последствия.",
     ),
     "vpnSystemProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Добавить HTTP-прокси к VPN",

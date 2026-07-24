@@ -20,7 +20,7 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
       openLogs: json['openLogs'] as bool? ?? true,
       closeConnections: json['closeConnections'] as bool? ?? true,
       testUrl: json['testUrl'] as String? ?? defaultTestUrl,
-      isAnimateToPage: json['isAnimateToPage'] as bool? ?? true,
+      showStartSwitch: json['showStartSwitch'] as bool? ?? true,
       enableNavBarHapticFeedback:
           json['enableNavBarHapticFeedback'] as bool? ?? true,
       autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
@@ -53,7 +53,7 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
       'openLogs': instance.openLogs,
       'closeConnections': instance.closeConnections,
       'testUrl': instance.testUrl,
-      'isAnimateToPage': instance.isAnimateToPage,
+      'showStartSwitch': instance.showStartSwitch,
       'enableNavBarHapticFeedback': instance.enableNavBarHapticFeedback,
       'autoCheckUpdate': instance.autoCheckUpdate,
       'showLabel': instance.showLabel,
@@ -145,6 +145,7 @@ _WindowProps _$WindowPropsFromJson(Map<String, dynamic> json) => _WindowProps(
   height: (json['height'] as num?)?.toDouble() ?? 620,
   top: (json['top'] as num?)?.toDouble(),
   left: (json['left'] as num?)?.toDouble(),
+  isPinned: json['isPinned'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$WindowPropsToJson(_WindowProps instance) =>
@@ -153,6 +154,7 @@ Map<String, dynamic> _$WindowPropsToJson(_WindowProps instance) =>
       'height': instance.height,
       'top': instance.top,
       'left': instance.left,
+      'isPinned': instance.isPinned,
     };
 
 _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
@@ -323,7 +325,6 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
       ) ??
       DynamicSchemeVariant.content,
   pureBlack: json['pureBlack'] as bool? ?? false,
-  classicTheme: json['classicTheme'] as bool? ?? false,
   textScale: json['textScale'] == null
       ? const TextScale()
       : TextScale.fromJson(json['textScale'] as Map<String, dynamic>),
@@ -339,7 +340,6 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'themeMode': _$ThemeModeEnumMap[instance.themeMode]!,
       'schemeVariant': _$DynamicSchemeVariantEnumMap[instance.schemeVariant]!,
       'pureBlack': instance.pureBlack,
-      'classicTheme': instance.classicTheme,
       'textScale': instance.textScale,
       'useLightIcon': instance.useLightIcon,
       'useHarmonyFont': instance.useHarmonyFont,

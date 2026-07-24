@@ -240,6 +240,10 @@ class ClashCore {
     return clashInterface.updateExternalProvider(providerName);
   }
 
+  Future<String> parseExternalProviderContent(String providerName) {
+    return clashInterface.parseExternalProviderContent(providerName);
+  }
+
   Future<void> startListener() async {
     await clashInterface.startListener();
   }

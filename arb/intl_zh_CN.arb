@@ -103,7 +103,7 @@
   "autoCheckUpdate": "自动检查更新",
   "autoCheckUpdateDesc": "应用启动时自动检查更新",
   "accessControl": "访问控制",
-  "accessControlDesc": "配置应用访问代理",
+  "accessControlDesc": "配置应用访问黑白名单",
   "clearCacheTitle": "清理缓存",
   "clearCacheDesc": "是否需要清理FakeIP&DNS缓存？",
   "forceGCTitle": "强制垃圾回收",
@@ -187,6 +187,8 @@
   "systemProxy": "系统代理",
   "project": "项目",
   "core": "内核",
+  "showStartSwitch": "联动开关",
+  "showStartSwitchDesc": "首页显示独立的开关按钮",
   "tabAnimation": "切换动画",
   "desc": "XTLS修改版Bettbox，针对网站微调，增加易用性，致力于更好的体验。",
   "startVpn": "正在启动",
@@ -237,6 +239,7 @@
   "app": "应用",
   "general": "常规",
   "vpnSystemProxyDesc": "为VpnService附加HTTP代理",
+  "vpnSystemProxyConfirmDesc": "非桌面端通常不推荐使用HTTP代理，此功能仅建议您在必要且熟悉的情况下开启",
   "systemProxyDesc": "设置系统代理",
   "unifiedDelay": "统一延迟",
   "unifiedDelayDesc": "去除握手解析等额外延迟",
@@ -336,7 +339,7 @@
   "value": "值",
   "hostsDesc": "追加当前配置Hosts",
   "vpnTip": "重启VPN后改变生效",
-  "vpnEnableDesc": "通过VpnService自动路由系统所有流量",
+  "vpnEnableDesc": "通过VpnService自动路由系统流量",
   "options": "选项",
   "loopback": "回环解锁工具",
   "loopbackDesc": "用于UWP回环解锁",
@@ -546,7 +549,6 @@
   "saveChanges": "是否保存更改？",
   "generalDesc": "修改全局通用设置",
   "findProcessModeDesc": "开启后可以匹配查找进程",
-  "tabAnimationDesc": "仅在部分移动视图中有效",
   "navBarHapticFeedback": "触感反馈",
   "navBarHapticFeedbackDesc": "底部导航栏切换震动反馈",
   "saveTip": "确定要保存吗？",
@@ -651,6 +653,7 @@
   "agePublicKeyLabel": "Age 公钥",
   "generateFromPrivateKey": "从Age私钥生成",
   "ageKeyPairGeneratedSuccess": "已生成X25519密钥对, 请妥善保存",
-  "agePrivateKeyRequired": "请先输入正确的Age 私钥"
+  "agePrivateKeyRequired": "请先输入正确的Age 私钥",
+  "lineWrap": "自动换行"
 }
 

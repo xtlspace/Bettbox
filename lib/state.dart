@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:animations/animations.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -59,7 +58,6 @@ class GlobalState {
   bool _needsTaskRestart = false;
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
-
   bool isInit = false;
 
   bool get isStart => startTime != null && startTime!.isBeforeNow;
@@ -204,9 +202,9 @@ class GlobalState {
     }
     render?.pause();
 
-    final networkSpeedNotification = appController.ref
-        .read(vpnSettingProvider)
-        .networkSpeedNotification;
+    final networkSpeedNotification =
+        system.isAndroid &&
+        appController.ref.read(vpnSettingProvider).networkSpeedNotification;
     if (!networkSpeedNotification) {
       stopUpdateTasks();
     }
@@ -256,26 +254,6 @@ class GlobalState {
 
     await appController.updateRunTime();
     await startUpdateTasks([appController.updateTraffic]);
-
-    if (system.isDesktop && clashService != null) {
-      final service = clashService;
-      if (service == null) return;
-      service
-          .checkCoreHealth()
-          .then((healthy) async {
-            if (healthy || service.isStarting) return;
-            if (appController.ref.read(
-              providers_state.isRestartingCoreProvider,
-            )) {
-              return;
-            }
-            commonPrint.log('Core connection error on resume, force-restart');
-            await appController.restartCore();
-          })
-          .catchError((e) {
-            commonPrint.log('Resume health check failed: $e');
-          });
-    }
   }
 
   void _scheduleBackgroundCleanup() {
@@ -421,16 +399,88 @@ class GlobalState {
     if (state == null) return null;
     final context = state.context;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return await showModal<T>(
+    return await showGeneralDialog<T>(
       context: context,
-      configuration: FadeScaleTransitionConfiguration(
-        barrierColor: isDark
-            ? const Color(0xCC000000)
-            : const Color(0x99000000),
-        barrierDismissible: dismissible,
-      ),
-      builder: (_) => child,
+      barrierColor: isDark ? const Color(0xCC000000) : const Color(0x99000000),
+      barrierDismissible: dismissible,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (context, animation, secondaryAnimation) => child,
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return RepaintBoundary(
+          child: FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: curved.drive(Tween<double>(begin: 0.94, end: 1.0)),
+              child: child,
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  bool _dialogWarmedUp = false;
+
+  void warmupCommonDialog() {
+    if (_dialogWarmedUp) return;
+    _dialogWarmedUp = true;
+
+    final state = navigatorKey.currentState;
+    if (state == null) return;
+    final overlayState = state.overlay;
+    if (overlayState == null) return;
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          entry.remove();
+          entry.dispose();
+        });
+        return Offstage(
+          offstage: true,
+          child: RepaintBoundary(
+            child: Material(
+              type: MaterialType.transparency,
+              child: FadeTransition(
+                opacity: const AlwaysStoppedAnimation(1.0),
+                child: ScaleTransition(
+                  scale: const AlwaysStoppedAnimation(1.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: const [
+                        BoxShadow(
+                          blurRadius: 10,
+                          color: Colors.black12,
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_outline),
+                        SizedBox(height: 8),
+                        Text('warmup'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlayState.insert(entry);
   }
 
   void showNotifier(
@@ -682,7 +732,7 @@ class GlobalState {
       rawConfig['ntp'] = ntp.toJson();
     }
     if (system.isAndroid) {
-      rawConfig['ntp']['enable'] = false;
+      rawConfig['ntp']['write-to-system'] = false;
     }
     if (rawConfig['sniffer'] == null) {
       rawConfig['sniffer'] = {};
@@ -921,7 +971,11 @@ class DashboardRefreshManager {
 
   Future<bool> _isActive() async {
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
-    if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) {
+    final isPinned =
+        system.isDesktop && globalState.config.windowProps.isPinned;
+    if (!isPinned &&
+        lifecycleState != null &&
+        lifecycleState != AppLifecycleState.resumed) {
       return false;
     }
     if (system.isDesktop) {

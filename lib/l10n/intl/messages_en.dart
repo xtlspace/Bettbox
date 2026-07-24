@@ -64,7 +64,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Only route selected apps through VPN",
     ),
     "accessControlDesc": MessageLookupByLibrary.simpleMessage(
-      "Configure per-app proxy access",
+      "Configure per-app access allowlist/blocklist",
     ),
     "accessControlNotAllowDesc": MessageLookupByLibrary.simpleMessage(
       "Exclude selected apps from VPN",
@@ -230,10 +230,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "checking": MessageLookupByLibrary.simpleMessage("Checking..."),
     "circle": MessageLookupByLibrary.simpleMessage("Circle"),
-    "classicTheme": MessageLookupByLibrary.simpleMessage("Classic Theme"),
-    "classicThemeDesc": MessageLookupByLibrary.simpleMessage(
-      "Use a more classic and simple Flutter theme",
-    ),
     "clearCacheDesc": MessageLookupByLibrary.simpleMessage(
       "Clear FakeIP and DNS cache?",
     ),
@@ -604,6 +600,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lightIconDesc": MessageLookupByLibrary.simpleMessage(
       "Manually switch light desktop app icon",
     ),
+    "lineWrap": MessageLookupByLibrary.simpleMessage("Wrap Lines"),
     "list": MessageLookupByLibrary.simpleMessage("List"),
     "listen": MessageLookupByLibrary.simpleMessage("Listen"),
     "local": MessageLookupByLibrary.simpleMessage("Local"),
@@ -995,6 +992,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
+    "showStartSwitch": MessageLookupByLibrary.simpleMessage("Linkage Switch"),
+    "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
+      "Display independent switch button on the homepage",
+    ),
     "shrink": MessageLookupByLibrary.simpleMessage("Compact"),
     "silentLaunch": MessageLookupByLibrary.simpleMessage("Silent Launch"),
     "silentLaunchDesc": MessageLookupByLibrary.simpleMessage(
@@ -1078,10 +1079,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "systemProxy": MessageLookupByLibrary.simpleMessage("System Proxy"),
     "systemProxyDesc": MessageLookupByLibrary.simpleMessage("Set system proxy"),
     "tab": MessageLookupByLibrary.simpleMessage("Tab"),
-    "tabAnimation": MessageLookupByLibrary.simpleMessage("Tab Animation"),
-    "tabAnimationDesc": MessageLookupByLibrary.simpleMessage(
-      "Effective only in mobile view",
-    ),
     "tcpConcurrent": MessageLookupByLibrary.simpleMessage("TCP Concurrent"),
     "tcpConcurrentDesc": MessageLookupByLibrary.simpleMessage(
       "Allow concurrent TCP connections",
@@ -1175,7 +1172,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "view": MessageLookupByLibrary.simpleMessage("View"),
     "vpnDesc": MessageLookupByLibrary.simpleMessage("VPN-related settings"),
     "vpnEnableDesc": MessageLookupByLibrary.simpleMessage(
-      "Route all system traffic via VpnService",
+      "Route system traffic via VpnService",
+    ),
+    "vpnSystemProxyConfirmDesc": MessageLookupByLibrary.simpleMessage(
+      "HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.",
     ),
     "vpnSystemProxyDesc": MessageLookupByLibrary.simpleMessage(
       "Attach HTTP proxy to VpnService",

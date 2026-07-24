@@ -75,6 +75,16 @@ class MainActivity : FlutterActivity() {
 
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        val engine = flutterEngine
+        if (engine != null) {
+            engine.navigationChannel.popRoute()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         return try {
             super.dispatchTouchEvent(ev)

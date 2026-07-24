@@ -8,9 +8,10 @@ import 'package:bett_box/plugins/service.dart' as vpn_service;
 import 'package:bett_box/plugins/tile.dart';
 import 'package:bett_box/plugins/vpn.dart';
 import 'package:bett_box/state.dart';
+import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'application.dart';
 import 'clash/core.dart';
@@ -48,8 +49,8 @@ Future<void> main(List<String> args) async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
   final version = await system.version;
-  await clashCore.preload();
   await globalState.initApp(version);
+  await clashCore.preload();
 
   try {
     await uiManager.initializeUI();
@@ -77,6 +78,12 @@ Future<void> _sendControlCommand(String command) async {
 }
 
 Future<void> _runApp() async {
+  try {
+    await RustLib.init();
+  } catch (e) {
+    commonPrint.log('Failed to initialize code_forge RustLib: $e');
+  }
+
   if (system.isAndroid) {
     try {
       await FlutterDisplayMode.setHighRefreshRate();
@@ -142,8 +149,6 @@ Future<void> _service(List<String> flags) async {
       _handleMainIpc(clashLibHandler);
       return;
     }
-
-    _handleMainIpc(clashLibHandler);
 
     commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
     await ClashCore.initGeo();

@@ -92,7 +92,7 @@ Future<T?> showExtend<T>(
   };
 }
 
-class AdaptiveSheetScaffold extends StatefulWidget {
+class AdaptiveSheetScaffold extends StatelessWidget {
   final SheetType type;
   final Widget body;
   final String title;
@@ -107,28 +107,23 @@ class AdaptiveSheetScaffold extends StatefulWidget {
   });
 
   @override
-  State<AdaptiveSheetScaffold> createState() => _AdaptiveSheetScaffoldState();
-}
-
-class _AdaptiveSheetScaffoldState extends State<AdaptiveSheetScaffold> {
-  @override
   Widget build(BuildContext context) {
     final backgroundColor = context.colorScheme.surface;
-    final bottomSheet = widget.type == SheetType.bottomSheet;
-    final sideSheet = widget.type == SheetType.sideSheet;
+    final bottomSheet = type == SheetType.bottomSheet;
+    final sideSheet = type == SheetType.sideSheet;
     final appBar = AppBar(
       forceMaterialTransparency: bottomSheet ? true : false,
       automaticallyImplyLeading: bottomSheet
           ? false
-          : widget.actions.isEmpty && sideSheet
+          : actions.isEmpty && sideSheet
           ? false
           : true,
       centerTitle: bottomSheet,
       backgroundColor: backgroundColor,
-      title: Text(widget.title),
+      title: Text(title),
       actions: genActions([
-        if (widget.actions.isEmpty && sideSheet) CloseButton(),
-        ...widget.actions,
+        if (actions.isEmpty && sideSheet) CloseButton(),
+        ...actions,
       ]),
     );
     if (bottomSheet) {
@@ -155,7 +150,7 @@ class _AdaptiveSheetScaffoldState extends State<AdaptiveSheetScaffold> {
               ),
             ),
             appBar,
-            Flexible(flex: 1, child: widget.body),
+            Flexible(flex: 1, child: body),
           ],
         ),
       );
@@ -163,7 +158,7 @@ class _AdaptiveSheetScaffoldState extends State<AdaptiveSheetScaffold> {
     return CommonScaffold(
       appBar: appBar,
       backgroundColor: backgroundColor,
-      body: widget.body,
+      body: body,
     );
   }
 }

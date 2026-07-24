@@ -80,6 +80,9 @@ class ApplicationState extends ConsumerState<Application>
     if (system.isAndroid) {
       app.initShortcuts();
     }
+    Future.delayed(const Duration(seconds: 3), () {
+      globalState.warmupCommonDialog();
+    });
   }
 
   @override

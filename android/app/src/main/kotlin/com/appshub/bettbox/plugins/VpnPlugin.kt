@@ -269,6 +269,11 @@ data object VpnPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         lastDns = dns
         invokeDart("dnsChanged", dns)
     }
+
+    fun notifyScreenStateChanged(isOn: Boolean) {
+        invokeDart("screenStateChanged", isOn)
+    }
+
     private fun getCurrentDns(): String {
         val dnsSet = when {
             networkDnsMap.isNotEmpty() -> networkDnsMap.values.flatMap { it }
