@@ -26,14 +26,20 @@ class AboutView extends StatelessWidget {
 
   List<Widget> _buildMoreSection(BuildContext context) {
     return generateSection(
-      separated: false,
       title: appLocalizations.more,
       items: [
-        ListItem(
-          title: Text(appLocalizations.checkUpdate),
-          onTap: () {
-            _checkUpdate(context);
-          },
+        _LinkGridRow(
+          left: _LinkGridTile(
+            title: 'Github Releases',
+            icon: Icons.star,
+            onTap: () =>
+                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
+          ),
+          right: _LinkGridTile(
+            title: appLocalizations.checkUpdate,
+            icon: Icons.refresh,
+            onTap: () => _checkUpdate(context),
+          ),
         ),
       ],
     );
@@ -150,5 +156,73 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(onTap: _handleTap, child: widget.child);
+  }
+}
+
+class _LinkGridRow extends StatelessWidget {
+  final _LinkGridTile left;
+  final _LinkGridTile right;
+
+  const _LinkGridRow({required this.left, required this.right});
+
+  @override
+  Widget build(BuildContext context) {
+    final dividerColor = context.colorScheme.outlineVariant.withValues(
+      alpha: context.colorScheme.brightness == Brightness.light ? 0.3 : 0.2,
+    );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: left),
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            indent: 8,
+            endIndent: 8,
+            color: dividerColor,
+          ),
+          Expanded(child: right),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkGridTile extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  const _LinkGridTile({required this.title, this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (icon != null) ...[
+              const SizedBox(width: 4),
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -107,6 +107,7 @@ class EditProfileViewState extends State<EditProfileView> {
           await globalState.showMessage(
             title: appLocalizations.tip,
             message: TextSpan(text: e.formatError),
+            cancelable: false,
           );
         }
         return;
@@ -133,6 +134,7 @@ class EditProfileViewState extends State<EditProfileView> {
             await globalState.showMessage(
               title: appLocalizations.tip,
               message: TextSpan(text: e.toString()),
+              cancelable: false,
             );
           }
           return;
@@ -149,6 +151,7 @@ class EditProfileViewState extends State<EditProfileView> {
             message: TextSpan(
               text: '${profile.label ?? profile.id}: ${e.formatError}',
             ),
+            cancelable: false,
           );
         }
       }
@@ -197,6 +200,7 @@ class EditProfileViewState extends State<EditProfileView> {
       globalState.showMessage(
         title: appLocalizations.tip,
         message: TextSpan(text: message),
+        cancelable: false,
       );
       return;
     }

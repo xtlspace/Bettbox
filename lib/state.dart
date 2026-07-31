@@ -120,8 +120,13 @@ class GlobalState {
 
   Future<void> init() async {
     packageInfo = await PackageInfo.fromPlatform();
-    config =
-        await preferences.getConfig() ?? Config(themeProps: defaultThemeProps);
+    config = await preferences.getConfig() ??
+        Config(
+          themeProps: defaultThemeProps,
+          patchClashConfig: system.isAndroid
+              ? const ClashConfig(findProcessMode: FindProcessMode.always)
+              : defaultClashConfig,
+        );
     await globalState.migrateOldData(config);
     final locale =
         utils.getLocaleForString(config.appSetting.locale) ??
@@ -856,8 +861,11 @@ class GlobalState {
       rawConfig.remove('rule');
     }
 
+    final scriptActive = config.scriptProps.currentScript != null &&
+        profile.useScriptOverride;
+
     final overrideData = profile.overrideData;
-    if (overrideData.enable && config.scriptProps.currentScript == null) {
+    if (overrideData.enable && !scriptActive) {
       if (overrideData.rule.type == OverrideRuleType.override) {
         rules = overrideData.runningRule;
       } else {
@@ -913,6 +921,33 @@ class GlobalState {
       }
     }
 
+    if (profile.groupSwitches.isNotEmpty &&
+        !scriptActive &&
+        rawConfig['proxy-groups'] is List) {
+      final disabledGroups = profile.groupSwitches.entries
+          .where((e) => !e.value)
+          .map((e) => e.key)
+          .toSet();
+      if (disabledGroups.isNotEmpty) {
+        final proxyGroups = rawConfig['proxy-groups'] as List;
+        proxyGroups.removeWhere((g) {
+          if (g is Map && g['name'] is String) {
+            return disabledGroups.contains(g['name']);
+          }
+          return false;
+        });
+        for (int i = 0; i < rules.length; i++) {
+          if (rules[i] is String) {
+            final parsed = ParsedRule.parseString(rules[i] as String);
+            if (parsed.ruleTarget != null &&
+                disabledGroups.contains(parsed.ruleTarget)) {
+              rules[i] = parsed.copyWith(ruleTarget: 'PASS').value;
+            }
+          }
+        }
+      }
+    }
+
     rawConfig['rule'] = rules;
     return rawConfig;
   }
@@ -945,6 +980,7 @@ class GlobalState {
         return await JavaScriptRuntimeManager.evaluateScript(
           currentScript.content,
           config,
+          customOptions: currentScript.customOptions,
         );
       } catch (e) {
         commonPrint.log('Script execution failed: $e');

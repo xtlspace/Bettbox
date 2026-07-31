@@ -65,6 +65,7 @@ class _ResourcesViewState extends ConsumerState<ResourcesView> {
         globalState.showMessage(
           title: appLocalizations.syncFailed,
           message: TextSpan(text: e.toString()),
+          cancelable: false,
         );
       }
     } finally {
@@ -150,6 +151,7 @@ class _GeoDataListItemState extends State<GeoDataListItem> {
         globalState.showMessage(
           title: geoItem.label,
           message: TextSpan(text: e.toString()),
+          cancelable: false,
         );
       }
     }

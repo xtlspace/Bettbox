@@ -19,8 +19,10 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector3;
 
 const int kSemanticTokenViewportPaddingLines = 1500;
-const int kExactWrappedHeightThreshold = 512;
+const int kExactWrappedHeightThreshold = 2000;
 const int kWrappedHeightSampleSize = 64;
+const double _kSelectionHandleHitPadding = 20.0;
+const double _kCaretHandleHitPadding = 24.0;
 const String _wordCharPattern =
     r'[\w\u0600-\u06FF\u08A0-\u08FF\u0590-\u05FF'
     r'\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]';
@@ -331,7 +333,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
   late final AnimationController _caretBlinkController;
   late final AnimationController _lineHighlightController;
   late final Map<String, TextStyle> _editorTheme;
-  late final Mode _language;
+  late final Mode? _language;
   late final CodeSelectionStyle _selectionStyle;
   late final GutterStyle _gutterStyle;
   late final SuggestionStyle _suggestionStyle;
@@ -595,12 +597,14 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
                 selection: _controller.selection,
               ),
         );
+      } else if (!_focusNode.hasFocus) {
+        if (mounted && !_readOnly) {
+          _controller.clearMultiCursors();
+        }
       }
     });
 
     _controller.requestImeReset = _resetImeConnection;
-
-    Future.microtask(CustomIcons.loadAllCustomFonts);
 
     if (_filePath == null && _controller.lspConfig != null) {
       throw ArgumentError(
@@ -790,7 +794,8 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
       TextInputConfiguration(
         readOnly: widget.readOnly,
         enableDeltaModel: true,
-        enableSuggestions: widget.enableKeyboardSuggestions,
+        enableSuggestions:
+            widget.enableKeyboardSuggestions && !widget.readOnly,
         inputType: widget.keyboardType,
         inputAction: TextInputAction.newline,
         autocorrect: false,
@@ -1149,6 +1154,32 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     _controller.pressEndKey(isShiftPressed: withShift);
   }
 
+  void _triggerSearchWithSelection({bool isReplace = false}) {
+    if (_controller.selection.start != _controller.selection.end) {
+      final start = _controller.selection.start.clamp(0, _controller.length);
+      final end = _controller.selection.end.clamp(0, _controller.length);
+      if (start < end) {
+        final selectedText = _controller.text.substring(start, end);
+        if (selectedText.isNotEmpty && !selectedText.contains('\n')) {
+          _findController.findInputController.text = selectedText;
+          _findController.find(selectedText);
+        }
+      }
+    }
+    if (!_readOnly) {
+      _findController.isReplaceMode = isReplace;
+    } else {
+      _findController.isReplaceMode = false;
+    }
+    _findController.isActive = true;
+    _contextMenuOffsetNotifier.value = const Offset(-1, -1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _findController.findInputFocusNode.requestFocus();
+      }
+    });
+  }
+
   Widget _buildContextMenu() {
     return ValueListenableBuilder<Offset>(
       valueListenable: _contextMenuOffsetNotifier,
@@ -1159,9 +1190,37 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
             _controller.selection.start != _controller.selection.end;
 
         if (_isMobile) {
+          Offset anchorAbove = offset;
+          Offset anchorBelow = Offset(offset.dx, offset.dy + 40);
+          if (hasSelection) {
+            final renderObject =
+                _codeFieldKey.currentContext?.findRenderObject();
+            if (renderObject is _CodeFieldRenderer) {
+              final rects = renderObject.getSelectionHandleRects();
+              final startRect = rects.startHandle;
+              final endRect = rects.endHandle;
+              final lineHeight = rects.lineHeight;
+              if (startRect != null && endRect != null && lineHeight > 0) {
+                final handleRadius = (lineHeight / 2).clamp(6.0, 12.0);
+                final centerX =
+                    (startRect.center.dx + endRect.center.dx) / 2;
+                final minY =
+                    startRect.center.dy < endRect.center.dy
+                        ? startRect.center.dy
+                        : endRect.center.dy;
+                final maxY =
+                    startRect.center.dy > endRect.center.dy
+                        ? startRect.center.dy
+                        : endRect.center.dy;
+                anchorAbove =
+                    Offset(centerX, minY - lineHeight - handleRadius);
+                anchorBelow = Offset(centerX, maxY - handleRadius);
+              }
+            }
+          }
           return TextSelectionToolbar(
-            anchorAbove: offset,
-            anchorBelow: Offset(offset.dx, offset.dy + 40),
+            anchorAbove: anchorAbove,
+            anchorBelow: anchorBelow,
             toolbarBuilder: (BuildContext context, Widget child) {
               return Container(
                 decoration: BoxDecoration(
@@ -1254,6 +1313,30 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
               TextSelectionToolbarTextButton(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 onPressed: () {
+                  _triggerSearchWithSelection();
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.search,
+                      size: 16,
+                      color: _editorTheme['root']?.color,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      MaterialLocalizations.of(context).searchFieldLabel,
+                      style: TextStyle(
+                        color: _editorTheme['root']?.color,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextSelectionToolbarTextButton(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                onPressed: () {
                   _controller.selectAll();
                 },
                 child: Row(
@@ -1309,6 +1392,11 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
                         'Ctrl+V',
                         () => _controller.paste(),
                       ),
+                    _buildDesktopContextMenuItem(
+                      MaterialLocalizations.of(context).searchFieldLabel,
+                      'Ctrl+F',
+                      () => _triggerSearchWithSelection(),
+                    ),
                     _buildDesktopContextMenuItem(
                       MaterialLocalizations.of(context).selectAllButtonLabel,
                       'Ctrl+A',
@@ -1445,13 +1533,12 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
 
   void _moveWordLeft(bool withShift) {
     final selection = _controller.selection;
-    final text = _controller.text;
     int caret = selection.extentOffset;
 
     if (caret <= 0) return;
 
-    final prevNewline = text.lastIndexOf('\n', caret - 1);
-    final lineStart = prevNewline == -1 ? 0 : prevNewline + 1;
+    final lineIndex = _controller.getLineAtOffset(caret);
+    final lineStart = _controller.getLineStartOffset(lineIndex);
     if (caret == lineStart && lineStart > 0) {
       final newOffset = lineStart - 1;
       _controller.setSelectionSilently(
@@ -1465,16 +1552,27 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
       return;
     }
 
-    final lineText = text.substring(lineStart, caret);
+    final lineText = _controller.getLineText(lineIndex);
+    final colScalar = caret - lineStart;
+    final colUtf16 = CodeForgeController.scalarToStringIndex(
+      lineText,
+      colScalar,
+    );
+    final subLineText = lineText.substring(0, colUtf16);
     final wordMatches = RegExp(
       '$_wordCharPattern+|[^$_wordCharPattern\\s]+',
-    ).allMatches(lineText).toList();
+    ).allMatches(subLineText).toList();
 
-    int newOffset = lineStart;
+    int newColUtf16 = 0;
     for (final match in wordMatches) {
-      if (match.end >= lineText.length) break;
-      newOffset = lineStart + match.start;
+      if (match.end >= subLineText.length) break;
+      newColUtf16 = match.start;
     }
+    final newColScalar = CodeForgeController.utf16ToScalarOffset(
+      lineText,
+      newColUtf16,
+    );
+    final newOffset = lineStart + newColScalar;
 
     _controller.setSelectionSilently(
       withShift
@@ -1491,9 +1589,11 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     final text = _controller.text;
     int caret = selection.extentOffset;
 
-    if (caret >= text.length) return;
+    if (caret >= _controller.length) return;
 
-    if (caret < text.length && text[caret] == '\n') {
+    final caretUtf16 = CodeForgeController.scalarToStringIndex(text, caret);
+
+    if (caretUtf16 < text.length && text[caretUtf16] == '\n') {
       final newOffset = caret + 1;
       _controller.setSelectionSilently(
         withShift
@@ -1507,16 +1607,21 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
     }
 
     final regex = RegExp('$_wordCharPattern+|[^$_wordCharPattern\\s]+|\\s+');
-    final matches = regex.allMatches(text, caret);
+    final matches = regex.allMatches(text, caretUtf16);
 
-    int newOffset = caret;
+    int newOffsetUtf16 = caretUtf16;
     for (final match in matches) {
-      if (match.start > caret) {
-        newOffset = match.start;
+      if (match.start > caretUtf16) {
+        newOffsetUtf16 = match.start;
         break;
       }
     }
-    if (newOffset == caret) newOffset = text.length;
+    if (newOffsetUtf16 == caretUtf16) newOffsetUtf16 = text.length;
+
+    final newOffset = CodeForgeController.utf16ToScalarOffset(
+      text,
+      newOffsetUtf16,
+    );
 
     _controller.setSelectionSilently(
       withShift
@@ -1674,6 +1779,37 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
 
                                                 final shrtCt =
                                                     widget.keyboardShotcuts;
+
+                                                if (shrtCt.showFindBar.accepts(
+                                                  event,
+                                                  HardwareKeyboard.instance,
+                                                )) {
+                                                  final isAlt = HardwareKeyboard
+                                                      .instance
+                                                      .isAltPressed;
+                                                  _triggerSearchWithSelection(
+                                                    isReplace: isAlt,
+                                                  );
+                                                  return KeyEventResult.handled;
+                                                }
+
+                                                if (shrtCt.showFindAndReplaceBar
+                                                    .accepts(
+                                                      event,
+                                                      HardwareKeyboard.instance,
+                                                    )) {
+                                                  if (!HardwareKeyboard
+                                                      .instance
+                                                      .isMetaPressed) {
+                                                    _triggerSearchWithSelection(
+                                                      isReplace: true,
+                                                    );
+
+                                                    return KeyEventResult
+                                                        .handled;
+                                                  }
+                                                }
+
                                                 if (shrtCt.duplicate.accepts(
                                                   event,
                                                   HardwareKeyboard.instance,
@@ -4173,7 +4309,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
 class _CodeField extends LeafRenderObjectWidget {
   final CodeForgeController controller;
   final Map<String, TextStyle> editorTheme;
-  final Mode language;
+  final Mode? language;
   final List<Mode> extraLanguages;
   final String? languageId;
   final LspConfig? lspConfig;
@@ -4375,6 +4511,9 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   final Map<String, List<ui.TextBox>> _diagnosticPathCache = {};
   final Map<String, List<ui.TextBox>> _searchHighlightCache = {};
   final Map<String, double> _lineOffsetCache = {};
+  List<double> _wrappedLineYPrefixSum = const [];
+  int _wrappedPrefixSumVersion = 0;
+  int _lastBuiltPrefixSumVersion = -1;
   final Map<
     int,
     ({int lineIndex, int columnIndex, Offset offset, double height})
@@ -4393,11 +4532,11 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   late double _lineHeight;
   late ui.ParagraphStyle _paragraphStyle;
   late ui.TextStyle _uiTextStyle;
-  late SyntaxHighlighter _syntaxHighlighter;
+  late SyntaxHighlighter? _syntaxHighlighter;
   late double _gutterWidth;
   TextStyle? _ghostTextStyle;
   Map<String, TextStyle> _editorTheme;
-  Mode _language;
+  Mode? _language;
   List<Mode> _extraLanguages;
   EdgeInsets? _innerPadding;
   double _rightPaddingWidth = 0, _bottomPaddingHeight = 0;
@@ -4427,9 +4566,11 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   Timer? _foldComputeTimer;
   Timer? _semanticTokenTimer;
   bool _selectionActive = false, _isDragging = false;
+  bool _longPressSelected = false;
   bool _draggingStartHandle = false, _draggingEndHandle = false;
   bool _showBubble = false, _draggingCHandle = false, _readOnly;
   bool _openedLspActionFromBulbTap = false;
+  bool _isGutterPointer = false;
   bool _isDeferringLayout = false, _hasCachedHeight = false;
   bool _isCachedHeightExact = false;
   bool _caretSyncAfterLayoutScheduled = false;
@@ -4445,7 +4586,9 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   int _lastSemanticTokenRequestEndLine = -1;
   int _semanticTokenRequestSerial = 0;
   double _cachedTotalHeight = 0.0;
-  String? _aiResponse, _lastProcessedText;
+  double _cachedWrapWidthForHeight = double.infinity;
+  String? _aiResponse;
+  int _lastProcessedLength = -1;
   int _lastProcessedContentVersion = -1;
   TextSelection? _lastSelectionForAi;
   ui.Paragraph? _cachedMagnifiedParagraph;
@@ -4455,6 +4598,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   int? _ghostTextAnchorLine, _highlightedLine;
   int _lastAppliedSemanticVersion = -1, _lastDocumentVersion = -1;
   bool _suspendBracketHighlight = false;
+  bool _lastCaretVisible = false;
   int _previousLineCount = 0;
   int _ghostTextLineCount = 0, _cachedLineCount = 0;
   int _virtualRemovedTotalLineCount = 0;
@@ -4472,7 +4616,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   void updateSemanticTokens(List<LspSemanticToken> tokens, int version) {
     if (version < _lastAppliedSemanticVersion) return;
     _lastAppliedSemanticVersion = version;
-    _syntaxHighlighter.updateSemanticTokens(
+    _syntaxHighlighter?.updateSemanticTokens(
       tokens,
       controller.getLineText,
       controller.lineCount,
@@ -4483,7 +4627,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _indentEndLineCache.clear();
     _diagnosticPathCache.clear();
     _searchHighlightCache.clear();
-    _lineOffsetCache.clear();
+    _invalidateWrappedLayoutCache();
     _caretInfoCache.clear();
     _lineIndentCache.clear();
   }
@@ -4605,21 +4749,23 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   }
 
   void _checkDocumentVersionAndClearCache() {
-    final currentDocVersion = _syntaxHighlighter.documentVersion;
+    final h = _syntaxHighlighter;
+    if (h == null) return;
+    final currentDocVersion = h.documentVersion;
     if (currentDocVersion != _lastDocumentVersion) {
       _lastDocumentVersion = currentDocVersion;
-      _paragraphCache.clear();
-      _lineTextCache.clear();
+      // 行号键控的文本/段落缓存（_paragraphCache / _lineTextCache / _indentGuideCache /
+      // _lineIndentCache）已在 _onControllerChange 中按 editLine 做细粒度失效，这里不清空
+      // 以避免把"编辑行之前未变化行"的缓存也清掉。
+      // 这里仅清空"非行号键控"或"版本敏感但行号无关/构建开销低"的缓存。
       _lineWidthCache.clear();
       _lineHeightCache.clear();
       _bracketCache.clear();
-      _indentGuideCache.clear();
       _indentEndLineCache.clear();
       _diagnosticPathCache.clear();
       _searchHighlightCache.clear();
-      _lineOffsetCache.clear();
+      _invalidateWrappedLayoutCache();
       _caretInfoCache.clear();
-      _lineIndentCache.clear();
     }
   }
 
@@ -4708,9 +4854,11 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     String text, {
     double? width,
   }) {
+    final h = _syntaxHighlighter;
+    if (h == null) return _buildParagraph(text, width: width);
     final fontSize = textStyle?.fontSize ?? 14.0;
     final fontFamily = textStyle?.fontFamily;
-    return _syntaxHighlighter.buildHighlightedParagraph(
+    return h.buildHighlightedParagraph(
       lineIndex,
       text,
       _paragraphStyle,
@@ -4777,13 +4925,16 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
     _lineHeight = fontSize * lineHeightMultiplier;
 
-    _syntaxHighlighter = SyntaxHighlighter(
-      language: _language,
-      extraLanguages: _extraLanguages,
-      editorTheme: _editorTheme,
-      baseTextStyle: _textStyle,
-      languageId: languageId,
-    );
+    _syntaxHighlighter = _language == null
+        ? null
+        : SyntaxHighlighter(
+            language: _language!,
+            extraLanguages: _extraLanguages,
+            editorTheme: _editorTheme,
+            baseTextStyle: _textStyle,
+            languageId: languageId,
+            getLineText: controller.getLineText,
+          );
     _layoutMap = LayoutMap();
     _rebuildLayoutMap();
 
@@ -4910,7 +5061,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       markNeedsPaint();
     });
 
-    caretBlinkController.addListener(markNeedsPaint);
+    caretBlinkController.addListener(_onCaretBlink);
     controller.addListener(_onControllerChange);
 
     _lineHighlightAnimation = Tween<double>(begin: 0.55, end: 0.0).animate(
@@ -4958,7 +5109,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   }
 
   Map<String, TextStyle> get editorTheme => _editorTheme;
-  Mode get language => _language;
+  Mode? get language => _language;
   TextStyle? get textStyle => _textStyle;
   EdgeInsets? get innerPadding => _innerPadding;
   bool get readOnly => _readOnly;
@@ -5009,36 +5160,42 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     if (identical(theme, _editorTheme)) return;
     _editorTheme = theme;
     try {
-      _syntaxHighlighter.dispose();
+      _syntaxHighlighter?.dispose();
     } catch (e) {
       //
     }
-    _syntaxHighlighter = SyntaxHighlighter(
-      language: language,
-      extraLanguages: _extraLanguages,
-      editorTheme: theme,
-      baseTextStyle: textStyle,
-      languageId: languageId,
-    );
+    _syntaxHighlighter = _language == null
+        ? null
+        : SyntaxHighlighter(
+            language: _language!,
+            extraLanguages: _extraLanguages,
+            editorTheme: theme,
+            baseTextStyle: textStyle,
+            languageId: languageId,
+            getLineText: controller.getLineText,
+          );
     _paragraphCache.clear();
     _bracketCache.clear();
     markNeedsLayout();
     markNeedsPaint();
   }
 
-  set language(Mode lang) {
+  set language(Mode? lang) {
     if (identical(lang, _language)) return;
     _language = lang;
     try {
-      _syntaxHighlighter.dispose();
+      _syntaxHighlighter?.dispose();
     } catch (_) {}
-    _syntaxHighlighter = SyntaxHighlighter(
-      language: lang,
-      extraLanguages: _extraLanguages,
-      editorTheme: editorTheme,
-      baseTextStyle: textStyle,
-      languageId: languageId,
-    );
+    _syntaxHighlighter = lang == null
+        ? null
+        : SyntaxHighlighter(
+            language: lang,
+            extraLanguages: _extraLanguages,
+            editorTheme: editorTheme,
+            baseTextStyle: textStyle,
+            languageId: languageId,
+            getLineText: controller.getLineText,
+          );
     _paragraphCache.clear();
     _bracketCache.clear();
     markNeedsLayout();
@@ -5088,15 +5245,18 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _bracketHighlightPainter.color = color;
 
     try {
-      _syntaxHighlighter.dispose();
+      _syntaxHighlighter?.dispose();
     } catch (_) {}
-    _syntaxHighlighter = SyntaxHighlighter(
-      language: language,
-      extraLanguages: _extraLanguages,
-      editorTheme: editorTheme,
-      baseTextStyle: style,
-      languageId: languageId,
-    );
+    _syntaxHighlighter = _language == null
+        ? null
+        : SyntaxHighlighter(
+            language: _language!,
+            extraLanguages: _extraLanguages,
+            editorTheme: editorTheme,
+            baseTextStyle: style,
+            languageId: languageId,
+            getLineText: controller.getLineText,
+          );
 
     _paragraphCache.clear();
     _lineWidthCache.clear();
@@ -5107,7 +5267,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _indentEndLineCache.clear();
     _diagnosticPathCache.clear();
     _searchHighlightCache.clear();
-    _lineOffsetCache.clear();
+    _invalidateWrappedLayoutCache();
     _caretInfoCache.clear();
     _lineIndentCache.clear();
     _longLineWidth = 0.0;
@@ -5133,15 +5293,18 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     if (listEquals(value, _extraLanguages)) return;
     _extraLanguages = value;
     try {
-      _syntaxHighlighter.dispose();
+      _syntaxHighlighter?.dispose();
     } catch (_) {}
-    _syntaxHighlighter = SyntaxHighlighter(
-      language: language,
-      extraLanguages: _extraLanguages,
-      editorTheme: editorTheme,
-      baseTextStyle: textStyle,
-      languageId: languageId,
-    );
+    _syntaxHighlighter = _language == null
+        ? null
+        : SyntaxHighlighter(
+            language: _language!,
+            extraLanguages: _extraLanguages,
+            editorTheme: editorTheme,
+            baseTextStyle: textStyle,
+            languageId: languageId,
+            getLineText: controller.getLineText,
+          );
     _paragraphCache.clear();
     _bracketCache.clear();
     markNeedsLayout();
@@ -5164,9 +5327,12 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _indentEndLineCache.clear();
     _diagnosticPathCache.clear();
     _searchHighlightCache.clear();
-    _lineOffsetCache.clear();
+    _invalidateWrappedLayoutCache();
     _caretInfoCache.clear();
     _lineIndentCache.clear();
+    _hasCachedHeight = false;
+    _isCachedHeightExact = false;
+    _cachedWrapWidthForHeight = double.infinity;
     if (!_lineWrap) {
       _rebuildLayoutMap();
     }
@@ -5298,9 +5464,14 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _isDeferringLayout = true;
 
     if (_hasCachedHeight) {
-      final lineDelta = _cachedLineCount - _previousLineCount;
-      _cachedTotalHeight += lineDelta * _lineHeight;
-      _isCachedHeightExact = false;
+      if (_lineWrap) {
+        _hasCachedHeight = false;
+        _isCachedHeightExact = false;
+      } else {
+        final lineDelta = _cachedLineCount - _previousLineCount;
+        _cachedTotalHeight += lineDelta * _lineHeight;
+        _isCachedHeightExact = false;
+      }
     }
     _previousLineCount = _cachedLineCount;
 
@@ -5328,6 +5499,16 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       }
       _ensureCaretVisible();
     });
+  }
+
+  /// 仅在 caret 可见性切换时重绘，避免每帧 markNeedsPaint
+  void _onCaretBlink() {
+    final caretVisible =
+        focusNode.hasFocus && caretBlinkController.value > 0.5;
+    if (caretVisible != _lastCaretVisible) {
+      _lastCaretVisible = caretVisible;
+      markNeedsPaint();
+    }
   }
 
   void _onControllerChange() {
@@ -5397,7 +5578,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
               f!.startIndex: f,
           };
           _foldedLineCacheDirty = true;
-          _lineOffsetCache.clear();
+          _invalidateWrappedLayoutCache();
           _hasCachedHeight = false;
           markNeedsLayout();
           markNeedsPaint();
@@ -5517,9 +5698,8 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _showBubble = false;
     }
 
-    final newText = controller.text;
-    final previousText = _lastProcessedText ?? newText;
-    final textChanged = newText != previousText;
+    final isFirstCall = _lastProcessedLength < 0;
+    final textChanged = !isFirstCall;
 
     if (textChanged) {
       _caretInfoCache.clear();
@@ -5527,23 +5707,24 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _pauseBracketHighlightDuringTyping();
     }
 
+    final newTextLength = controller.length;
     final dirtyRange = controller.dirtyRegion;
+
     if (dirtyRange != null) {
-      final safeEnd = dirtyRange.end.clamp(dirtyRange.start, newText.length);
-      final insertedText = newText.substring(dirtyRange.start, safeEnd);
-      final delta = newText.length - previousText.length;
+      final safeEnd = dirtyRange.end.clamp(dirtyRange.start, newTextLength);
+      final insertedText = controller.substring(dirtyRange.start, safeEnd);
+      final delta = newTextLength - _lastProcessedLength;
       final removedLength = max(insertedText.length - delta, 0);
       final oldEnd = dirtyRange.start + removedLength;
-      final deletedText = previousText.substring(dirtyRange.start, oldEnd);
+      final deletedText = controller.lastDeletedText;
       final editLine = controller.getLineAtOffset(dirtyRange.start);
 
-      _syntaxHighlighter.applyDocumentEdit(
+      _syntaxHighlighter?.applyDocumentEdit(
         editLine,
         dirtyRange.start,
         oldEnd,
         insertedText,
         deletedText,
-        newText,
       );
 
       final invalidateFromLine = max(0, editLine);
@@ -5567,7 +5748,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _lineTextCache.remove(affectedLine);
       _paragraphCache.remove(affectedLine);
       _lineHeightCache.remove(affectedLine);
-      _syntaxHighlighter.invalidateLines({affectedLine});
+      _syntaxHighlighter?.invalidateLines({affectedLine});
     }
     controller.clearDirtyRegion();
 
@@ -5580,23 +5761,31 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
           );
 
       _cachedLineCount = newLineCount;
-      _lineOffsetCache.clear();
+      _invalidateWrappedLayoutCache();
       _caretInfoCache.clear();
       _cachedCaretOffset = -1;
 
       final startInvalidation = insertionLine > 0 ? insertionLine - 1 : 0;
 
-      _lineTextCache.clear();
-      _lineWidthCache.clear();
-      _paragraphCache.clear();
-      _lineHeightCache.clear();
+      // insertionLine 本身内容已变，清除该行缓存
+      _lineTextCache.remove(insertionLine);
+      _lineWidthCache.remove(insertionLine);
+      _paragraphCache.remove(insertionLine);
+      _lineHeightCache.remove(insertionLine);
+      _lineIndentCache.remove(insertionLine);
+      // 对 insertionLine 之后的行号键控缓存做 key-shift（保留内容）
+      _shiftLineKeyedCache(_lineTextCache, insertionLine, lineDelta);
+      _shiftLineKeyedCache(_lineWidthCache, insertionLine, lineDelta);
+      _shiftLineKeyedCache(_paragraphCache, insertionLine, lineDelta);
+      _shiftLineKeyedCache(_lineHeightCache, insertionLine, lineDelta);
+      _shiftLineKeyedCache(_lineIndentCache, insertionLine, lineDelta);
+      // 内容包含行号或 key 非行号的缓存仍需全清
       _indentGuideCache.clear();
       _indentEndLineCache.clear();
       _diagnosticPathCache.clear();
       _searchHighlightCache.clear();
-      _lineIndentCache.clear();
       _bracketCache.clear();
-      _syntaxHighlighter.invalidateAll();
+      _syntaxHighlighter?.invalidateAll();
 
       if (enableGutter && gutterStyle.gutterWidth == null) {
         final fontSize = textStyle?.fontSize ?? 14.0;
@@ -5667,7 +5856,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         _foldRanges.addAll(adjustedFoldRanges);
         _foldRangesNeedsClear = false;
         _foldedLineCacheDirty = true;
-        _lineOffsetCache.clear();
+        _invalidateWrappedLayoutCache();
         controller.foldings = adjustedControllerFoldings;
         controller.adjustLspFoldRangesForLineChange(editLine, lineDelta);
       } else {
@@ -5722,14 +5911,12 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       markNeedsPaint();
     }
 
-    final oldText = previousText;
     final cursorPosition = controller.selection.extentOffset.clamp(
       0,
       controller.length,
     );
-    final textBeforeCursor = newText.substring(0, cursorPosition);
 
-    if (_lastProcessedText == newText &&
+    if (!textChanged &&
         _aiResponse != null &&
         _aiResponse!.isNotEmpty &&
         _lastSelectionForAi != controller.selection) {
@@ -5740,7 +5927,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
 
     final ghost = controller.ghostText;
-    if (_lastProcessedText == newText &&
+    if (!textChanged &&
         ghost != null &&
         !ghost.shouldPersist &&
         _lastSelectionForAi != controller.selection) {
@@ -5749,10 +5936,10 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _lastSelectionForAi = controller.selection;
 
     if (_aiResponse != null && _aiResponse!.isNotEmpty) {
-      final textLengthDiff = newText.length - oldText.length;
+      final textLengthDiff = newTextLength - _lastProcessedLength;
 
       if (textLengthDiff > 0 && cursorPosition >= textLengthDiff) {
-        final newlyTypedChars = textBeforeCursor.substring(
+        final newlyTypedChars = controller.substring(
           cursorPosition - textLengthDiff,
           cursorPosition,
         );
@@ -5787,10 +5974,10 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
     final ctrlGhost = controller.ghostText;
     if (ctrlGhost != null && !ctrlGhost.shouldPersist) {
-      final textLengthDiff = newText.length - oldText.length;
+      final textLengthDiff = newTextLength - _lastProcessedLength;
 
       if (textLengthDiff > 0 && cursorPosition >= textLengthDiff) {
-        final newlyTypedChars = textBeforeCursor.substring(
+        final newlyTypedChars = controller.substring(
           cursorPosition - textLengthDiff,
           cursorPosition,
         );
@@ -5820,14 +6007,11 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       }
     }
 
-    if (focusNode.hasFocus &&
-        !_isFoldToggleInProgress &&
-        _lastProcessedText != newText) {
+    if (focusNode.hasFocus && !_isFoldToggleInProgress && textChanged) {
       _ensureCaretVisible();
     }
 
-    if (_lastProcessedText == newText) return;
-    _lastProcessedText = newText;
+    _lastProcessedLength = newTextLength;
     _lastProcessedContentVersion = currentContentVersion;
   }
 
@@ -6040,7 +6224,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       };
       _rebuildLayoutMap();
       _foldedLineCacheDirty = true;
-      _lineOffsetCache.clear();
+      _invalidateWrappedLayoutCache();
       _caretInfoCache.clear();
       _cachedCaretOffset = -1;
       _paragraphCache.clear();
@@ -6111,7 +6295,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     };
     _rebuildLayoutMap();
     _foldedLineCacheDirty = true;
-    _lineOffsetCache.clear();
+    _invalidateWrappedLayoutCache();
     _caretInfoCache.clear();
     _cachedCaretOffset = -1;
     _paragraphCache.clear();
@@ -6142,7 +6326,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     };
     _rebuildLayoutMap();
     _foldedLineCacheDirty = true;
-    _lineOffsetCache.clear();
+    _invalidateWrappedLayoutCache();
     _caretInfoCache.clear();
     _cachedCaretOffset = -1;
     _paragraphCache.clear();
@@ -6176,7 +6360,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         };
         _rebuildLayoutMap();
         _foldedLineCacheDirty = true;
-        _lineOffsetCache.clear();
+        _invalidateWrappedLayoutCache();
         _hasCachedHeight = false;
         markNeedsLayout();
         break;
@@ -6468,6 +6652,16 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     } else {
       lineIndex = controller.getLineAtOffset(cursorOffset);
       lineStartOffset = controller.getLineStartOffset(lineIndex);
+      if (lineIndex > 0) {
+        final shouldMoveUp =
+            cursorOffset < lineStartOffset ||
+            (cursorOffset == lineStartOffset &&
+                controller.findLineEnd(cursorOffset - 1) == cursorOffset - 1);
+        if (shouldMoveUp) {
+          lineIndex -= 1;
+          lineStartOffset = controller.getLineStartOffset(lineIndex);
+        }
+      }
       _cachedCaretOffset = cursorOffset;
       _cachedCaretLine = lineIndex;
       _cachedCaretLineStart = lineStartOffset;
@@ -6587,8 +6781,18 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
 
     final hasActiveFolds = _hasActiveFolds;
-    final lineIndex = controller.getLineAtOffset(cursorOffset);
-    final lineStartOffset = controller.getLineStartOffset(lineIndex);
+    var lineIndex = controller.getLineAtOffset(cursorOffset);
+    var lineStartOffset = controller.getLineStartOffset(lineIndex);
+    if (lineIndex > 0) {
+      final shouldMoveUp =
+          cursorOffset < lineStartOffset ||
+          (cursorOffset == lineStartOffset &&
+              controller.findLineEnd(cursorOffset - 1) == cursorOffset - 1);
+      if (shouldMoveUp) {
+        lineIndex -= 1;
+        lineStartOffset = controller.getLineStartOffset(lineIndex);
+      }
+    }
     final columnIndex = cursorOffset - lineStartOffset;
     final lineY = _getLineYOffset(lineIndex, hasActiveFolds);
     final lineText = controller.getLineText(lineIndex);
@@ -6710,14 +6914,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
     final tappedLineIndex = _findVisibleLineByYPosition(position.dy);
 
-    String lineText;
-    if (_lineTextCache.containsKey(tappedLineIndex)) {
-      lineText = _lineTextCache[tappedLineIndex]!;
-    } else {
-      lineText = controller.getLineText(tappedLineIndex);
-      _lineTextCache[tappedLineIndex] = lineText;
-      _paragraphCache.remove(tappedLineIndex);
-    }
+    final lineText = controller.getLineText(tappedLineIndex);
 
     final contentWidth =
         size.width - _gutterWidth - (innerPadding?.horizontal ?? 0);
@@ -6726,7 +6923,9 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         : (isRTL ? max(contentWidth * 3, 10000.0) : null);
 
     ui.Paragraph para;
-    if (_paragraphCache.containsKey(tappedLineIndex) && !isRTL) {
+    if (_paragraphCache.containsKey(tappedLineIndex) &&
+        _lineTextCache[tappedLineIndex] == lineText &&
+        !isRTL) {
       para = _paragraphCache[tappedLineIndex]!;
     } else {
       para = _buildHighlightedParagraph(
@@ -6735,6 +6934,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         width: paragraphWidth,
       );
       if (!isRTL) {
+        _lineTextCache[tappedLineIndex] = lineText;
         _paragraphCache[tappedLineIndex] = para;
       }
     }
@@ -6803,12 +7003,27 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     );
 
     final lineStartOffset = controller.getLineStartOffset(tappedLineIndex);
-    final absoluteOffset = lineStartOffset + scalarColumn;
+    var absoluteOffset = lineStartOffset + scalarColumn;
+
+    final nextLineIndex = tappedLineIndex + 1;
+    if (nextLineIndex < controller.lineCount) {
+      final nextLineStart = controller.getLineStartOffset(nextLineIndex);
+      if (absoluteOffset >= nextLineStart) {
+        absoluteOffset = nextLineStart - 1;
+      }
+    }
 
     return absoluteOffset.clamp(0, controller.length);
   }
 
   Offset getCaretOffset() => _getCaretInfo().offset;
+
+  ({Rect? startHandle, Rect? endHandle, double lineHeight})
+      getSelectionHandleRects() => (
+        startHandle: _startHandleRect,
+        endHandle: _endHandleRect,
+        lineHeight: _lineHeight,
+      );
 
   void _updateImeGeometry() {
     final conn = controller.connection;
@@ -7050,6 +7265,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _virtualRemovedTotalLineCount * _lineHeight;
   double get _totalVirtualExtraHeight =>
       _ghostTextExtraHeight + _virtualRemovedExtraHeight;
+  double _extraBottomPadding = 80.0;
 
   double _getGhostTextVisualOffset(int lineIndex) {
     if (_ghostTextAnchorLine == null || _ghostTextLineCount <= 0) return 0;
@@ -7102,7 +7318,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         _indentGuideCache.clear();
         _diagnosticPathCache.clear();
         _searchHighlightCache.clear();
-        _lineOffsetCache.clear();
+        _invalidateWrappedLayoutCache();
         _caretInfoCache.clear();
         _lineIndentCache.clear();
       }
@@ -7112,7 +7328,8 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       final computedContentHeight =
           _cachedTotalHeight +
           (innerPadding?.top ?? 0) +
-          _totalVirtualExtraHeight;
+          _totalVirtualExtraHeight +
+          _extraBottomPadding;
       final contentHeight = max(
         computedContentHeight,
         constraints.maxHeight.isFinite
@@ -7147,7 +7364,20 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
           viewportWidth - _gutterWidth - (innerPadding?.horizontal ?? 0);
       final clampedWrapWidth = newWrapWidth < 100 ? 100.0 : newWrapWidth;
 
-      if ((_wrapWidth - clampedWrapWidth).abs() > 1) {
+      if (_wrapWidth == double.infinity &&
+          constraints.maxWidth.isFinite &&
+          constraints.maxWidth > 0) {
+        _wrapWidth = clampedWrapWidth;
+        _paragraphCache.clear();
+        _lineHeightCache.clear();
+        _bracketCache.clear();
+        _indentGuideCache.clear();
+        _diagnosticPathCache.clear();
+        _searchHighlightCache.clear();
+        _invalidateWrappedLayoutCache();
+        _caretInfoCache.clear();
+        _lineIndentCache.clear();
+      } else if ((_wrapWidth - clampedWrapWidth).abs() > 1) {
         _resizeTimer?.cancel();
         _resizeTimer = Timer(const Duration(milliseconds: 150), () {
           _wrapWidth = clampedWrapWidth;
@@ -7157,14 +7387,11 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
           _indentGuideCache.clear();
           _diagnosticPathCache.clear();
           _searchHighlightCache.clear();
-          _lineOffsetCache.clear();
+          _invalidateWrappedLayoutCache();
           _caretInfoCache.clear();
           _lineIndentCache.clear();
           markNeedsLayout();
         });
-        if (_wrapWidth == double.infinity) {
-          _wrapWidth = clampedWrapWidth;
-        }
       }
 
       if (hasActiveFolds) {
@@ -7184,7 +7411,8 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
             _hasCachedHeight &&
             _isCachedHeightExact &&
             _previousLineCount == lineCount &&
-            _lineHeightCache.length >= lineCount;
+            _lineHeightCache.length >= lineCount &&
+            _cachedWrapWidthForHeight == _wrapWidth;
 
         if (canReuseExactWrappedHeight) {
           visibleHeight = _cachedTotalHeight;
@@ -7241,11 +7469,22 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     _longLineWidth = maxLineWidth;
     _cachedTotalHeight = visibleHeight;
     _hasCachedHeight = true;
-    _isCachedHeightExact = true;
+    if (lineCount <= kExactWrappedHeightThreshold) {
+      _isCachedHeightExact = true;
+    }
     _previousLineCount = lineCount;
+    _cachedWrapWidthForHeight = _wrapWidth;
+
+    if (lineWrap && lineCount > 0) {
+      final lastLineHeight = _getWrappedLineHeight(lineCount - 1);
+      _extraBottomPadding =
+          max(lastLineHeight + _lineHeight * 2, _lineHeight * 3.5);
+    } else {
+      _extraBottomPadding = max(_lineHeight * 3.5, 80.0);
+    }
 
     final computedContentHeight =
-        visibleHeight + (innerPadding?.top ?? 0) + _totalVirtualExtraHeight;
+        visibleHeight + (innerPadding?.top ?? 0) + _totalVirtualExtraHeight + _extraBottomPadding;
     final contentHeight = max(
       computedContentHeight,
       constraints.maxHeight.isFinite
@@ -7332,7 +7571,59 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     return (rowIndex < 0 ? 0 : rowIndex) * _lineHeight;
   }
 
+  void _invalidateWrappedLayoutCache() {
+    _wrappedPrefixSumVersion++;
+    _lineOffsetCache.clear();
+  }
+
+  /// 惰性构建 lineWrap 模式下的 Y 前缀和数组（仅用于无折叠场景）。
+  /// prefixSum[i] = 第 i 行顶部 Y 坐标，prefixSum[lineCount] = 总高度。
+  void _ensureWrappedPrefixSum() {
+    if (_lastBuiltPrefixSumVersion == _wrappedPrefixSumVersion) return;
+    _lastBuiltPrefixSumVersion = _wrappedPrefixSumVersion;
+
+    final lineCount = controller.lineCount;
+    final sum = List<double>.filled(lineCount + 1, 0.0);
+    double acc = 0.0;
+    for (int i = 0; i < lineCount; i++) {
+      sum[i] = acc;
+      acc += _getWrappedLineHeight(i);
+    }
+    sum[lineCount] = acc;
+    _wrappedLineYPrefixSum = sum;
+  }
+
+  /// 二分查找第一个 Y 顶部 >= viewTop 的行（lineWrap 无折叠场景）。
+  int _findFirstVisibleWrappedLine(double viewTop) {
+    _ensureWrappedPrefixSum();
+    final sum = _wrappedLineYPrefixSum;
+    if (sum.length <= 1) return 0;
+
+    int lo = 0, hi = sum.length - 1;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (sum[mid] < viewTop) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    // lo 是第一个 sum[lo] >= viewTop 的行，可见行应该是 lo-1（其底部可能仍可见）
+    if (lo > 0) lo--;
+    return lo.clamp(0, sum.length - 2);
+  }
+
   double _getLineYOffset(int targetLine, bool hasActiveFolds) {
+    // lineWrap 无折叠：直接查前缀和 O(1)
+    if (lineWrap && !hasActiveFolds) {
+      _ensureWrappedPrefixSum();
+      final sum = _wrappedLineYPrefixSum;
+      if (targetLine >= 0 && targetLine < sum.length) {
+        return sum[targetLine];
+      }
+      return sum.isEmpty ? 0.0 : sum.last;
+    }
+
     final cacheKey = '${targetLine}_$hasActiveFolds';
     if (_lineOffsetCache.containsKey(cacheKey)) {
       return _lineOffsetCache[cacheKey]!;
@@ -7438,7 +7729,30 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         }
       }
       lastVisibleLine = lo.clamp(0, lineCount - 1);
+    } else if (!hasActiveFolds) {
+      // lineWrap 无折叠：使用前缀和二分查找 O(log N)
+      _ensureWrappedPrefixSum();
+      final sum = _wrappedLineYPrefixSum;
+      if (sum.length <= 1 || lineCount == 0) {
+        firstVisibleLine = 0;
+        lastVisibleLine = 0;
+        firstVisibleLineY = 0;
+      } else {
+        firstVisibleLine = _findFirstVisibleWrappedLine(viewTop);
+        firstVisibleLineY = sum[firstVisibleLine];
+
+        lastVisibleLine = firstVisibleLine;
+        for (int i = firstVisibleLine; i < lineCount; i++) {
+          if (sum[i + 1] >= viewBottom) {
+            lastVisibleLine = i;
+            break;
+          }
+          lastVisibleLine = i;
+        }
+        lastVisibleLine = lastVisibleLine.clamp(0, lineCount - 1);
+      }
     } else {
+      // lineWrap + 折叠：仍走线性扫描（折叠场景较少，保持原逻辑）
       double currentY = 0;
       firstVisibleLine = 0;
       lastVisibleLine = lineCount - 1;
@@ -7469,13 +7783,16 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
     _pruneViewportCaches(firstVisibleLine, lastVisibleLine);
     _scheduleVisibleSemanticTokens(firstVisibleLine, lastVisibleLine);
-    unawaited(
-      _syntaxHighlighter.preHighlightLines(
-        firstVisibleLine,
-        lastVisibleLine,
-        controller.getLineText,
-      ),
-    );
+    final h = _syntaxHighlighter;
+    if (h != null) {
+      unawaited(
+        h.preHighlightLines(
+          firstVisibleLine,
+          lastVisibleLine,
+          controller.getLineText,
+        ),
+      );
+    }
 
     _drawSearchHighlights(
       canvas,
@@ -7895,14 +8212,17 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
             } else {
               final zoomFontSize = (textStyle?.fontSize ?? 14) * 1.5;
               final fontFamily = textStyle?.fontFamily;
-              zoomParagraph = _syntaxHighlighter.buildHighlightedParagraph(
-                caretLineIndex,
-                previewText,
-                _paragraphStyle,
-                zoomFontSize,
-                fontFamily,
-                width: isRTL ? 10000.0 : null,
-              );
+              final h = _syntaxHighlighter;
+              zoomParagraph = h == null
+                  ? _buildParagraph(previewText, width: isRTL ? 10000.0 : null)
+                  : h.buildHighlightedParagraph(
+                      caretLineIndex,
+                      previewText,
+                      _paragraphStyle,
+                      zoomFontSize,
+                      fontFamily,
+                      width: isRTL ? 10000.0 : null,
+                    );
               _cachedMagnifiedParagraph = zoomParagraph;
               _cachedMagnifiedLine = caretLineIndex;
               _cachedMagnifiedOffset = caretInLine;
@@ -8020,14 +8340,17 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
               if (displayText.isEmpty) displayText = ' ';
 
-              final para = _syntaxHighlighter.buildHighlightedParagraph(
-                line,
-                displayText,
-                _paragraphStyle,
-                zoomFontSize,
-                fontFamily,
-                width: isRTL ? 10000.0 : null,
-              );
+              final h = _syntaxHighlighter;
+              final para = h == null
+                  ? _buildParagraph(displayText, width: isRTL ? 10000.0 : null)
+                  : h.buildHighlightedParagraph(
+                      line,
+                      displayText,
+                      _paragraphStyle,
+                      zoomFontSize,
+                      fontFamily,
+                      width: isRTL ? 10000.0 : null,
+                    );
               zoomParagraphs.add(para);
             }
             _cachedSelectionMagnifierParagraphs = zoomParagraphs;
@@ -8774,6 +9097,25 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
   }
 
+  /// 对行号键控的缓存做 key-shift，保留 insertionLine 之前的缓存
+  void _shiftLineKeyedCache<T>(
+    Map<int, T> cache,
+    int insertionLine,
+    int delta,
+  ) {
+    if (delta == 0) return;
+    final entries = cache.entries.toList();
+    cache.clear();
+    for (final entry in entries) {
+      if (entry.key > insertionLine) {
+        final newKey = entry.key + delta;
+        if (newKey >= 0) cache[newKey] = entry.value;
+      } else {
+        cache[entry.key] = entry.value;
+      }
+    }
+  }
+
   void _pruneViewportCaches(int firstVisibleLine, int lastVisibleLine) {
     const int keepMargin = 400;
     const int maxLineBoundedCacheEntries = 3000;
@@ -9146,8 +9488,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         if (hasActiveFolds && _isLineFolded(lineIndex)) continue;
 
         final lineStartOffset = controller.getLineStartOffset(lineIndex);
-        final lineText =
-            _lineTextCache[lineIndex] ?? controller.getLineText(lineIndex);
+        final lineText = controller.getLineText(lineIndex);
         final lineLength = lineText.length;
 
         int lineSelStart = 0;
@@ -9172,7 +9513,9 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
             : (isRTL ? contentWidth : null);
 
         ui.Paragraph para;
-        if (_paragraphCache.containsKey(lineIndex)) {
+        if (_paragraphCache.containsKey(lineIndex) &&
+            _lineTextCache[lineIndex] == lineText &&
+            !isRTL) {
           para = _paragraphCache[lineIndex]!;
         } else {
           para = _buildHighlightedParagraph(
@@ -9180,7 +9523,10 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
             lineText,
             width: paragraphWidth,
           );
-          _paragraphCache[lineIndex] = para;
+          if (!isRTL) {
+            _lineTextCache[lineIndex] = lineText;
+            _paragraphCache[lineIndex] = para;
+          }
         }
 
         final lineY = _getLineYOffset(lineIndex, hasActiveFolds);
@@ -11173,7 +11519,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
   void dispose() {
     controller.removeListener(_onControllerChange);
     controller.setScrollCallback(null);
-    _syntaxHighlighter.dispose();
+    _syntaxHighlighter?.dispose();
     super.dispose();
   }
 
@@ -11188,8 +11534,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       } else if (_endHandleRect?.contains(position) == true) {
         isHit = true;
       } else if (_normalHandle != null) {
-        final handleRadius = (_lineHeight / 2).clamp(6.0, 12.0);
-        if (_normalHandle!.inflate(handleRadius * 1.5).contains(position)) {
+        if (_normalHandle!.inflate(_kCaretHandleHitPadding).contains(position)) {
           isHit = true;
         }
       }
@@ -11256,6 +11601,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _draggingEndHandle = false;
       _draggingCHandle = false;
       _isDragging = false;
+      _longPressSelected = false;
       _cachedSelectionMagnifierParagraphs = null;
       _cachedSelectionMagnifierStartLine = null;
       _cachedSelectionMagnifierEndLine = null;
@@ -11263,12 +11609,34 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       _cachedMagnifiedLine = null;
       _cachedMagnifiedOffset = null;
 
-      contextMenuOffsetNotifier.value = localPosition;
       markNeedsPaint();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        contextMenuOffsetNotifier.value = localPosition;
+      });
       return;
     }
 
     if (event is PointerDownEvent && event.buttons == kPrimaryButton) {
+      final extraPadding = isMobile ? 12.0 : 0.0;
+      final effectiveGutterWidth = _gutterWidth + extraPadding;
+      final gutterClickArea = isRTL
+          ? localPosition.dx > size.width - effectiveGutterWidth
+          : localPosition.dx < effectiveGutterWidth;
+
+      if (enableGutter && gutterClickArea) {
+        _isGutterPointer = true;
+        _selectionTimer?.cancel();
+        if (clickY >= 0 && enableFolding) {
+          final clickedLine = _findVisibleLineByYPosition(clickY);
+          final foldRange = _getFoldRangeAtLine(clickedLine);
+          if (foldRange != null && foldRange.endIndex > foldRange.startIndex) {
+            _toggleFold(foldRange);
+          }
+        }
+        return;
+      }
+      _isGutterPointer = false;
+
       if (controller.connection == null ||
           !controller.connection!.attached ||
           !focusNode.hasFocus) {
@@ -11314,22 +11682,6 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         }
       }
 
-      final gutterClickArea = isRTL
-          ? localPosition.dx > size.width - _gutterWidth
-          : localPosition.dx < _gutterWidth;
-
-      if (enableFolding && enableGutter && gutterClickArea) {
-        if (clickY < 0) return;
-        final clickedLine = _findVisibleLineByYPosition(clickY);
-
-        final foldRange = _getFoldRangeAtLine(clickedLine);
-        if (foldRange != null && foldRange.endIndex > foldRange.startIndex) {
-          _toggleFold(foldRange);
-          return;
-        }
-        return;
-      }
-
       if (isMobile) {
         _dtap.addPointer(event);
         _draggingCHandle = false;
@@ -11337,8 +11689,12 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         _draggingEndHandle = false;
 
         _dtap.onDoubleTap = () {
-          _selectWordAtOffset(textOffset);
-          contextMenuOffsetNotifier.value = localPosition;
+          final freshOffset = _getTextOffsetFromPosition(contentPosition);
+          _selectWordAtOffset(freshOffset);
+          _longPressSelected = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            contextMenuOffsetNotifier.value = localPosition;
+          });
         };
 
         _onetap.onTap = () {
@@ -11364,25 +11720,26 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
         };
 
         if (controller.selection.start != controller.selection.end) {
-          if (_startHandleRect?.contains(localPosition) ?? false) {
+          final startHit = _startHandleRect?.inflate(_kSelectionHandleHitPadding);
+          final endHit = _endHandleRect?.inflate(_kSelectionHandleHitPadding);
+          if (startHit?.contains(localPosition) ?? false) {
             _draggingStartHandle = true;
-            _selectionActive = selectionActiveNotifier.value = true;
-            _pointerDownPosition = localPosition;
-            _dragStartOffset = controller.selection.start;
-            markNeedsPaint();
-            return;
-          }
-          if (_endHandleRect?.contains(localPosition) ?? false) {
-            _draggingEndHandle = true;
             _selectionActive = selectionActiveNotifier.value = true;
             _pointerDownPosition = localPosition;
             _dragStartOffset = controller.selection.end;
             markNeedsPaint();
             return;
           }
+          if (endHit?.contains(localPosition) ?? false) {
+            _draggingEndHandle = true;
+            _selectionActive = selectionActiveNotifier.value = true;
+            _pointerDownPosition = localPosition;
+            _dragStartOffset = controller.selection.start;
+            markNeedsPaint();
+            return;
+          }
         } else if (controller.selection.isCollapsed && _normalHandle != null) {
-          final handleRadius = (_lineHeight / 2).clamp(6.0, 12.0);
-          final expandedHandle = _normalHandle!.inflate(handleRadius * 1.5);
+          final expandedHandle = _normalHandle!.inflate(24.0);
           if (expandedHandle.contains(localPosition)) {
             _draggingCHandle = true;
             _selectionActive = selectionActiveNotifier.value = true;
@@ -11401,17 +11758,30 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
         _selectionTimer?.cancel();
         _selectionTimer = Timer(const Duration(milliseconds: 500), () {
-          _selectWordAtOffset(textOffset);
+          final freshPos = contentPosition;
+          final freshOffset = _getTextOffsetFromPosition(freshPos);
+          _selectWordAtOffset(freshOffset);
+          _longPressSelected = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            contextMenuOffsetNotifier.value = localPosition;
+          });
         });
       } else {
         controller.focusNode?.requestFocus();
         _dtap.addPointer(event);
         _dtap.onDoubleTap = () {
-          _selectWordAtOffset(textOffset);
+          final freshOffset = _getTextOffsetFromPosition(contentPosition);
+          _selectWordAtOffset(freshOffset);
         };
 
         _dragStartOffset = textOffset;
-        final isAltClick = HardwareKeyboard.instance.isAltPressed;
+        _pointerDownPosition = localPosition;
+        _isDragging = false;
+        _selectionActive = false;
+        selectionActiveNotifier.value = false;
+        final isAltClick = HardwareKeyboard.instance.isAltPressed &&
+            !HardwareKeyboard.instance.isControlPressed &&
+            !HardwareKeyboard.instance.isMetaPressed;
         _onetap.onTap = () {
           if (_openedLspActionFromBulbTap) {
             _openedLspActionFromBulbTap = false;
@@ -11443,6 +11813,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
 
     if (event is PointerMoveEvent && _dragStartOffset != null) {
+      if (_isGutterPointer) return;
       if (isMobile) {
         if (_draggingCHandle) {
           final handleRadius = (_lineHeight / 2).clamp(6.0, 12.0);
@@ -11508,6 +11879,10 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
           _selectionTimer?.cancel();
         }
 
+        if (_longPressSelected) {
+          return;
+        }
+
         if (_isDragging && !_selectionActive) {
           return;
         }
@@ -11520,18 +11895,50 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
           markNeedsPaint();
         }
       } else {
-        controller.selection = TextSelection(
-          baseOffset: _dragStartOffset!,
-          extentOffset: textOffset,
-        );
+        final delta = localPosition - (_pointerDownPosition ?? localPosition);
+        if (!_isDragging && delta.distance > 2) {
+          _isDragging = true;
+          _selectionActive = selectionActiveNotifier.value = true;
+        }
+
+        if (_selectionActive) {
+          final newSel = TextSelection(
+            baseOffset: _dragStartOffset!,
+            extentOffset: textOffset,
+          );
+          if (newSel != controller.selection) {
+            controller.selection = newSel;
+            markNeedsPaint();
+          }
+        }
       }
     }
 
     if (event is PointerUpEvent || event is PointerCancelEvent) {
-      if (!_isDragging && isMobile && !_selectionActive) {
+      if (_isGutterPointer) {
+        _isGutterPointer = false;
+        _selectionTimer?.cancel();
+        _draggingStartHandle = false;
+        _draggingEndHandle = false;
+        _draggingCHandle = false;
+        _pointerDownPosition = null;
+        _dragStartOffset = null;
+        _isDragging = false;
+        _selectionActive = selectionActiveNotifier.value = false;
+        _longPressSelected = false;
+        markNeedsPaint();
+        return;
+      }
+
+      // PointerCancelEvent 表示手势被系统抢占（如侧滑返回），不应触发选区变更或键盘
+      // 只有真正的 PointerUpEvent（tap）才设置 collapsed selection
+      if (event is PointerUpEvent &&
+          !_isDragging &&
+          isMobile &&
+          !_selectionActive &&
+          !readOnly) {
         controller.selection = TextSelection.collapsed(offset: textOffset);
         if (controller.connection?.attached ?? false) {
-          if (readOnly) return;
           controller.connection?.show();
         }
       }
@@ -11553,6 +11960,7 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
       final wasDragging = _isDragging;
       _isDragging = false;
       _selectionActive = selectionActiveNotifier.value = false;
+      _longPressSelected = false;
 
       markNeedsPaint();
 
@@ -11573,14 +11981,36 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
     }
 
     final text = controller.text;
-    int start = offset, end = offset;
+    if (text.isEmpty) return;
 
-    while (start > 0 && !_isWordBoundary(text[start - 1])) {
+    final runes = text.runes.toList(growable: false);
+    final scalarLength = runes.length;
+    if (scalarLength == 0) return;
+
+    int target = offset.clamp(0, scalarLength - 1);
+    bool isBoundary(int scalar) =>
+        _isWordBoundary(String.fromCharCode(scalar));
+
+    if (isBoundary(runes[target])) {
+      if (target > 0 && !isBoundary(runes[target - 1])) {
+        target = target - 1;
+      } else if (target < scalarLength - 1 &&
+          !isBoundary(runes[target + 1])) {
+        target = target + 1;
+      }
+    }
+
+    int start = target, end = target;
+
+    while (start > 0 && !isBoundary(runes[start - 1])) {
       start--;
     }
-    while (end < text.length && !_isWordBoundary(text[end])) {
+    while (end < scalarLength && !isBoundary(runes[end])) {
       end++;
     }
+
+    start = start.clamp(0, scalarLength);
+    end = end.clamp(start, scalarLength);
 
     controller.selection = TextSelection(baseOffset: start, extentOffset: end);
     markNeedsPaint();
@@ -11592,8 +12022,10 @@ class _CodeFieldRenderer extends RenderBox implements MouseTrackerAnnotation {
 
   bool _isOffsetOverWord(int offset) {
     final text = controller.text;
-    if (offset < 0 || offset >= text.length) return false;
-    return RegExp(_wordCharPattern).hasMatch(text[offset]);
+    if (offset < 0 || offset >= controller.length) return false;
+    final utf16Index = CodeForgeController.scalarToStringIndex(text, offset);
+    if (utf16Index < 0 || utf16Index >= text.length) return false;
+    return RegExp(_wordCharPattern).hasMatch(text[utf16Index]);
   }
 
   Map<String, int> _offsetToLineChar(int offset) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
@@ -49,8 +50,7 @@ Future<void> main(List<String> args) async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
   final version = await system.version;
-  await globalState.initApp(version);
-  await clashCore.preload();
+  await Future.wait([globalState.initApp(version), clashCore.preload()]);
 
   try {
     await uiManager.initializeUI();
@@ -190,6 +190,20 @@ Future<void> _service(List<String> flags) async {
             profileName,
             '↑0B/s ↓0B/s',
           );
+          Timer.periodic(const Duration(seconds: 1), (timer) async {
+            if (!globalState.isService ||
+                !globalState.config.vpnProps.networkSpeedNotification) {
+              timer.cancel();
+              return;
+            }
+            try {
+              final traffic = await clashCore.getTraffic();
+              await vpn_service.service?.updateNotificationSpeed(
+                profileName,
+                traffic.toString(),
+              );
+            } catch (_) {}
+          });
         }
 
         if (globalState.config.appSetting.openLogs) {

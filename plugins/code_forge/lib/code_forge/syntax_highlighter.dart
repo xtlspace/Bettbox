@@ -42,6 +42,7 @@ class SyntaxHighlighter {
   final Map<String, TextStyle> editorTheme;
   final TextStyle? baseTextStyle;
   final String? languageId;
+  final String Function(int)? getLineText;
   final Map<int, HighlightedLine> _grammarCache = {}, _mergedCache = {};
   final Map<int, List<SemanticWordSpan>> _lineSemanticSpans = {};
   final Map<String, TextSpan?> _lineSpanCache = {};
@@ -54,6 +55,7 @@ class SyntaxHighlighter {
   static const int _cacheKeepMargin = 500;
   static const int _maxLineCacheEntries = 6000;
   static const int _maxSpanCacheEntries = 8000;
+  static const int _blockCommentLookbackLimit = 200;
   int get documentVersion => _documentVersion;
   Future<void>? _preHighlightInFlight;
   int _preHighlightInFlightVersion = -1, _version = 0, _documentVersion = 0;
@@ -65,6 +67,7 @@ class SyntaxHighlighter {
     this.baseTextStyle,
     this.languageId,
     this.extraLanguages = const [],
+    this.getLineText,
   }) {
     _langId = language.hashCode.toString();
     _resolvedTheme = _buildResolvedTheme(editorTheme);
@@ -139,7 +142,6 @@ class SyntaxHighlighter {
     int oldEnd,
     String insertedText,
     String deletedText,
-    String fullText,
   ) {
     _documentVersion++;
     final insertedLineBreaks = '\n'.allMatches(insertedText).length;
@@ -239,7 +241,6 @@ class SyntaxHighlighter {
       _isEditing = true;
     }
 
-    _lineSpanCache.clear();
     _version++;
   }
 
@@ -277,6 +278,17 @@ class SyntaxHighlighter {
         mergedCache.version == _version &&
         mergedCache.text == lineText) {
       return mergedCache.span;
+    }
+
+    if (_isInsideBlockComment(lineIndex)) {
+      final commentStyle = _resolvedTheme['comment'] ?? baseTextStyle;
+      final commentSpan = TextSpan(text: lineText, style: commentStyle);
+      _mergedCache[lineIndex] = HighlightedLine(
+        lineText,
+        commentSpan,
+        _version,
+      );
+      return commentSpan;
     }
 
     final grammarCache = _grammarCache[lineIndex];
@@ -567,6 +579,44 @@ class SyntaxHighlighter {
     return null;
   }
 
+  bool _isInsideBlockComment(int lineIndex) {
+    final getLineText = this.getLineText;
+    if (getLineText == null) return false;
+
+    final startLine = (lineIndex - _blockCommentLookbackLimit).clamp(
+      0,
+      lineIndex,
+    );
+
+    for (int i = lineIndex; i >= startLine; i--) {
+      final text = getLineText(i);
+      if (text.isEmpty) continue;
+
+      int pos = 0;
+      while (true) {
+        final openIdx = text.indexOf('/*', pos);
+        final closeIdx = text.indexOf('*/', pos);
+
+        if (openIdx < 0 && closeIdx < 0) break;
+
+        if (openIdx >= 0 && (closeIdx < 0 || openIdx < closeIdx)) {
+          final afterOpen = text.indexOf('*/', openIdx + 2);
+          if (afterOpen >= 0) {
+            pos = afterOpen + 2;
+            continue;
+          }
+          return i != lineIndex;
+        }
+
+        if (closeIdx >= 0 && (openIdx < 0 || closeIdx < openIdx)) {
+          return i == lineIndex;
+        }
+      }
+    }
+
+    return false;
+  }
+
   TextSpan? _highlightLine(String lineText) {
     if (lineText.isEmpty) return null;
 
@@ -578,10 +628,80 @@ class SyntaxHighlighter {
       if (_isTsxOrJsx && _looksLikeJsxTagLine(lineText)) {
         span = _applyJsxTagFallback(lineText, span);
       }
+      span = _applyRegexFallback(lineText, span);
       return span;
     } catch (e) {
       return TextSpan(text: lineText, style: baseTextStyle);
     }
+  }
+
+  TextSpan? _applyRegexFallback(String lineText, TextSpan? span) {
+    if (span == null || lineText.isEmpty) return span;
+
+    final regexpStyle = _resolvedTheme['regexp'] ?? _resolvedTheme['string'];
+    if (regexpStyle == null) return span;
+
+    final regexLiteralPattern = RegExp(
+      r'(^|[\s:=,({[\?])(\/(?![/*])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\[\n])+\/[a-z]*)',
+    );
+
+    final matches = regexLiteralPattern.allMatches(lineText).toList();
+    if (matches.isEmpty) return span;
+
+    final grammarSegments = <({String text, TextStyle? style})>[];
+    _flattenGrammarSpan(span, grammarSegments, baseTextStyle);
+
+    final ranges = <({int start, int end})>[];
+    for (final match in matches) {
+      final prefix = match.group(1) ?? '';
+      final regexStr = match.group(2);
+      if (regexStr == null || regexStr.isEmpty) continue;
+
+      final start = match.start + prefix.length;
+      final end = start + regexStr.length;
+
+      final existingStyle = _getStyleAtPosition(grammarSegments, start);
+      if (!_isStringOrCommentStyle(existingStyle)) {
+        ranges.add((
+          start: start.clamp(0, lineText.length),
+          end: end.clamp(0, lineText.length),
+        ));
+      }
+    }
+
+    if (ranges.isEmpty) return span;
+
+    final children = <TextSpan>[];
+    int currentPos = 0;
+
+    for (final range in ranges) {
+      if (range.start > currentPos) {
+        _addGrammarSegments(
+          children,
+          grammarSegments,
+          currentPos,
+          range.start,
+          lineText,
+        );
+      }
+      if (range.start < range.end) {
+        final regexText = lineText.substring(range.start, range.end);
+        children.add(TextSpan(text: regexText, style: regexpStyle));
+        currentPos = range.end;
+      }
+    }
+
+    if (currentPos < lineText.length) {
+      _addGrammarSegments(
+        children,
+        grammarSegments,
+        currentPos,
+        lineText.length,
+        lineText,
+      );
+    }
+
+    return TextSpan(children: children, style: baseTextStyle);
   }
 
   bool get _isTsxOrJsx {

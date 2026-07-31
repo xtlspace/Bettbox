@@ -179,7 +179,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Backup & Restore",
     ),
     "backupAndRecoveryDesc": MessageLookupByLibrary.simpleMessage(
-      "Sync data via WebDAV or local files",
+      "Sync data via WebDAV or locally",
     ),
     "backupSuccess": MessageLookupByLibrary.simpleMessage("Backup Successful"),
     "basicConfig": MessageLookupByLibrary.simpleMessage("Core Configuration"),
@@ -279,6 +279,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "controlSecretDesc": MessageLookupByLibrary.simpleMessage(
       "RESTful API access password",
     ),
+    "copiedPackageName": MessageLookupByLibrary.simpleMessage(
+      "Copied package name",
+    ),
     "copy": MessageLookupByLibrary.simpleMessage("Copy"),
     "copyEnvVar": MessageLookupByLibrary.simpleMessage(
       "Copy Environment Variable",
@@ -296,6 +299,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "custom": MessageLookupByLibrary.simpleMessage("Custom"),
     "customDashboardTitle": MessageLookupByLibrary.simpleMessage(
       "Custom Dashboard Title",
+    ),
+    "customScriptOptions": MessageLookupByLibrary.simpleMessage(
+      "Custom Options",
     ),
     "customUrl": MessageLookupByLibrary.simpleMessage("Custom URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Cut"),
@@ -433,6 +439,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "externalResources": MessageLookupByLibrary.simpleMessage(
       "External Resources",
     ),
+    "fa": MessageLookupByLibrary.simpleMessage("Persian"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("Fading Circle"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("Fading Four"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage(
@@ -593,6 +600,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "TCP keep-alive interval",
     ),
     "key": MessageLookupByLibrary.simpleMessage("Key"),
+    "ko": MessageLookupByLibrary.simpleMessage("Korean"),
     "language": MessageLookupByLibrary.simpleMessage("Language"),
     "layout": MessageLookupByLibrary.simpleMessage("Layout"),
     "light": MessageLookupByLibrary.simpleMessage("Light"),
@@ -743,7 +751,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "options": MessageLookupByLibrary.simpleMessage("Options"),
     "other": MessageLookupByLibrary.simpleMessage("Other"),
     "otherContributors": MessageLookupByLibrary.simpleMessage(
-      "Other Contributors",
+      "Other Contributors (Random Order)",
     ),
     "otherSettings": MessageLookupByLibrary.simpleMessage("Enhanced Tools"),
     "otherSettingsDesc": MessageLookupByLibrary.simpleMessage(
@@ -936,6 +944,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "remove": MessageLookupByLibrary.simpleMessage("Remove"),
     "rename": MessageLookupByLibrary.simpleMessage("Rename"),
+    "replace": MessageLookupByLibrary.simpleMessage("Replace"),
+    "replaceAll": MessageLookupByLibrary.simpleMessage("Replace All"),
     "request": MessageLookupByLibrary.simpleMessage("Request"),
     "requests": MessageLookupByLibrary.simpleMessage("Requests"),
     "requestsDesc": MessageLookupByLibrary.simpleMessage(

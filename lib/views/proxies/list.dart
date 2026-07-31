@@ -28,6 +28,7 @@ class ProxiesListView extends ConsumerWidget {
       columns: state.columns,
       cardType: state.proxyCardType,
       sortType: state.proxiesSortType,
+      sortNum: state.sortNum,
       currentUnfoldSet: state.currentUnfoldSet,
     );
   }
@@ -38,6 +39,7 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
   final int columns;
   final ProxyCardType cardType;
   final ProxiesSortType sortType;
+  final num sortNum;
   final Set<String> currentUnfoldSet;
 
   const _ProxyGroupsList({
@@ -45,6 +47,7 @@ class _ProxyGroupsList extends ConsumerStatefulWidget {
     required this.columns,
     required this.cardType,
     required this.sortType,
+    required this.sortNum,
     required this.currentUnfoldSet,
   });
 

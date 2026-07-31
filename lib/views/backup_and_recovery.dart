@@ -37,6 +37,7 @@ class BackupAndRecovery extends ConsumerWidget {
     globalState.showMessage(
       title: appLocalizations.backup,
       message: TextSpan(text: appLocalizations.backupSuccess),
+      cancelable: false,
     );
   }
 
@@ -58,6 +59,7 @@ class BackupAndRecovery extends ConsumerWidget {
     globalState.showMessage(
       title: appLocalizations.recovery,
       message: TextSpan(text: appLocalizations.recoverySuccess),
+      cancelable: false,
     );
   }
 
@@ -86,6 +88,7 @@ class BackupAndRecovery extends ConsumerWidget {
     globalState.showMessage(
       title: appLocalizations.backup,
       message: TextSpan(text: appLocalizations.backupSuccess),
+      cancelable: false,
     );
   }
 
@@ -116,6 +119,7 @@ class BackupAndRecovery extends ConsumerWidget {
     globalState.showMessage(
       title: appLocalizations.recovery,
       message: TextSpan(text: appLocalizations.recoverySuccess),
+      cancelable: false,
     );
   }
 

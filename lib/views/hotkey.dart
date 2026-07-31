@@ -126,6 +126,7 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
       globalState.showMessage(
         title: appLocalizations.tip,
         message: TextSpan(text: appLocalizations.inputCorrectHotkey),
+        cancelable: false,
       );
       return;
     }
@@ -142,6 +143,7 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
       globalState.showMessage(
         title: appLocalizations.tip,
         message: TextSpan(text: appLocalizations.hotkeyConflict),
+        cancelable: false,
       );
       return;
     }

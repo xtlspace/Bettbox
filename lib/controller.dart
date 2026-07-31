@@ -247,7 +247,11 @@ class AppController {
 
     final needReapply = await _needsSetupConfig();
     if (needReapply) {
-      await _quickSetupConfig();
+      final setupResult = await _quickSetupConfig();
+      if (setupResult != true) {
+        commonPrint.log('Fast start aborted: setupConfig failed');
+        return;
+      }
     }
 
     await globalState.handleStart([updateRunTime, updateTraffic]);
@@ -266,13 +270,26 @@ class AppController {
 
   void _backgroundLoad() {
     final version = ++_backgroundLoadVersion;
+    final generation = _coreGeneration;
 
     Future.microtask(() async {
       try {
-        final groups = await clashCore.getProxiesGroups();
+        List<Group> groups = [];
+        for (var attempt = 0; attempt < 3; attempt++) {
+          if (version != _backgroundLoadVersion) return;
+          if (generation != _coreGeneration) return;
+          if (attempt > 0) {
+            await Future.delayed(Duration(milliseconds: 200 * attempt));
+          }
+          groups = await clashCore.getProxiesGroups();
+          if (groups.isNotEmpty) break;
+        }
         if (version != _backgroundLoadVersion) return;
+        if (generation != _coreGeneration) return;
 
-        _ref.read(groupsProvider.notifier).value = groups;
+        if (groups.isNotEmpty) {
+          _ref.read(groupsProvider.notifier).value = groups;
+        }
 
         await Future.delayed(const Duration(seconds: 2));
         if (version != _backgroundLoadVersion) return;
@@ -606,11 +623,13 @@ class AppController {
 
   Future<void> _applyProfile() async {
     _invalidateCoreReads();
-    await clashCore.requestGc();
+    _ref.read(delayDataSourceProvider.notifier).value = {};
+    unawaited(clashCore.requestGc());
     final configured = await _setupCoreConfig();
     if (!configured) return;
-    await updateGroups();
-    await updateProviders();
+    final providers = await clashCore.getExternalProviders();
+    _ref.read(providersProvider.notifier).value = providers;
+    await updateGroups(preloadedProviders: providers);
   }
 
   Future<void> applyProfile({bool silence = false}) {
@@ -632,7 +651,6 @@ class AppController {
 
   Future<void> handleChangeProfile({bool hardRestart = false}) {
     return _coreLifecycleLock.synchronized(() async {
-      _ref.read(delayDataSourceProvider.notifier).value = {};
       if (hardRestart) {
         _ref.read(isRestartingCoreProvider.notifier).state = true;
         try {
@@ -644,12 +662,16 @@ class AppController {
         if (system.isAndroid) {
           clashCore.closeConnections();
           await clashCore.flushFakeIP();
+          await clashCore.flushDnsCache();
         }
         final prevProfileId = _ref.read(currentProfileIdProvider);
         try {
           await _applyProfile();
         } catch (err) {
           _ref.read(currentProfileIdProvider.notifier).value = prevProfileId;
+          try {
+            await _applyProfile();
+          } catch (_) {}
           globalState.showNotifier(err.toString());
         }
       }
@@ -718,8 +740,32 @@ class AppController {
     }
   }
 
-  Future<void> updateGroups() {
-    return _coreLifecycleLock.synchronized(_updateGroups);
+  Future<void> updateGroups({List<ExternalProvider>? preloadedProviders}) {
+    return _coreLifecycleLock.synchronized(
+      () => _updateGroups(preloadedProviders: preloadedProviders),
+    );
+  }
+
+  static const List<Duration> _kGroupRetryDelays = [
+    Duration.zero,
+    Duration(milliseconds: 50),
+    Duration(milliseconds: 150),
+    Duration(milliseconds: 400),
+  ];
+
+  Future<List<Group>> _retryGetProxiesGroups(
+    List<ExternalProvider>? preloadedProviders,
+  ) async {
+    for (var attempt = 0; attempt < _kGroupRetryDelays.length; attempt++) {
+      if (attempt > 0) {
+        await Future.delayed(_kGroupRetryDelays[attempt]);
+      }
+      final groups = await clashCore.getProxiesGroups(
+        preloadedProviders: preloadedProviders,
+      );
+      if (groups.isNotEmpty) return groups;
+    }
+    return [];
   }
 
   void _handleUpdateGroupsError(int generation, dynamic e) {
@@ -751,7 +797,9 @@ class AppController {
     });
   }
 
-  Future<void> _updateGroups() async {
+  Future<void> _updateGroups({
+    List<ExternalProvider>? preloadedProviders,
+  }) async {
     if (_isUpdatingGroups) {
       commonPrint.log('updateGroups already in progress, skipping');
       return;
@@ -762,12 +810,7 @@ class AppController {
     try {
       final currentGroups = _ref.read(groupsProvider);
 
-      final newGroups = await retry(
-        task: clashCore.getProxiesGroups,
-        retryIf: (res) => res.isEmpty,
-        maxAttempts: 4,
-        delay: const Duration(milliseconds: 666),
-      );
+      final newGroups = await _retryGetProxiesGroups(preloadedProviders);
 
       if (newGroups.isEmpty) {
         _handleUpdateGroupsError(
@@ -928,9 +971,6 @@ class AppController {
         await prefs?.setBool('is_tun_running', false);
       }
       await savePreferences();
-      if (macOS != null) {
-        await macOS!.updateDns(true);
-      }
       if (proxy != null) {
         await proxy!.stopProxy();
       }
@@ -941,6 +981,13 @@ class AppController {
     } catch (e) {
       commonPrint.log('handleExit error: $e');
     } finally {
+      if (macOS != null) {
+        try {
+          await macOS!.updateDns(true);
+        } catch (e) {
+          commonPrint.log('Failed to restore macOS system DNS on exit: $e');
+        }
+      }
       if (!exitLock.isCompleted) {
         exitLock.complete();
       }
@@ -1014,6 +1061,7 @@ class AppController {
       globalState.showMessage(
         title: appLocalizations.checkUpdate,
         message: TextSpan(text: appLocalizations.checkUpdateError),
+        cancelable: false,
       );
     }
   }
@@ -1205,6 +1253,9 @@ class AppController {
         }
       }
     }
+    if (system.isMacOS && !globalState.isStart) {
+      await macOS?.updateDns(true);
+    }
     final hasProfile = _ref.read(currentProfileProvider) != null;
     final shouldStart =
         hasProfile &&
@@ -1371,6 +1422,7 @@ class AppController {
       await globalState.showMessage(
         title: appLocalizations.add,
         message: TextSpan(text: _formatErrorMessage(e)),
+        cancelable: false,
       );
     } finally {
       _ref.read(loadingProvider.notifier).value = false;
@@ -1378,27 +1430,54 @@ class AppController {
   }
 
   Future<void> addProfileFormFile() async {
-    final platformFile = await safeRun(picker.pickerFile);
-    final bytes = platformFile?.bytes;
-    if (bytes == null) {
+    final platformFiles = await safeRun(
+      () => picker.pickerFiles(
+        allowMultiple: true,
+        allowedExtensions: ['yaml', 'yml'],
+      ),
+    );
+    if (platformFiles == null || platformFiles.isEmpty) {
       return;
     }
     if (!context.mounted) return;
 
+    final validFiles = platformFiles.where((file) {
+      final name = file.name.toLowerCase();
+      return name.endsWith('.yaml') || name.endsWith('.yml');
+    }).toList();
+
+    if (validFiles.isEmpty) {
+      return;
+    }
+
     _ref.read(loadingProvider.notifier).value = true;
+    int successCount = 0;
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final profile = await Profile.normal(
-        label: platformFile?.name,
-      ).saveFile(bytes);
-      globalState.navigatorKey.currentState?.popUntil((route) => route.isFirst);
-      toProfiles();
-      await addProfile(profile);
-    } on Object catch (e) {
-      await globalState.showMessage(
-        title: appLocalizations.add,
-        message: TextSpan(text: _formatErrorMessage(e)),
-      );
+      for (final platformFile in validFiles) {
+        final bytes = platformFile.bytes;
+        if (bytes == null || bytes.isEmpty) continue;
+
+        try {
+          final profile = await Profile.normal(
+            label: platformFile.name,
+          ).saveFile(bytes);
+          await addProfile(profile);
+          successCount++;
+        } on Object catch (e) {
+          if (!context.mounted) break;
+          await globalState.showMessage(
+            title: '${platformFile.name} (${appLocalizations.add})',
+            message: TextSpan(text: _formatErrorMessage(e)),
+            cancelable: false,
+          );
+        }
+      }
+
+      if (successCount > 0) {
+        globalState.navigatorKey.currentState
+            ?.popUntil((route) => route.isFirst);
+        toProfiles();
+      }
     } finally {
       _ref.read(loadingProvider.notifier).value = false;
     }
@@ -2070,6 +2149,7 @@ class AppController {
     globalState.showMessage(
       title: appLocalizations.recoverySuccess,
       message: TextSpan(text: message),
+      cancelable: false,
     );
   }
 
@@ -2140,19 +2220,14 @@ class AppController {
       }
 
       // 2. App settings
-      final currentAppSetting = _ref.read(appSettingProvider);
       final backupAppSetting = config.appSetting;
 
-      // Merge dashboardWidgets: preserve platform-specific widgets
-      final currentWidgets = currentAppSetting.dashboardWidgets;
-      final backupWidgets = backupAppSetting.dashboardWidgets;
-      final mergedWidgets = _mergeDashboardWidgets(
-        currentWidgets,
-        backupWidgets,
-      );
-
       _ref.read(appSettingProvider.notifier).value = backupAppSetting.copyWith(
-        dashboardWidgets: mergedWidgets,
+        mobileDashboardWidgets: backupAppSetting.mobileDashboardWidgets,
+        desktopDashboardWidgets: backupAppSetting.desktopDashboardWidgets,
+        dashboardWidgets: system.isAndroid
+            ? backupAppSetting.mobileDashboardWidgets
+            : backupAppSetting.desktopDashboardWidgets,
       );
 
       // 3. Restore current profile ID
@@ -2213,64 +2288,7 @@ class AppController {
     _ensureCurrentProfile(profiles);
   }
 
-  /// Merge widgets
-  List<DashboardWidget> _mergeDashboardWidgets(
-    List<DashboardWidget> currentWidgets,
-    List<DashboardWidget> backupWidgets,
-  ) {
-    // Platform widgets
-    final Set<DashboardWidget> androidOnlyWidgets = {
-      // Android-specific widgets (if any)
-    };
 
-    final Set<DashboardWidget> desktopOnlyWidgets = {
-      DashboardWidget.tunButton, // TUN button (desktop-specific)
-      DashboardWidget
-          .systemProxyButton, // System proxy button (more common on desktop)
-    };
-
-    // Determine platform-specific widgets
-    final platformSpecificWidgets = system.isAndroid
-        ? androidOnlyWidgets
-        : desktopOnlyWidgets;
-
-    // Build position map for platform-specific widgets
-    final platformWidgetPositions = <DashboardWidget, int>{};
-    for (var i = 0; i < currentWidgets.length; i++) {
-      final widget = currentWidgets[i];
-      if (platformSpecificWidgets.contains(widget)) {
-        platformWidgetPositions[widget] = i;
-      }
-    }
-
-    // Get non-platform-specific widgets from backup
-    final backupCommonWidgets = backupWidgets
-        .where((widget) => !platformSpecificWidgets.contains(widget))
-        .toList();
-
-    // Merge strategy: insert platform-specific widgets at original positions
-    final mergedWidgets = <DashboardWidget>[...backupCommonWidgets];
-
-    // Insert platform-specific widgets by position (smallest first)
-    final sortedEntries = platformWidgetPositions.entries.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-
-    for (final entry in sortedEntries) {
-      final widget = entry.key;
-      final originalPosition = entry.value;
-
-      // Insert position cannot exceed list length
-      final insertPosition = originalPosition.clamp(0, mergedWidgets.length);
-      mergedWidgets.insert(insertPosition, widget);
-    }
-
-    // Use default widgets if merged is empty
-    return mergedWidgets.isNotEmpty
-        ? mergedWidgets
-        : (system.isAndroid
-              ? defaultAndroidDashboardWidgets
-              : defaultDashboardWidgets);
-  }
 
   Future<T?> safeRun<T>(
     FutureOr<T> Function() futureFunction, {
@@ -2297,6 +2315,7 @@ class AppController {
           await globalState.showMessage(
             title: title ?? appLocalizations.tip,
             message: TextSpan(text: errorMessage),
+            cancelable: false,
           );
         } catch (_) {
           globalState.showNotifier(errorMessage);

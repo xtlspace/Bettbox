@@ -73,6 +73,7 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
               TextSpan(text: message, style: titleMedium),
           ],
         ),
+        cancelable: false,
       );
     }
   }
@@ -256,17 +257,20 @@ class ProviderItem extends StatelessWidget {
   String _buildProviderDesc() {
     final updateTimeText = provider.updateAt.lastUpdateTimeDesc;
     final subInfo = provider.subscriptionInfo;
-    if (subInfo != null) {
+    String infoText;
+    if (subInfo == null) {
+      infoText = updateTimeText;
+    } else {
       final trafficText = _buildTrafficInfoText(subInfo);
       final expireText = _getExpireText(subInfo);
-      if (trafficText != null) {
-        return '$trafficText · $expireText - $updateTimeText';
-      } else {
-        return '$expireText - $updateTimeText';
-      }
-    } else {
-      return updateTimeText;
+      infoText = trafficText == null
+          ? '$expireText - $updateTimeText'
+          : '$trafficText · $expireText - $updateTimeText';
     }
+    final count = provider.count;
+    return count == 0
+        ? infoText
+        : '$infoText · $count${appLocalizations.entries}';
   }
 
   String _getExpireText(SubscriptionInfo subscriptionInfo) {

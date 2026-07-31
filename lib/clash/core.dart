@@ -91,11 +91,13 @@ class ClashCore {
     return await clashInterface.setupConfig(setupParams);
   }
 
-  Future<List<Group>> getProxiesGroups() async {
+  Future<List<Group>> getProxiesGroups({
+    List<ExternalProvider>? preloadedProviders,
+  }) async {
     final proxies = await clashInterface.getProxies();
     if (proxies.isEmpty) return [];
 
-    final providers = await getExternalProviders();
+    final providers = preloadedProviders ?? await getExternalProviders();
 
     return Isolate.run<List<Group>>(() {
       final allProxies = Map<String, dynamic>.from(proxies);

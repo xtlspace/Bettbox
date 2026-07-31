@@ -12,6 +12,16 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
       dashboardWidgets: json['dashboardWidgets'] == null
           ? defaultDashboardWidgets
           : dashboardWidgetsSafeFormJson(json['dashboardWidgets'] as List?),
+      mobileDashboardWidgets: json['mobileDashboardWidgets'] == null
+          ? defaultAndroidDashboardWidgets
+          : mobileDashboardWidgetsSafeFromJson(
+              json['mobileDashboardWidgets'] as List?,
+            ),
+      desktopDashboardWidgets: json['desktopDashboardWidgets'] == null
+          ? defaultDashboardWidgets
+          : desktopDashboardWidgetsSafeFromJson(
+              json['desktopDashboardWidgets'] as List?,
+            ),
       onlyStatisticsProxy: json['onlyStatisticsProxy'] as bool? ?? true,
       autoLaunch: json['autoLaunch'] as bool? ?? false,
       silentLaunch: json['silentLaunch'] as bool? ?? false,
@@ -43,6 +53,12 @@ Map<String, dynamic> _$AppSettingPropsToJson(_AppSettingProps instance) =>
     <String, dynamic>{
       'locale': instance.locale,
       'dashboardWidgets': instance.dashboardWidgets
+          .map((e) => _$DashboardWidgetEnumMap[e]!)
+          .toList(),
+      'mobileDashboardWidgets': instance.mobileDashboardWidgets
+          .map((e) => _$DashboardWidgetEnumMap[e]!)
+          .toList(),
+      'desktopDashboardWidgets': instance.desktopDashboardWidgets
           .map((e) => _$DashboardWidgetEnumMap[e]!)
           .toList(),
       'onlyStatisticsProxy': instance.onlyStatisticsProxy,
@@ -114,8 +130,8 @@ _AccessControl _$AccessControlFromJson(Map<String, dynamic> json) =>
       sort:
           $enumDecodeNullable(_$AccessSortTypeEnumMap, json['sort']) ??
           AccessSortType.none,
-      isFilterSystemApp: json['isFilterSystemApp'] as bool? ?? true,
-      isFilterNonInternetApp: json['isFilterNonInternetApp'] as bool? ?? true,
+      isFilterSystemApp: json['isFilterSystemApp'] as bool? ?? false,
+      isFilterNonInternetApp: json['isFilterNonInternetApp'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$AccessControlToJson(_AccessControl instance) =>
@@ -422,7 +438,9 @@ _Config _$ConfigFromJson(Map<String, dynamic> json) => _Config(
       : WindowProps.fromJson(json['windowProps'] as Map<String, dynamic>?),
   patchClashConfig: json['patchClashConfig'] == null
       ? defaultClashConfig
-      : ClashConfig.fromJson(json['patchClashConfig'] as Map<String, dynamic>),
+      : ClashConfig.safeFormJson(
+          json['patchClashConfig'] as Map<String, Object?>?,
+        ),
   scriptProps: json['scriptProps'] == null
       ? const ScriptProps()
       : ScriptProps.fromJson(json['scriptProps'] as Map<String, dynamic>),

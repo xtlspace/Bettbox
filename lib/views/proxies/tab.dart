@@ -222,6 +222,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
           columns: state.columns,
           cardType: state.proxyCardType,
           sortType: state.proxiesSortType,
+          sortNum: state.sortNum,
         ),
       );
     }).toList();
@@ -315,6 +316,7 @@ class ProxyGroupView extends ConsumerStatefulWidget {
   final int columns;
   final ProxyCardType cardType;
   final ProxiesSortType sortType;
+  final num sortNum;
 
   const ProxyGroupView({
     super.key,
@@ -322,6 +324,7 @@ class ProxyGroupView extends ConsumerStatefulWidget {
     required this.columns,
     required this.cardType,
     required this.sortType,
+    required this.sortNum,
   });
 
   @override
@@ -337,21 +340,25 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   ProxiesSortType? _lastSortType;
   List<Proxy>? _lastProxies;
   String? _lastTestUrl;
+  num? _lastSortNum;
 
   List<Proxy> _getSortedProxies() {
     final group = widget.group;
     final sortType = widget.sortType;
     final proxies = group.all;
     final testUrl = group.testUrl;
+    final sortNum = widget.sortNum;
     if (_cachedSortedProxies != null &&
         _lastSortType == sortType &&
         _lastTestUrl == testUrl &&
-        _lastProxies == proxies) {
+        _lastProxies == proxies &&
+        _lastSortNum == sortNum) {
       return _cachedSortedProxies!;
     }
     _lastSortType = sortType;
     _lastTestUrl = testUrl;
     _lastProxies = proxies;
+    _lastSortNum = sortNum;
     _cachedSortedProxies = globalState.appController.getSortProxies(
       proxies: proxies,
       sortType: sortType,

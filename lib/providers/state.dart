@@ -241,7 +241,11 @@ NavigationState navigationState(Ref ref) {
 @riverpod
 DashboardState dashboardState(Ref ref) {
   final dashboardWidgets = ref.watch(
-    appSettingProvider.select((state) => state.dashboardWidgets),
+    appSettingProvider.select(
+      (state) => system.isAndroid
+          ? state.mobileDashboardWidgets
+          : state.desktopDashboardWidgets,
+    ),
   );
   final viewWidth = ref.watch(viewWidthProvider);
   final widgets = dashboardWidgets.contains(DashboardWidget.startButton)

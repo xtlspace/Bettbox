@@ -28,10 +28,22 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
   static final Map<String, File?> _moduleFileCache = {};
   static final Map<String, bool> _moduleSvgValidCache = {};
   static final Map<String, DateTime> _moduleFailureCache = {};
-
+  static const _maxCacheEntries = 80;
   static const _failureCooldownSeconds = 10;
 
-  String _moduleCacheKey(int cacheSize) => '${widget.src}_$cacheSize';
+  String _moduleCacheKey(int cacheSize) {
+    if (widget.src.isSvg) return 'svg|${widget.src}';
+    return 'bmp|${widget.src}|$cacheSize';
+  }
+
+  static void _ensureCacheLimit() {
+    while (_moduleFileCache.length > _maxCacheEntries) {
+      _moduleFileCache.remove(_moduleFileCache.keys.first);
+    }
+    while (_moduleSvgValidCache.length > _maxCacheEntries) {
+      _moduleSvgValidCache.remove(_moduleSvgValidCache.keys.first);
+    }
+  }
 
   bool _shouldRetry(String mKey) {
     final failedAt = _moduleFailureCache[mKey];
@@ -45,24 +57,13 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  @override
   void didUpdateWidget(covariant CommonTargetIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final cacheSize = (widget.size * devicePixelRatio).ceil();
-
-    // Reinit when src or size changes
-    if (oldWidget.src != widget.src || _cachedSize != cacheSize) {
+    if (oldWidget.src != widget.src || oldWidget.size != widget.size) {
       _file = null;
       _cachedSrc = null;
       _cachedSize = null;
       _didSyncCheck = false;
-      _init();
     }
   }
 
@@ -80,13 +81,14 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     final key = _moduleCacheKey(cacheSize);
 
     final cachedFile = _moduleFileCache[key];
-    if (cachedFile == null) return; // not cached — let _init() handle it
-    if (widget.src.isSvg && _moduleSvgValidCache[widget.src] != true) return;
+    final syncHit = cachedFile != null;
 
-    // Sync cache hit: set _file before first build so no default-icon flash
-    _cachedSrc = widget.src;
-    _cachedSize = cacheSize;
-    _file = cachedFile;
+    if (syncHit) {
+      _cachedSrc = widget.src;
+      _cachedSize = cacheSize;
+      _file = cachedFile;
+    }
+    _init(cacheSize);
   }
 
   /// Generate resized cache path
@@ -190,16 +192,13 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     }
   }
 
-  Future<void> _init() async {
+  Future<void> _init(int cacheSize) async {
     if (widget.src.isEmpty) {
       return;
     }
     if (widget.src.getBase64 != null) {
       return;
     }
-
-    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final cacheSize = (widget.size * devicePixelRatio).ceil();
 
     // If cached with same src and size, return directly
     if (_cachedSrc == widget.src && _cachedSize == cacheSize && _file != null) {
@@ -214,7 +213,6 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     if (_moduleFileCache.containsKey(mKey)) {
       final cachedFile = _moduleFileCache[mKey];
       if (cachedFile == null) return; // permanently invalid
-      if (widget.src.isSvg && _moduleSvgValidCache[widget.src] != true) return;
 
       if (mounted) {
         setState(() {
@@ -266,6 +264,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
       _moduleFileCache[mKey] = file;
       _moduleSvgValidCache[widget.src] = true;
       _moduleFailureCache.remove(mKey);
+      _ensureCacheLimit();
       if (mounted) {
         setState(() {
           _file = file;
@@ -292,6 +291,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     }
     _moduleFileCache[mKey] = displayFile;
     _moduleFailureCache.remove(mKey);
+    _ensureCacheLimit();
     if (mounted) {
       setState(() {
         _file = displayFile;
@@ -353,7 +353,6 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
               commonPrint.log(
                 'SVG validation failed in build: ${snapshot.error}',
               );
-              // Remove invalid file and clear state
               DefaultCacheManager().removeFile(widget.src);
               _moduleFileCache.remove(_moduleCacheKey(cacheSize));
               _moduleSvgValidCache.remove(widget.src);
@@ -362,6 +361,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
               _cachedSize = null;
               return _defaultIcon();
             }
+            _moduleSvgValidCache[widget.src] = true;
             try {
               return SvgPicture.file(
                 _file!,

@@ -34,6 +34,7 @@ Future<void> proxyDelayTest(Proxy proxy, [String? testUrl]) async {
   appController.setDelay(Delay(url: url, name: state.proxyName, value: 0));
   // Get and set delay
   appController.setDelay(await clashCore.getDelay(url, state.proxyName));
+  appController.addSortNum();
 }
 
 bool _isNonTestableProxyName(String proxyName) {

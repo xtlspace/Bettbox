@@ -523,40 +523,90 @@ abstract class ParsedRule with _$ParsedRule {
   }) = _ParsedRule;
 
   factory ParsedRule.parseString(String value) {
-    final splits = value.split(',');
-    final shortSplits = splits
-        .where((item) => !item.contains('src') && !item.contains('no-resolve'))
-        .toList();
+    var raw = value.trim();
+    bool noResolve = false;
+    bool src = false;
+
+    while (true) {
+      if (raw.endsWith(',no-resolve')) {
+        noResolve = true;
+        raw = raw.substring(0, raw.length - ',no-resolve'.length).trim();
+      } else if (raw.endsWith(',src')) {
+        src = true;
+        raw = raw.substring(0, raw.length - ',src'.length).trim();
+      } else {
+        break;
+      }
+    }
+
+    final firstComma = raw.indexOf(',');
+    if (firstComma == -1) {
+      final action = RuleAction.values.firstWhere(
+        (item) => item.value == raw,
+        orElse: () => RuleAction.MATCH,
+      );
+      return ParsedRule(
+        ruleAction: action,
+        noResolve: noResolve,
+        src: src,
+      );
+    }
+
+    final actionStr = raw.substring(0, firstComma).trim();
     final ruleAction = RuleAction.values.firstWhere(
-      (item) => item.value == shortSplits.first,
+      (item) => item.value == actionStr,
       orElse: () => RuleAction.DOMAIN,
     );
+
+    final rest = raw.substring(firstComma + 1).trim();
+
+    if (ruleAction == RuleAction.MATCH) {
+      return ParsedRule(
+        ruleAction: ruleAction,
+        ruleTarget: rest,
+        noResolve: noResolve,
+        src: src,
+      );
+    }
+
+    final lastComma = rest.lastIndexOf(',');
+    if (lastComma == -1) {
+      return ParsedRule(
+        ruleAction: ruleAction,
+        content: ruleAction != RuleAction.RULE_SET ? rest : null,
+        ruleProvider: ruleAction == RuleAction.RULE_SET ? rest : null,
+        noResolve: noResolve,
+        src: src,
+      );
+    }
+
+    final mainContent = rest.substring(0, lastComma).trim();
+    final targetStr = rest.substring(lastComma + 1).trim();
+
     String? subRule;
     String? ruleTarget;
-
     if (ruleAction == RuleAction.SUB_RULE) {
-      subRule = shortSplits.last;
+      subRule = targetStr;
     } else {
-      ruleTarget = shortSplits.last;
+      ruleTarget = targetStr;
     }
 
     String? content;
     String? ruleProvider;
-
     if (ruleAction == RuleAction.RULE_SET) {
-      ruleProvider = shortSplits.sublist(1, shortSplits.length - 1).join(',');
+      ruleProvider = mainContent;
     } else {
-      content = shortSplits.sublist(1, shortSplits.length - 1).join(',');
+      content = mainContent;
     }
 
     return ParsedRule(
       ruleAction: ruleAction,
       content: content,
-      src: splits.contains('src'),
       ruleProvider: ruleProvider,
-      noResolve: splits.contains('no-resolve'),
       subRule: subRule,
       ruleTarget: ruleTarget,
+      noResolve: noResolve,
+      src: src,
     );
   }
 }
@@ -564,17 +614,22 @@ abstract class ParsedRule with _$ParsedRule {
 extension ParsedRuleExt on ParsedRule {
   String get value {
     if (ruleAction == RuleAction.MATCH) {
-      return [ruleAction.value, ruleTarget].join(',');
+      return [ruleAction.value, ruleTarget]
+          .where((e) => e != null && e.isNotEmpty)
+          .join(',');
     }
-    return [
+    final target = ruleAction == RuleAction.SUB_RULE ? subRule : ruleTarget;
+    final main = ruleAction == RuleAction.RULE_SET ? ruleProvider : content;
+    final parts = <String>[
       ruleAction.value,
-      ruleAction == RuleAction.RULE_SET ? ruleProvider : content,
-      ruleAction == RuleAction.SUB_RULE ? subRule : ruleTarget,
+      if (main != null && main.isNotEmpty) main,
+      if (target != null && target.isNotEmpty) target,
       if (ruleAction.hasParams) ...[
         if (src) 'src',
         if (noResolve) 'no-resolve',
       ],
-    ].join(',');
+    ];
+    return parts.join(',');
   }
 }
 
@@ -685,12 +740,16 @@ abstract class ClashConfig with _$ClashConfig {
 
   factory ClashConfig.safeFormJson(Map<String, Object?>? json) {
     if (json == null) {
-      return defaultClashConfig;
+      return system.isAndroid
+          ? const ClashConfig(findProcessMode: FindProcessMode.always)
+          : defaultClashConfig;
     }
     try {
       return ClashConfig.fromJson(json);
     } catch (_) {
-      return defaultClashConfig;
+      return system.isAndroid
+          ? const ClashConfig(findProcessMode: FindProcessMode.always)
+          : defaultClashConfig;
     }
   }
 }

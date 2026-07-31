@@ -87,6 +87,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
     globalState.showMessage(
       title: appLocalizations.tip,
       message: TextSpan(text: appLocalizations.exportSuccess),
+      cancelable: false,
     );
   }
 

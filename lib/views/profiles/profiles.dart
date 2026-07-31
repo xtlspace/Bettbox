@@ -62,6 +62,7 @@ class _ProfilesViewState extends ConsumerState<ProfilesView> {
         message: TextSpan(
           children: [for (final message in messages) TextSpan(text: message)],
         ),
+        cancelable: false,
       );
     }
   }
@@ -265,6 +266,7 @@ class ProfileItem extends StatelessWidget {
         message: TextSpan(
           text: '${profile.label ?? profile.id}: ${e.formatError}',
         ),
+        cancelable: false,
       );
     }
   }
@@ -303,32 +305,14 @@ class ProfileItem extends StatelessWidget {
       const SizedBox(height: 8),
       if (subscriptionInfo != null) ...[
         SubscriptionInfoView(subscriptionInfo: subscriptionInfo),
-        // Traffic / Total · Expiry - Update time
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${_getTrafficText(subscriptionInfo)} · ${_getExpireText(subscriptionInfo)} - $updateTimeText',
-                style: context.textTheme.labelMedium?.toLight,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        Text(
+          '${_getTrafficText(subscriptionInfo)} · ${_getExpireText(subscriptionInfo)} - $updateTimeText',
+          style: context.textTheme.labelMedium?.toLight,
         ),
       ] else
-        // Show only update time when no subscription info
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                updateTimeText,
-                style: context.textTheme.labelMedium?.toLight,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        Text(
+          updateTimeText,
+          style: context.textTheme.labelMedium?.toLight,
         ),
     ];
   }
@@ -387,9 +371,14 @@ class ProfileItem extends StatelessWidget {
     final res = await globalState.appController.safeRun<bool>(
       () async {
         final file = await profile.getFile();
+        final rawName = (profile.label ?? profile.id).trim();
+        final fileName = (rawName.endsWith('.yaml') || rawName.endsWith('.yml'))
+            ? rawName
+            : '$rawName.yaml';
         final value = await picker.saveFile(
-          profile.label ?? profile.id,
+          fileName,
           await file.readAsBytes(),
+          allowedExtensions: ['yaml', 'yml'],
         );
         if (value == null) return false;
         return true;

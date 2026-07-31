@@ -14,6 +14,7 @@ class SheetProps {
   final bool isScrollControlled;
   final bool useSafeArea;
   final bool blur;
+  final Color? barrierColor;
 
   const SheetProps({
     this.maxWidth,
@@ -21,6 +22,7 @@ class SheetProps {
     this.useSafeArea = true,
     this.isScrollControlled = false,
     this.blur = false,
+    this.barrierColor,
   });
 }
 
@@ -62,6 +64,7 @@ Future<T?> showSheet<T>({
     false => showModalSideSheet<T>(
       useSafeArea: props.useSafeArea,
       isScrollControlled: props.isScrollControlled,
+      barrierColor: props.barrierColor,
       context: context,
       constraints: BoxConstraints(maxWidth: props.maxWidth ?? 360),
       filter: props.blur ? commonFilter : null,

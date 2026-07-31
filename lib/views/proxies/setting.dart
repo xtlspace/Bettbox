@@ -1,5 +1,6 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:bett_box/providers/app.dart';
 import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -117,6 +118,7 @@ class ProxiesSetting extends StatelessWidget {
                             .updateState((state) {
                               return state.copyWith(sortType: item);
                             });
+                        ref.read(sortNumProvider.notifier).add();
                       },
                     ),
                 ],
