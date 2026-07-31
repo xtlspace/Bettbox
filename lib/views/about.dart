@@ -28,18 +28,10 @@ class AboutView extends StatelessWidget {
     return generateSection(
       title: appLocalizations.more,
       items: [
-        _LinkGridRow(
-          left: _LinkGridTile(
-            title: 'Github Releases',
-            icon: Icons.star,
-            onTap: () =>
-                globalState.openUrl('https://github.com/appshubcc/Bettbox'),
-          ),
-          right: _LinkGridTile(
-            title: appLocalizations.checkUpdate,
-            icon: Icons.refresh,
-            onTap: () => _checkUpdate(context),
-          ),
+        _LinkGridTile(
+          title: appLocalizations.checkUpdate,
+          icon: Icons.refresh,
+          onTap: () => _checkUpdate(context),
         ),
       ],
     );
@@ -156,36 +148,6 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(onTap: _handleTap, child: widget.child);
-  }
-}
-
-class _LinkGridRow extends StatelessWidget {
-  final _LinkGridTile left;
-  final _LinkGridTile right;
-
-  const _LinkGridRow({required this.left, required this.right});
-
-  @override
-  Widget build(BuildContext context) {
-    final dividerColor = context.colorScheme.outlineVariant.withValues(
-      alpha: context.colorScheme.brightness == Brightness.light ? 0.3 : 0.2,
-    );
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: left),
-          VerticalDivider(
-            width: 1,
-            thickness: 1,
-            indent: 8,
-            endIndent: 8,
-            color: dividerColor,
-          ),
-          Expanded(child: right),
-        ],
-      ),
-    );
   }
 }
 
