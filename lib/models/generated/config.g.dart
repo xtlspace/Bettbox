@@ -187,6 +187,7 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
   trayEnhancement: json['trayEnhancement'] as bool? ?? false,
+  enableTraySpeed: json['enableTraySpeed'] as bool? ?? false,
   alwaysShowTitleBar: json['alwaysShowTitleBar'] as bool? ?? true,
   quickResponse: json['quickResponse'] as bool? ?? true,
   accessControl: json['accessControl'] == null
@@ -208,6 +209,7 @@ Map<String, dynamic> _$VpnPropsToJson(_VpnProps instance) => <String, dynamic>{
   'networkSpeedNotification': instance.networkSpeedNotification,
   'excludeChina': instance.excludeChina,
   'trayEnhancement': instance.trayEnhancement,
+  'enableTraySpeed': instance.enableTraySpeed,
   'alwaysShowTitleBar': instance.alwaysShowTitleBar,
   'quickResponse': instance.quickResponse,
   'accessControl': instance.accessControl,
@@ -262,6 +264,7 @@ _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
           ) ??
           const {},
       concurrencyLimit: (json['concurrencyLimit'] as num?)?.toInt() ?? 250,
+      showHiddenItems: json['showHiddenItems'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ProxiesStyleToJson(_ProxiesStyle instance) =>
@@ -274,6 +277,7 @@ Map<String, dynamic> _$ProxiesStyleToJson(_ProxiesStyle instance) =>
       'delayAnimation': _$DelayAnimationTypeEnumMap[instance.delayAnimation]!,
       'iconMap': instance.iconMap,
       'concurrencyLimit': instance.concurrencyLimit,
+      'showHiddenItems': instance.showHiddenItems,
     };
 
 const _$ProxiesTypeEnumMap = {ProxiesType.tab: 'tab', ProxiesType.list: 'list'};
@@ -344,7 +348,7 @@ _ThemeProps _$ThemePropsFromJson(Map<String, dynamic> json) => _ThemeProps(
   textScale: json['textScale'] == null
       ? const TextScale()
       : TextScale.fromJson(json['textScale'] as Map<String, dynamic>),
-  useLightIcon: json['useLightIcon'] as bool? ?? false,
+  useDarkIcon: json['useDarkIcon'] as bool? ?? false,
   useHarmonyFont: json['useHarmonyFont'] as bool? ?? false,
   invertTrayIcon: json['invertTrayIcon'] as bool? ?? false,
 );
@@ -357,7 +361,7 @@ Map<String, dynamic> _$ThemePropsToJson(_ThemeProps instance) =>
       'schemeVariant': _$DynamicSchemeVariantEnumMap[instance.schemeVariant]!,
       'pureBlack': instance.pureBlack,
       'textScale': instance.textScale,
-      'useLightIcon': instance.useLightIcon,
+      'useDarkIcon': instance.useDarkIcon,
       'useHarmonyFont': instance.useHarmonyFont,
       'invertTrayIcon': instance.invertTrayIcon,
     };

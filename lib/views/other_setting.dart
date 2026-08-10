@@ -485,26 +485,61 @@ class NetworkSpeedNotificationItem extends ConsumerWidget {
   }
 }
 
-class TrayEnhancementItem extends ConsumerWidget {
-  const TrayEnhancementItem({super.key});
+class TraySection extends ConsumerWidget {
+  const TraySection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trayEnhancement = ref.watch(
       vpnSettingProvider.select((state) => state.trayEnhancement),
     );
-    return ListItem.switchItem(
-      title: Text(appLocalizations.trayEnhancement),
-      subtitle: Text(appLocalizations.trayEnhancementDesc),
-      delegate: SwitchDelegate(
-        value: trayEnhancement,
-        onChanged: (bool value) async {
-          ref
-              .read(vpnSettingProvider.notifier)
-              .updateState((state) => state.copyWith(trayEnhancement: value));
-          await globalState.appController.updateTray();
-        },
-      ),
+    final enableTraySpeed = ref.watch(
+      vpnSettingProvider.select((state) => state.enableTraySpeed),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListItem.switchItem(
+          title: Text(appLocalizations.trayEnhancement),
+          subtitle: Text(appLocalizations.trayEnhancementDesc),
+          delegate: SwitchDelegate(
+            value: trayEnhancement,
+            onChanged: (bool value) async {
+              ref
+                  .read(vpnSettingProvider.notifier)
+                  .updateState((state) => state.copyWith(trayEnhancement: value));
+              await globalState.appController.updateTray();
+            },
+          ),
+        ),
+        if (system.isMacOS) ...[
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: context.colorScheme.outlineVariant.withValues(
+              alpha: context.colorScheme.brightness == Brightness.light
+                  ? 0.3
+                  : 0.2,
+            ),
+            indent: 16,
+            endIndent: 16,
+          ),
+          ListItem.switchItem(
+            title: Text(appLocalizations.enableTraySpeed),
+            subtitle: Text(appLocalizations.enableTraySpeedDesc),
+            delegate: SwitchDelegate(
+              value: enableTraySpeed,
+              onChanged: (bool value) async {
+                ref
+                    .read(vpnSettingProvider.notifier)
+                    .updateState((state) => state.copyWith(enableTraySpeed: value));
+                await globalState.appController.updateTray();
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -521,7 +556,7 @@ class OtherSettingView extends ConsumerWidget {
       const StoreFixItem(),
       const DisableQuicSection(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),
-      if (!system.isAndroid) const TrayEnhancementItem(),
+      if (!system.isAndroid) const TraySection(),
       if (system.isWindows) const HighPriorityItem(),
       if (system.isWindows) const NetworkFixItem(),
       if (system.isAndroid) const BatteryOptimizationItem(),

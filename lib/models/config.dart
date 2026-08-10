@@ -219,8 +219,9 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool disableQuic,
     @Default(false) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
-    @Default(true) bool trayEnhancement,
-    @Default(false) bool alwaysShowTitleBar,
+    @Default(false) bool trayEnhancement,
+    @Default(false) bool enableTraySpeed,
+    @Default(true) bool alwaysShowTitleBar,
     @Default(true) bool quickResponse,
     @Default(defaultAccessControl) AccessControl accessControl,
   }) = _VpnProps;
@@ -264,6 +265,7 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default(DelayAnimationType.none) DelayAnimationType delayAnimation,
     @Default({}) Map<String, String> iconMap,
     @Default(250) int concurrencyLimit,
+    @Default(false) bool showHiddenItems,
   }) = _ProxiesStyle;
 
   factory ProxiesStyle.fromJson(Map<String, Object?>? json) =>
@@ -290,7 +292,7 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
     @Default(false) bool pureBlack,
     @Default(TextScale()) TextScale textScale,
-    @Default(false) bool useLightIcon,
+    @Default(false) bool useDarkIcon,
     @Default(false) bool useHarmonyFont,
     @Default(false) bool invertTrayIcon,
   }) = _ThemeProps;

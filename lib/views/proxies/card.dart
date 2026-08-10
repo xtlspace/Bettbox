@@ -10,9 +10,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-final groupIconMapProvider = Provider<Map<String, String>>((ref) {
+final proxyIconProvider = Provider.family<String, String>((ref, proxyName) {
+  if (proxyName.isEmpty) return '';
+  final style = ref.watch(
+    proxiesStyleSettingProvider.select((s) => s.iconStyle),
+  );
+  if (style == ProxiesIconStyle.none) return '';
+
+  final iconMap = ref.watch(
+    proxiesStyleSettingProvider.select((s) => s.iconMap),
+  );
+  for (final entry in iconMap.entries) {
+    try {
+      if (RegExp(entry.key).hasMatch(proxyName)) {
+        return entry.value;
+      }
+    } catch (_) {}
+  }
+
   final groups = ref.watch(groupsProvider);
-  return {for (final g in groups) g.name: g.icon};
+  return groups.getGroup(proxyName)?.icon ?? '';
 });
 
 class ProxyCard extends StatelessWidget {
@@ -176,9 +193,7 @@ class ProxyCard extends StatelessWidget {
       return wrapPadding(nameWidget);
     }
 
-    final subGroupIcon = ref.watch(
-      groupIconMapProvider.select((map) => map[proxy.name] ?? ''),
-    );
+    final subGroupIcon = ref.watch(proxyIconProvider(proxy.name));
     if (subGroupIcon.isEmpty) {
       return wrapPadding(nameWidget);
     }

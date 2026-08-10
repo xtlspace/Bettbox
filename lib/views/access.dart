@@ -1029,24 +1029,26 @@ class _AccessControlPanelState extends ConsumerState<AccessControlPanel> {
       try {
         newAccessControl = AccessControl.fromJson(json.decode(text));
       } catch (_) {
+        final packageNameRegex = RegExp(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)+$');
         final packages = text
-            .split('\n')
+            .split(RegExp(r'[\n,\s]+'))
             .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
+            .where((e) => packageNameRegex.hasMatch(e))
             .toList();
 
         final currentState = ref.read(vpnSettingProvider).accessControl;
         final isAccept = currentState.mode == AccessControlMode.acceptSelected;
+        final currentList =
+            isAccept ? currentState.acceptList : currentState.rejectList;
+        final newList = {...currentList, ...packages}.toList();
 
         newAccessControl = currentState.copyWith(
-          acceptList: isAccept ? packages : currentState.acceptList,
-          rejectList: !isAccept ? packages : currentState.rejectList,
+          acceptList: isAccept ? newList : currentState.acceptList,
+          rejectList: !isAccept ? newList : currentState.rejectList,
         );
       }
 
-      ref
-          .read(vpnSettingProvider.notifier)
-          .updateState(
+      ref.read(vpnSettingProvider.notifier).updateState(
             (state) => state.copyWith(accessControl: newAccessControl),
           );
     });

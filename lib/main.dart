@@ -35,7 +35,7 @@ Future<void> main(List<String> args) async {
     exit(0);
   }
 
-  if (system.isDesktop) {
+  if (system.isMacOS) {
     final acquire = await singleInstanceLock.acquire();
     if (!acquire) {
       commonPrint.log(

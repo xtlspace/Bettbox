@@ -245,10 +245,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "creationTime": MessageLookupByLibrary.simpleMessage("생성 시간"),
     "custom": MessageLookupByLibrary.simpleMessage("사용자 지정"),
     "customDashboardTitle": MessageLookupByLibrary.simpleMessage("사용자 지정 제목"),
-    "customScriptOptions": MessageLookupByLibrary.simpleMessage("사용자 지정 분류"),
+    "customScriptOptions": MessageLookupByLibrary.simpleMessage("커스텀 규칙"),
     "customUrl": MessageLookupByLibrary.simpleMessage("사용자 지정 URL"),
     "cut": MessageLookupByLibrary.simpleMessage("잘라내기"),
     "dark": MessageLookupByLibrary.simpleMessage("다크"),
+    "darkIcon": MessageLookupByLibrary.simpleMessage("다크 아이콘"),
+    "darkIconDesc": MessageLookupByLibrary.simpleMessage(
+      "데스크톱 앱 아이콘을 어두운 색계열로 전환",
+    ),
     "dashboard": MessageLookupByLibrary.simpleMessage("홈"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage("기본 네임서버"),
@@ -322,12 +326,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "edit": MessageLookupByLibrary.simpleMessage("편집"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("포워딩 편집"),
     "emptyTip": m3,
-    "en": MessageLookupByLibrary.simpleMessage("영어"),
     "enableCrashReport": MessageLookupByLibrary.simpleMessage("크래시 분석"),
     "enableCrashReportDesc": MessageLookupByLibrary.simpleMessage(
       "필요 시 앱 크래시 로그 전송",
     ),
     "enableOverride": MessageLookupByLibrary.simpleMessage("오버라이드 활성화"),
+    "enableTraySpeed": MessageLookupByLibrary.simpleMessage("네트워크 속도"),
+    "enableTraySpeedDesc": MessageLookupByLibrary.simpleMessage(
+      "메뉴 막대에 업로드 및 다운로드 속도 표시",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage("NAT 향상"),
     "endpointIndependentNatConfirmDesc": MessageLookupByLibrary.simpleMessage(
       "Endpoint-Independent NAT를 활성화하면 성능이 약간 저하될 수 있습니다. 필요한 경우에만 설정하세요",
@@ -360,7 +367,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("외부 링크"),
     "externalResources": MessageLookupByLibrary.simpleMessage("외부 리소스"),
-    "fa": MessageLookupByLibrary.simpleMessage("페르시아어"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("페이딩 서클"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("페이딩 포 스퀘어"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage("FakeIP 필터 모드"),
@@ -479,13 +485,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipcidr": MessageLookupByLibrary.simpleMessage("IP / 서브넷 마스크"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage("활성화 시 IPv6 트래픽 수신 허용"),
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage("IPv6 인바운드 허용"),
-    "ja": MessageLookupByLibrary.simpleMessage("일본어"),
     "just": MessageLookupByLibrary.simpleMessage("방금 전"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP Keep-Alive 간격",
     ),
     "key": MessageLookupByLibrary.simpleMessage("키"),
-    "ko": MessageLookupByLibrary.simpleMessage("한국어"),
     "language": MessageLookupByLibrary.simpleMessage("언어"),
     "layout": MessageLookupByLibrary.simpleMessage("레이아웃"),
     "light": MessageLookupByLibrary.simpleMessage("라이트"),
@@ -783,7 +787,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "restartTip": MessageLookupByLibrary.simpleMessage("TUN 재시작 후 적용됩니다"),
     "retry": MessageLookupByLibrary.simpleMessage("재시도"),
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("단일 회전"),
-    "ru": MessageLookupByLibrary.simpleMessage("러시아어"),
     "rule": MessageLookupByLibrary.simpleMessage("규칙"),
     "ruleName": MessageLookupByLibrary.simpleMessage("규칙 이름"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("규칙 프로바이더"),
@@ -805,6 +808,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("서비스 실행 중"),
     "settings": MessageLookupByLibrary.simpleMessage("설정"),
     "show": MessageLookupByLibrary.simpleMessage("표시"),
+    "showHiddenItems": MessageLookupByLibrary.simpleMessage("숨겨진 항목 표시"),
     "showStartSwitch": MessageLookupByLibrary.simpleMessage("스위치 버튼 표시"),
     "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
       "홈 화면에 독립된 시작/정지 스위치 표시",
@@ -981,7 +985,5 @@ class MessageLookup extends MessageLookupByLibrary {
     "writeToSystem": MessageLookupByLibrary.simpleMessage("시스템 적용"),
     "writeToSystemDesc": MessageLookupByLibrary.simpleMessage("관리자 권한이 필요합니다"),
     "years": m14,
-    "zh_CN": MessageLookupByLibrary.simpleMessage("중국어 간체"),
-    "zh_TC": MessageLookupByLibrary.simpleMessage("중국어 번체"),
   };
 }

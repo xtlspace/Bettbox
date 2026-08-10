@@ -12,6 +12,23 @@ import 'config.dart';
 
 part 'generated/state.g.dart';
 
+List<Group> getVisibleGroups({
+  required Mode mode,
+  required List<Group> groups,
+  required bool showHiddenItems,
+}) {
+  final modeGroups = switch (mode) {
+    Mode.direct => const <Group>[],
+    Mode.global => groups,
+    Mode.rule =>
+      groups.where((group) => group.name != GroupName.GLOBAL.name).toList(),
+  };
+  if (showHiddenItems) {
+    return modeGroups.toList();
+  }
+  return modeGroups.where((group) => group.hidden != true).toList();
+}
+
 @riverpod
 Config configState(Ref ref) {
   final themeProps = ref.watch(themeSettingProvider);
@@ -60,16 +77,15 @@ GroupsState currentGroupsState(Ref ref) {
     patchClashConfigProvider.select((state) => state.mode),
   );
   final groups = ref.watch(groupsProvider);
+  final showHiddenItems = ref.watch(
+    proxiesStyleSettingProvider.select((state) => state.showHiddenItems),
+  );
   return GroupsState(
-    value: switch (mode) {
-      Mode.direct => [],
-      Mode.global => groups.toList(),
-      Mode.rule =>
-        groups
-            .where((item) => item.hidden != true)
-            .where((element) => element.name != GroupName.GLOBAL.name)
-            .toList(),
-    },
+    value: getVisibleGroups(
+      mode: mode,
+      groups: groups,
+      showHiddenItems: showHiddenItems,
+    ),
   );
 }
 
@@ -206,6 +222,7 @@ TrayState trayState(Ref ref) {
     selectedMap: selectedMap,
     wakelockEnabled: wakelockEnabled,
     trayEnhancement: vpnProps.trayEnhancement,
+    enableTraySpeed: vpnProps.enableTraySpeed,
   );
 }
 

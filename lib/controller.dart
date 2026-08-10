@@ -114,6 +114,9 @@ class AppController {
       _ref.read(isRestartingCoreProvider.notifier).state = true;
       try {
         await _restartCore();
+      } catch (err) {
+        _reportCoreRestartFailure(err);
+        rethrow;
       } finally {
         _ref.read(isRestartingCoreProvider.notifier).state = false;
       }
@@ -168,6 +171,9 @@ class AppController {
   Future<void> _updateStatus(bool isStart) async {
     if (isStart) {
       await _fastStart();
+      if (globalState.isStart && !_ref.read(runTimeProvider.notifier).isStart) {
+        _ref.read(runTimeProvider.notifier).value = 0;
+      }
     } else {
       await globalState.handleStop();
       clashCore.resetTraffic();
@@ -401,8 +407,12 @@ class AppController {
     final networkSpeedNotification =
         system.isAndroid &&
         _ref.read(vpnSettingProvider).networkSpeedNotification;
+    final enableTraySpeed =
+        system.isMacOS && _ref.read(vpnSettingProvider).enableTraySpeed;
 
-    if (!shouldUpdateDashboard && !networkSpeedNotification) {
+    if (!shouldUpdateDashboard &&
+        !networkSpeedNotification &&
+        !enableTraySpeed) {
       return;
     }
 
@@ -416,6 +426,10 @@ class AppController {
 
     if (shouldUpdateDashboard) {
       _ref.read(trafficsProvider.notifier).addTraffic(traffic);
+    }
+
+    if (enableTraySpeed) {
+      await tray.updateSpeed(traffic);
     }
 
     if (networkSpeedNotification) {
@@ -655,6 +669,9 @@ class AppController {
         _ref.read(isRestartingCoreProvider.notifier).state = true;
         try {
           await _restartCore();
+        } catch (err) {
+          _reportCoreRestartFailure(err);
+          rethrow;
         } finally {
           _ref.read(isRestartingCoreProvider.notifier).state = false;
         }
@@ -680,6 +697,12 @@ class AppController {
       globalState.computeHeightMapCache = {};
       addCheckIpNumDebounce();
     });
+  }
+
+  void _reportCoreRestartFailure(Object error) {
+    final message = error.formatError;
+    commonPrint.log('[Core] Restart failed: $message');
+    globalState.showNotifier('${appLocalizations.restartCoreTitle}: $message');
   }
 
   void updateBrightness() {
@@ -1412,9 +1435,8 @@ class AppController {
         ageSecretKey: ageSecretKey,
       ).update();
       if (globalState.navigatorKey.currentState?.canPop() ?? false) {
-        globalState.navigatorKey.currentState?.popUntil(
-          (route) => route.isFirst,
-        );
+        globalState.navigatorKey.currentState
+            ?.popUntil((route) => route.isFirst);
       }
       toProfiles();
       await addProfile(profile);
@@ -1474,8 +1496,9 @@ class AppController {
       }
 
       if (successCount > 0) {
-        globalState.navigatorKey.currentState
-            ?.popUntil((route) => route.isFirst);
+        globalState.navigatorKey.currentState?.popUntil(
+          (route) => route.isFirst,
+        );
         toProfiles();
       }
     } finally {

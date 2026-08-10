@@ -231,7 +231,7 @@ packages:
       path: "plugins/code_forge"
       relative: true
     source: path
-    version: "10.8.0"
+    version: "10.9.0"
   collection:
     dependency: "direct main"
     description:

@@ -194,6 +194,7 @@ class _ProxyGroupsListState extends ConsumerState<_ProxyGroupsList> {
     return CommonScrollBar(
       controller: _scrollController,
       child: ListView.builder(
+        key: const PageStorageKey<String>('proxies_list'),
         controller: _scrollController,
         padding: EdgeInsets.all(16).copyWith(
           bottom:
@@ -287,19 +288,13 @@ class _GroupHeader extends ConsumerWidget {
     final iconStyle = ref.watch(
       proxiesStyleSettingProvider.select((s) => s.iconStyle),
     );
-    final iconMap = ref.watch(
-      proxiesStyleSettingProvider.select((s) => s.iconMap),
-    );
-    final icon = _getIcon(iconStyle, iconMap);
+    final icon = ref.watch(proxyIconProvider(group.name));
     final selectedProxyName = ref
         .watch(getSelectedProxyNameProvider(group.name))
         .getSafeValue('');
 
     final selectedProxyIcon = ref.watch(
-      groupsProvider.select((groups) {
-        if (selectedProxyName.isEmpty) return '';
-        return groups.getGroup(selectedProxyName)?.icon ?? '';
-      }),
+      proxyIconProvider(selectedProxyName),
     );
 
     return CommonCard(
@@ -356,11 +351,25 @@ class _GroupHeader extends ConsumerWidget {
                 onPressed: onScrollToSelected,
                 tooltip: 'Scroll to selected',
               ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.network_ping),
-                onPressed: () => _delayTest(context),
-                tooltip: 'Delay test',
+              AnimatedBuilder(
+                animation: delayTestCoordinator,
+                builder: (_, _) {
+                  final isTestingThisGroup = delayTestCoordinator
+                      .isTestingGroup(group.name);
+                  return IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: isTestingThisGroup
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.network_ping),
+                    onPressed: delayTestCoordinator.isTesting
+                        ? null
+                        : () => _delayTest(context),
+                    tooltip: appLocalizations.startTest,
+                  );
+                },
               ),
             ],
             IconButton.filledTonal(
@@ -372,18 +381,6 @@ class _GroupHeader extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _getIcon(ProxiesIconStyle style, Map<String, String> iconMap) {
-    if (style == ProxiesIconStyle.none) return '';
-    for (final entry in iconMap.entries) {
-      try {
-        if (RegExp(entry.key).hasMatch(group.name)) {
-          return entry.value;
-        }
-      } catch (_) {}
-    }
-    return group.icon;
   }
 
   Widget _buildIcon(BuildContext context, ProxiesIconStyle style, String icon) {
@@ -414,6 +411,6 @@ class _GroupHeader extends ConsumerWidget {
   }
 
   Future<void> _delayTest(BuildContext context) async {
-    await delayTest(group.all, group.testUrl);
+    await delayTest(group.all, testUrl: group.testUrl, groupName: group.name);
   }
 }

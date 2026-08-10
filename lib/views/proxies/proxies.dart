@@ -29,6 +29,9 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
   bool _isTab = false;
 
   List<Widget> _buildActions() {
+    final showHiddenItems = ref.watch(
+      proxiesStyleSettingProvider.select((state) => state.showHiddenItems),
+    );
     final (scriptOn, compatible) = ref.watch(
       scriptStateProvider.select(
         (s) => (s.currentId != null, s.currentScript?.isCompatibleWithBettbox ?? false),
@@ -129,6 +132,20 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
                   );
                 },
               ),
+            PopupMenuItemData(
+              icon: showHiddenItems
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              label: appLocalizations.showHiddenItems,
+              onPressed: () {
+                ref
+                    .read(proxiesStyleSettingProvider.notifier)
+                    .updateState(
+                      (state) =>
+                          state.copyWith(showHiddenItems: !showHiddenItems),
+                    );
+              },
+            ),
           ],
         ),
       ),
@@ -137,18 +154,26 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> {
 
   Widget? _buildFAB() {
     if (!_isTab) return null;
-    final isMobileView = ref.watch(isMobileViewProvider);
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: isMobileView
-            ? getFloatingBottomBarFABReserveHeight(context)
-            : 0,
-      ),
-      child: DelayTestButton(
-        onClick: () async {
-          await _proxiesTabKey.currentState?.delayTestCurrentGroup();
-        },
-      ),
+    return Consumer(
+      builder: (context, ref, _) {
+        final isMobileView = ref.watch(isMobileViewProvider);
+        final currentGroupName = ref.watch(
+          proxiesTabControllerStateProvider.select((state) => state.b),
+        );
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: isMobileView
+                ? getFloatingBottomBarFABReserveHeight(context)
+                : 0,
+          ),
+          child: DelayTestButton(
+            groupName: currentGroupName ?? '',
+            onClick: () async {
+              await _proxiesTabKey.currentState?.delayTestCurrentGroup();
+            },
+          ),
+        );
+      },
     );
   }
 

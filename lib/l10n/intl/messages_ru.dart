@@ -301,12 +301,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "customDashboardTitle": MessageLookupByLibrary.simpleMessage(
       "Пользовательский заголовок",
     ),
-    "customScriptOptions": MessageLookupByLibrary.simpleMessage(
-      "Пользовательские опции",
-    ),
+    "customScriptOptions": MessageLookupByLibrary.simpleMessage("Свои правила"),
     "customUrl": MessageLookupByLibrary.simpleMessage("Пользовательский URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Вырезать"),
     "dark": MessageLookupByLibrary.simpleMessage("Тёмная"),
+    "darkIcon": MessageLookupByLibrary.simpleMessage("Тёмная иконка"),
+    "darkIconDesc": MessageLookupByLibrary.simpleMessage(
+      "Переключить на тёмный стиль рабочего стола вручную",
+    ),
     "dashboard": MessageLookupByLibrary.simpleMessage("Обзор"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
@@ -394,13 +396,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "Изменить перенаправление",
     ),
     "emptyTip": m3,
-    "en": MessageLookupByLibrary.simpleMessage("Английский"),
     "enableCrashReport": MessageLookupByLibrary.simpleMessage("Анализ сбоев"),
     "enableCrashReportDesc": MessageLookupByLibrary.simpleMessage(
       "Отправка отчётов о сбоях при необходимости",
     ),
     "enableOverride": MessageLookupByLibrary.simpleMessage(
       "Включить переопределение",
+    ),
+    "enableTraySpeed": MessageLookupByLibrary.simpleMessage("Скорость сети"),
+    "enableTraySpeedDesc": MessageLookupByLibrary.simpleMessage(
+      "Отображение скорости отдачи и загрузки в строке меню",
     ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "Улучшенный NAT",
@@ -442,7 +447,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "externalResources": MessageLookupByLibrary.simpleMessage(
       "Внешние ресурсы",
     ),
-    "fa": MessageLookupByLibrary.simpleMessage("Персидский"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("Затухающий круг"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("Затухающие точки"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage(
@@ -605,13 +609,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
       "Разрешить входящие IPv6",
     ),
-    "ja": MessageLookupByLibrary.simpleMessage("Японский"),
     "just": MessageLookupByLibrary.simpleMessage("Только что"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "Интервал TCP keep-alive",
     ),
     "key": MessageLookupByLibrary.simpleMessage("Ключ"),
-    "ko": MessageLookupByLibrary.simpleMessage("Корейский"),
     "language": MessageLookupByLibrary.simpleMessage("Язык"),
     "layout": MessageLookupByLibrary.simpleMessage("Ширина"),
     "light": MessageLookupByLibrary.simpleMessage("Светлая"),
@@ -991,7 +993,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "retry": MessageLookupByLibrary.simpleMessage("Повторить"),
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("Вращающийся круг"),
-    "ru": MessageLookupByLibrary.simpleMessage("Русский"),
     "rule": MessageLookupByLibrary.simpleMessage("Правила"),
     "ruleName": MessageLookupByLibrary.simpleMessage("Имя правила"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("Провайдеры правил"),
@@ -1017,6 +1018,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Служба запущена"),
     "settings": MessageLookupByLibrary.simpleMessage("Настройки"),
     "show": MessageLookupByLibrary.simpleMessage("Показать"),
+    "showHiddenItems": MessageLookupByLibrary.simpleMessage("Показать скрытые"),
     "showStartSwitch": MessageLookupByLibrary.simpleMessage(
       "Связанный переключатель",
     ),
@@ -1247,7 +1249,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "Требуются права администратора",
     ),
     "years": m14,
-    "zh_CN": MessageLookupByLibrary.simpleMessage("Китайский (упрощённый)"),
-    "zh_TC": MessageLookupByLibrary.simpleMessage("Китайский (традиционный)"),
   };
 }

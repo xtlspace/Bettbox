@@ -56,31 +56,14 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
     return true;
   }
 
-  @override
-  void didUpdateWidget(covariant CommonTargetIcon oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.src != widget.src || oldWidget.size != widget.size) {
-      _file = null;
-      _cachedSrc = null;
-      _cachedSize = null;
-      _didSyncCheck = false;
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didSyncCheck) return;
-    _didSyncCheck = true;
-
-    // Bail out early — no-op for empty / base64 sources
+  void _syncCheckAndInit() {
     if (widget.src.isEmpty || widget.src.getBase64 != null) return;
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
     final cacheSize = (widget.size * devicePixelRatio).ceil();
     final key = _moduleCacheKey(cacheSize);
 
-    final cachedFile = _moduleFileCache[key];
+    final cachedFile = _moduleFileCache[key] ?? _findCachedFileForSrc(widget.src);
     final syncHit = cachedFile != null;
 
     if (syncHit) {
@@ -89,6 +72,38 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
       _file = cachedFile;
     }
     _init(cacheSize);
+  }
+
+  @override
+  void didUpdateWidget(covariant CommonTargetIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.src != widget.src || oldWidget.size != widget.size) {
+      _file = null;
+      _cachedSrc = null;
+      _cachedSize = null;
+      _didSyncCheck = true;
+      _syncCheckAndInit();
+    }
+  }
+
+  static File? _findCachedFileForSrc(String src) {
+    if (src.isSvg) {
+      return _moduleFileCache['svg|$src'];
+    }
+    for (final entry in _moduleFileCache.entries) {
+      if (entry.key.startsWith('bmp|$src|') && entry.value != null) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didSyncCheck) return;
+    _didSyncCheck = true;
+    _syncCheckAndInit();
   }
 
   /// Generate resized cache path
@@ -275,20 +290,7 @@ class _CommonTargetIconState extends State<CommonTargetIcon> {
       return;
     }
 
-    final displayFile = await _resizeAndCacheImage(file, cacheSize);
-    if (displayFile == null) {
-      await DefaultCacheManager().removeFile(widget.src);
-      _moduleFileCache[mKey] = null;
-      _moduleFailureCache.remove(mKey);
-      if (mounted) {
-        setState(() {
-          _file = null;
-          _cachedSrc = null;
-          _cachedSize = null;
-        });
-      }
-      return;
-    }
+    final displayFile = (await _resizeAndCacheImage(file, cacheSize)) ?? file;
     _moduleFileCache[mKey] = displayFile;
     _moduleFailureCache.remove(mKey);
     _ensureCacheLimit();

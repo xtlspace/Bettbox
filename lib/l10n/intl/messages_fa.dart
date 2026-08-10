@@ -101,7 +101,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "کلید خصوصی Age",
     ),
     "agePrivateKeyRequired": MessageLookupByLibrary.simpleMessage(
-      "لطفاً ابتدا کلید خصوصی معتبر Age را وارد کنید",
+      "لطفا ابتدا کلید خصوصی Age صحیح را وارد کنید",
     ),
     "agePublicKeyLabel": MessageLookupByLibrary.simpleMessage("کلید عمومی Age"),
     "ageSecretKeyInvalidValidationDesc": MessageLookupByLibrary.simpleMessage(
@@ -297,11 +297,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "عنوان سفارشی",
     ),
     "customScriptOptions": MessageLookupByLibrary.simpleMessage(
-      "تقسیم ترافیک سفارشی",
+      "قوانین سفارشی",
     ),
     "customUrl": MessageLookupByLibrary.simpleMessage("آدرس URL سفارشی"),
     "cut": MessageLookupByLibrary.simpleMessage("برش"),
     "dark": MessageLookupByLibrary.simpleMessage("تاریک"),
+    "darkIcon": MessageLookupByLibrary.simpleMessage("آیکون تاریک"),
+    "darkIconDesc": MessageLookupByLibrary.simpleMessage(
+      "تغییر آیکون برنامه به تم تاریک",
+    ),
     "dashboard": MessageLookupByLibrary.simpleMessage("داشبورد"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
@@ -385,12 +389,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "edit": MessageLookupByLibrary.simpleMessage("ویرایش"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("ویرایش هدایت"),
     "emptyTip": m3,
-    "en": MessageLookupByLibrary.simpleMessage("انگلیسی"),
     "enableCrashReport": MessageLookupByLibrary.simpleMessage("تحلیل خرابی‌ها"),
     "enableCrashReportDesc": MessageLookupByLibrary.simpleMessage(
       "ارسال گزارش خرابی در صورت لزوم",
     ),
     "enableOverride": MessageLookupByLibrary.simpleMessage("فعالسازی اورراید"),
+    "enableTraySpeed": MessageLookupByLibrary.simpleMessage("نمایش سرعت شبکه"),
+    "enableTraySpeedDesc": MessageLookupByLibrary.simpleMessage(
+      "نمایش سرعت آپلود و دانلود در نوار منو",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "ارتقای NAT",
     ),
@@ -431,7 +438,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "externalLink": MessageLookupByLibrary.simpleMessage("لینک خارجی"),
     "externalResources": MessageLookupByLibrary.simpleMessage("منابع خارجی"),
-    "fa": MessageLookupByLibrary.simpleMessage("فارسی"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("حلقه محوشونده"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("چهار دایره محوشونده"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage(
@@ -590,13 +596,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
       "ورودی IPv6 مجاز باشد",
     ),
-    "ja": MessageLookupByLibrary.simpleMessage("ژاپنی"),
     "just": MessageLookupByLibrary.simpleMessage("همین الان"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "فاصله زمانی TCP Keep-Alive",
     ),
     "key": MessageLookupByLibrary.simpleMessage("کلید"),
-    "ko": MessageLookupByLibrary.simpleMessage("کره‌ای"),
     "language": MessageLookupByLibrary.simpleMessage("زبان"),
     "layout": MessageLookupByLibrary.simpleMessage("چیدمان"),
     "light": MessageLookupByLibrary.simpleMessage("روشن"),
@@ -604,7 +608,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lightIconDesc": MessageLookupByLibrary.simpleMessage(
       "تغییر آیکون برنامه به تم روشن",
     ),
-    "lineWrap": MessageLookupByLibrary.simpleMessage("شکستن خودکار خطوط"),
+    "lineWrap": MessageLookupByLibrary.simpleMessage("شکستن خطوط"),
     "list": MessageLookupByLibrary.simpleMessage("فهرست"),
     "listen": MessageLookupByLibrary.simpleMessage("شنود"),
     "local": MessageLookupByLibrary.simpleMessage("محلی"),
@@ -996,7 +1000,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "retry": MessageLookupByLibrary.simpleMessage("تلاش مجدد"),
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("چرخش تک‌دایره"),
-    "ru": MessageLookupByLibrary.simpleMessage("روسی"),
     "rule": MessageLookupByLibrary.simpleMessage("قوانین"),
     "ruleName": MessageLookupByLibrary.simpleMessage("نام قانون"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage(
@@ -1030,6 +1033,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "settings": MessageLookupByLibrary.simpleMessage("تنظیمات"),
     "show": MessageLookupByLibrary.simpleMessage("نمایش"),
+    "showHiddenItems": MessageLookupByLibrary.simpleMessage(
+      "نمایش موارد پنهان",
+    ),
     "showStartSwitch": MessageLookupByLibrary.simpleMessage("دکمه کلید سوئیچ"),
     "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
       "نمایش دکمه مستقل روشن/خاموش در صفحه اصلی",
@@ -1244,7 +1250,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "نیازمند دسترسی مدیریت (Admin)",
     ),
     "years": m14,
-    "zh_CN": MessageLookupByLibrary.simpleMessage("چینی ساده‌شده"),
-    "zh_TC": MessageLookupByLibrary.simpleMessage("چینی سنتی"),
   };
 }

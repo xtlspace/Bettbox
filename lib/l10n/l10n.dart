@@ -529,6 +529,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Network Speed`
+  String get enableTraySpeed {
+    return Intl.message(
+      'Network Speed',
+      name: 'enableTraySpeed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Display upload and download rates in the menu bar`
+  String get enableTraySpeedDesc {
+    return Intl.message(
+      'Display upload and download rates in the menu bar',
+      name: 'enableTraySpeedDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Exclude China`
   String get excludeChina {
     return Intl.message(
@@ -657,51 +677,6 @@ class AppLocalizations {
   /// `About`
   String get about {
     return Intl.message('About', name: 'about', desc: '', args: []);
-  }
-
-  /// `English`
-  String get en {
-    return Intl.message('English', name: 'en', desc: '', args: []);
-  }
-
-  /// `Persian`
-  String get fa {
-    return Intl.message('Persian', name: 'fa', desc: '', args: []);
-  }
-
-  /// `Japanese`
-  String get ja {
-    return Intl.message('Japanese', name: 'ja', desc: '', args: []);
-  }
-
-  /// `Korean`
-  String get ko {
-    return Intl.message('Korean', name: 'ko', desc: '', args: []);
-  }
-
-  /// `Russian`
-  String get ru {
-    return Intl.message('Russian', name: 'ru', desc: '', args: []);
-  }
-
-  /// `Simplified Chinese`
-  String get zh_CN {
-    return Intl.message(
-      'Simplified Chinese',
-      name: 'zh_CN',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Traditional Chinese`
-  String get zh_TC {
-    return Intl.message(
-      'Traditional Chinese',
-      name: 'zh_TC',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `Theme`
@@ -4734,6 +4709,21 @@ class AppLocalizations {
     );
   }
 
+  /// `Dark Icon`
+  String get darkIcon {
+    return Intl.message('Dark Icon', name: 'darkIcon', desc: '', args: []);
+  }
+
+  /// `Manually switch dark desktop app icon`
+  String get darkIconDesc {
+    return Intl.message(
+      'Manually switch dark desktop app icon',
+      name: 'darkIconDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Light Icon`
   String get lightIcon {
     return Intl.message('Light Icon', name: 'lightIcon', desc: '', args: []);
@@ -5184,10 +5174,10 @@ class AppLocalizations {
     return Intl.message('Custom', name: 'custom', desc: '', args: []);
   }
 
-  /// `Custom Options`
+  /// `Custom Rule Switch`
   String get customScriptOptions {
     return Intl.message(
-      'Custom Options',
+      'Custom Rule Switch',
       name: 'customScriptOptions',
       desc: '',
       args: [],
@@ -5392,6 +5382,16 @@ class AppLocalizations {
   /// `Wrap Lines`
   String get lineWrap {
     return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
+  }
+
+  /// `Show Hidden Items`
+  String get showHiddenItems {
+    return Intl.message(
+      'Show Hidden Items',
+      name: 'showHiddenItems',
+      desc: '',
+      args: [],
+    );
   }
 }
 

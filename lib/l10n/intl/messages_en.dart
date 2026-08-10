@@ -301,11 +301,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "Custom Dashboard Title",
     ),
     "customScriptOptions": MessageLookupByLibrary.simpleMessage(
-      "Custom Options",
+      "Custom Rule Switch",
     ),
     "customUrl": MessageLookupByLibrary.simpleMessage("Custom URL"),
     "cut": MessageLookupByLibrary.simpleMessage("Cut"),
     "dark": MessageLookupByLibrary.simpleMessage("Dark"),
+    "darkIcon": MessageLookupByLibrary.simpleMessage("Dark Icon"),
+    "darkIconDesc": MessageLookupByLibrary.simpleMessage(
+      "Manually switch dark desktop app icon",
+    ),
     "dashboard": MessageLookupByLibrary.simpleMessage("Dash"),
     "days": m0,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
@@ -391,7 +395,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
     "editTunnel": MessageLookupByLibrary.simpleMessage("Edit Forwarding"),
     "emptyTip": m3,
-    "en": MessageLookupByLibrary.simpleMessage("English"),
     "enableCrashReport": MessageLookupByLibrary.simpleMessage(
       "Crash Analytics",
     ),
@@ -399,6 +402,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Upload crash logs when needed",
     ),
     "enableOverride": MessageLookupByLibrary.simpleMessage("Enable Override"),
+    "enableTraySpeed": MessageLookupByLibrary.simpleMessage("Network Speed"),
+    "enableTraySpeedDesc": MessageLookupByLibrary.simpleMessage(
+      "Display upload and download rates in the menu bar",
+    ),
     "endpointIndependentNat": MessageLookupByLibrary.simpleMessage(
       "NAT Enhancement",
     ),
@@ -439,7 +446,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "externalResources": MessageLookupByLibrary.simpleMessage(
       "External Resources",
     ),
-    "fa": MessageLookupByLibrary.simpleMessage("Persian"),
     "fadingCircle": MessageLookupByLibrary.simpleMessage("Fading Circle"),
     "fadingFour": MessageLookupByLibrary.simpleMessage("Fading Four"),
     "fakeIpFilterMode": MessageLookupByLibrary.simpleMessage(
@@ -594,13 +600,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ipv6InboundDesc": MessageLookupByLibrary.simpleMessage(
       "Allow IPv6 inbound",
     ),
-    "ja": MessageLookupByLibrary.simpleMessage("Japanese"),
     "just": MessageLookupByLibrary.simpleMessage("Just now"),
     "keepAliveIntervalDesc": MessageLookupByLibrary.simpleMessage(
       "TCP keep-alive interval",
     ),
     "key": MessageLookupByLibrary.simpleMessage("Key"),
-    "ko": MessageLookupByLibrary.simpleMessage("Korean"),
     "language": MessageLookupByLibrary.simpleMessage("Language"),
     "layout": MessageLookupByLibrary.simpleMessage("Layout"),
     "light": MessageLookupByLibrary.simpleMessage("Light"),
@@ -974,7 +978,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "retry": MessageLookupByLibrary.simpleMessage("Retry"),
     "rotatingCircle": MessageLookupByLibrary.simpleMessage("Rotating Circle"),
-    "ru": MessageLookupByLibrary.simpleMessage("Russian"),
     "rule": MessageLookupByLibrary.simpleMessage("Rule"),
     "ruleName": MessageLookupByLibrary.simpleMessage("Rule Name"),
     "ruleProviders": MessageLookupByLibrary.simpleMessage("Rule Providers"),
@@ -1002,6 +1005,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "serviceRunning": MessageLookupByLibrary.simpleMessage("Service Running"),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
+    "showHiddenItems": MessageLookupByLibrary.simpleMessage(
+      "Show Hidden Items",
+    ),
     "showStartSwitch": MessageLookupByLibrary.simpleMessage("Linkage Switch"),
     "showStartSwitchDesc": MessageLookupByLibrary.simpleMessage(
       "Display independent switch button on the homepage",
@@ -1208,7 +1214,5 @@ class MessageLookup extends MessageLookupByLibrary {
       "Requires administrator privileges",
     ),
     "years": m14,
-    "zh_CN": MessageLookupByLibrary.simpleMessage("Simplified Chinese"),
-    "zh_TC": MessageLookupByLibrary.simpleMessage("Traditional Chinese"),
   };
 }

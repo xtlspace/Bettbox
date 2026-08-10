@@ -126,8 +126,12 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
         options.accessControl.takeIf { it.enable }?.let { ac ->
             when (ac.mode) {
-                AccessControlMode.acceptSelected -> (ac.acceptList + packageName).forEach { addAllowedApplication(it) }
-                AccessControlMode.rejectSelected -> (ac.rejectList - packageName).forEach { addDisallowedApplication(it) }
+                AccessControlMode.acceptSelected -> (ac.acceptList + packageName).forEach {
+                    runCatching { addAllowedApplication(it) }
+                }
+                AccessControlMode.rejectSelected -> (ac.rejectList - packageName).forEach {
+                    runCatching { addDisallowedApplication(it) }
+                }
             }
         }
 

@@ -930,7 +930,7 @@ as bool,
 /// @nodoc
 mixin _$VpnProps {
 
- bool get enable; bool get systemProxy; bool get allowBypass; bool get bypassPrivateRoute; bool get dozeSuspend; bool get smartAutoStop; String get smartAutoStopNetworks; bool get storeFix; bool get networkFix; bool get disableQuic; bool get networkSpeedNotification; bool get excludeChina; bool get trayEnhancement; bool get alwaysShowTitleBar; bool get quickResponse; AccessControl get accessControl;
+ bool get enable; bool get systemProxy; bool get allowBypass; bool get bypassPrivateRoute; bool get dozeSuspend; bool get smartAutoStop; String get smartAutoStopNetworks; bool get storeFix; bool get networkFix; bool get disableQuic; bool get networkSpeedNotification; bool get excludeChina; bool get trayEnhancement; bool get enableTraySpeed; bool get alwaysShowTitleBar; bool get quickResponse; AccessControl get accessControl;
 /// Create a copy of VpnProps
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -943,16 +943,16 @@ $VpnPropsCopyWith<VpnProps> get copyWith => _$VpnPropsCopyWithImpl<VpnProps>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VpnProps&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.bypassPrivateRoute, bypassPrivateRoute) || other.bypassPrivateRoute == bypassPrivateRoute)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.smartAutoStop, smartAutoStop) || other.smartAutoStop == smartAutoStop)&&(identical(other.smartAutoStopNetworks, smartAutoStopNetworks) || other.smartAutoStopNetworks == smartAutoStopNetworks)&&(identical(other.storeFix, storeFix) || other.storeFix == storeFix)&&(identical(other.networkFix, networkFix) || other.networkFix == networkFix)&&(identical(other.disableQuic, disableQuic) || other.disableQuic == disableQuic)&&(identical(other.networkSpeedNotification, networkSpeedNotification) || other.networkSpeedNotification == networkSpeedNotification)&&(identical(other.excludeChina, excludeChina) || other.excludeChina == excludeChina)&&(identical(other.trayEnhancement, trayEnhancement) || other.trayEnhancement == trayEnhancement)&&(identical(other.alwaysShowTitleBar, alwaysShowTitleBar) || other.alwaysShowTitleBar == alwaysShowTitleBar)&&(identical(other.quickResponse, quickResponse) || other.quickResponse == quickResponse)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VpnProps&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.bypassPrivateRoute, bypassPrivateRoute) || other.bypassPrivateRoute == bypassPrivateRoute)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.smartAutoStop, smartAutoStop) || other.smartAutoStop == smartAutoStop)&&(identical(other.smartAutoStopNetworks, smartAutoStopNetworks) || other.smartAutoStopNetworks == smartAutoStopNetworks)&&(identical(other.storeFix, storeFix) || other.storeFix == storeFix)&&(identical(other.networkFix, networkFix) || other.networkFix == networkFix)&&(identical(other.disableQuic, disableQuic) || other.disableQuic == disableQuic)&&(identical(other.networkSpeedNotification, networkSpeedNotification) || other.networkSpeedNotification == networkSpeedNotification)&&(identical(other.excludeChina, excludeChina) || other.excludeChina == excludeChina)&&(identical(other.trayEnhancement, trayEnhancement) || other.trayEnhancement == trayEnhancement)&&(identical(other.enableTraySpeed, enableTraySpeed) || other.enableTraySpeed == enableTraySpeed)&&(identical(other.alwaysShowTitleBar, alwaysShowTitleBar) || other.alwaysShowTitleBar == alwaysShowTitleBar)&&(identical(other.quickResponse, quickResponse) || other.quickResponse == quickResponse)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,systemProxy,allowBypass,bypassPrivateRoute,dozeSuspend,smartAutoStop,smartAutoStopNetworks,storeFix,networkFix,disableQuic,networkSpeedNotification,excludeChina,trayEnhancement,alwaysShowTitleBar,quickResponse,accessControl);
+int get hashCode => Object.hash(runtimeType,enable,systemProxy,allowBypass,bypassPrivateRoute,dozeSuspend,smartAutoStop,smartAutoStopNetworks,storeFix,networkFix,disableQuic,networkSpeedNotification,excludeChina,trayEnhancement,enableTraySpeed,alwaysShowTitleBar,quickResponse,accessControl);
 
 @override
 String toString() {
-  return 'VpnProps(enable: $enable, systemProxy: $systemProxy, allowBypass: $allowBypass, bypassPrivateRoute: $bypassPrivateRoute, dozeSuspend: $dozeSuspend, smartAutoStop: $smartAutoStop, smartAutoStopNetworks: $smartAutoStopNetworks, storeFix: $storeFix, networkFix: $networkFix, disableQuic: $disableQuic, networkSpeedNotification: $networkSpeedNotification, excludeChina: $excludeChina, trayEnhancement: $trayEnhancement, alwaysShowTitleBar: $alwaysShowTitleBar, quickResponse: $quickResponse, accessControl: $accessControl)';
+  return 'VpnProps(enable: $enable, systemProxy: $systemProxy, allowBypass: $allowBypass, bypassPrivateRoute: $bypassPrivateRoute, dozeSuspend: $dozeSuspend, smartAutoStop: $smartAutoStop, smartAutoStopNetworks: $smartAutoStopNetworks, storeFix: $storeFix, networkFix: $networkFix, disableQuic: $disableQuic, networkSpeedNotification: $networkSpeedNotification, excludeChina: $excludeChina, trayEnhancement: $trayEnhancement, enableTraySpeed: $enableTraySpeed, alwaysShowTitleBar: $alwaysShowTitleBar, quickResponse: $quickResponse, accessControl: $accessControl)';
 }
 
 
@@ -963,7 +963,7 @@ abstract mixin class $VpnPropsCopyWith<$Res>  {
   factory $VpnPropsCopyWith(VpnProps value, $Res Function(VpnProps) _then) = _$VpnPropsCopyWithImpl;
 @useResult
 $Res call({
- bool enable, bool systemProxy, bool allowBypass, bool bypassPrivateRoute, bool dozeSuspend, bool smartAutoStop, String smartAutoStopNetworks, bool storeFix, bool networkFix, bool disableQuic, bool networkSpeedNotification, bool excludeChina, bool trayEnhancement, bool alwaysShowTitleBar, bool quickResponse, AccessControl accessControl
+ bool enable, bool systemProxy, bool allowBypass, bool bypassPrivateRoute, bool dozeSuspend, bool smartAutoStop, String smartAutoStopNetworks, bool storeFix, bool networkFix, bool disableQuic, bool networkSpeedNotification, bool excludeChina, bool trayEnhancement, bool enableTraySpeed, bool alwaysShowTitleBar, bool quickResponse, AccessControl accessControl
 });
 
 
@@ -980,7 +980,7 @@ class _$VpnPropsCopyWithImpl<$Res>
 
 /// Create a copy of VpnProps
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? systemProxy = null,Object? allowBypass = null,Object? bypassPrivateRoute = null,Object? dozeSuspend = null,Object? smartAutoStop = null,Object? smartAutoStopNetworks = null,Object? storeFix = null,Object? networkFix = null,Object? disableQuic = null,Object? networkSpeedNotification = null,Object? excludeChina = null,Object? trayEnhancement = null,Object? alwaysShowTitleBar = null,Object? quickResponse = null,Object? accessControl = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? enable = null,Object? systemProxy = null,Object? allowBypass = null,Object? bypassPrivateRoute = null,Object? dozeSuspend = null,Object? smartAutoStop = null,Object? smartAutoStopNetworks = null,Object? storeFix = null,Object? networkFix = null,Object? disableQuic = null,Object? networkSpeedNotification = null,Object? excludeChina = null,Object? trayEnhancement = null,Object? enableTraySpeed = null,Object? alwaysShowTitleBar = null,Object? quickResponse = null,Object? accessControl = null,}) {
   return _then(_self.copyWith(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,systemProxy: null == systemProxy ? _self.systemProxy : systemProxy // ignore: cast_nullable_to_non_nullable
@@ -995,6 +995,7 @@ as bool,disableQuic: null == disableQuic ? _self.disableQuic : disableQuic // ig
 as bool,networkSpeedNotification: null == networkSpeedNotification ? _self.networkSpeedNotification : networkSpeedNotification // ignore: cast_nullable_to_non_nullable
 as bool,excludeChina: null == excludeChina ? _self.excludeChina : excludeChina // ignore: cast_nullable_to_non_nullable
 as bool,trayEnhancement: null == trayEnhancement ? _self.trayEnhancement : trayEnhancement // ignore: cast_nullable_to_non_nullable
+as bool,enableTraySpeed: null == enableTraySpeed ? _self.enableTraySpeed : enableTraySpeed // ignore: cast_nullable_to_non_nullable
 as bool,alwaysShowTitleBar: null == alwaysShowTitleBar ? _self.alwaysShowTitleBar : alwaysShowTitleBar // ignore: cast_nullable_to_non_nullable
 as bool,quickResponse: null == quickResponse ? _self.quickResponse : quickResponse // ignore: cast_nullable_to_non_nullable
 as bool,accessControl: null == accessControl ? _self.accessControl : accessControl // ignore: cast_nullable_to_non_nullable
@@ -1092,10 +1093,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool enableTraySpeed,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _VpnProps() when $default != null:
-return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
+return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.enableTraySpeed,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
   return orElse();
 
 }
@@ -1113,10 +1114,10 @@ return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPri
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool enableTraySpeed,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)  $default,) {final _that = this;
 switch (_that) {
 case _VpnProps():
-return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
+return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.enableTraySpeed,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1133,10 +1134,10 @@ return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPri
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool enable,  bool systemProxy,  bool allowBypass,  bool bypassPrivateRoute,  bool dozeSuspend,  bool smartAutoStop,  String smartAutoStopNetworks,  bool storeFix,  bool networkFix,  bool disableQuic,  bool networkSpeedNotification,  bool excludeChina,  bool trayEnhancement,  bool enableTraySpeed,  bool alwaysShowTitleBar,  bool quickResponse,  AccessControl accessControl)?  $default,) {final _that = this;
 switch (_that) {
 case _VpnProps() when $default != null:
-return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
+return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPrivateRoute,_that.dozeSuspend,_that.smartAutoStop,_that.smartAutoStopNetworks,_that.storeFix,_that.networkFix,_that.disableQuic,_that.networkSpeedNotification,_that.excludeChina,_that.trayEnhancement,_that.enableTraySpeed,_that.alwaysShowTitleBar,_that.quickResponse,_that.accessControl);case _:
   return null;
 
 }
@@ -1148,7 +1149,7 @@ return $default(_that.enable,_that.systemProxy,_that.allowBypass,_that.bypassPri
 @JsonSerializable()
 
 class _VpnProps implements VpnProps {
-  const _VpnProps({this.enable = true, this.systemProxy = false, this.allowBypass = false, this.bypassPrivateRoute = true, this.dozeSuspend = true, this.smartAutoStop = false, this.smartAutoStopNetworks = '', this.storeFix = false, this.networkFix = false, this.disableQuic = false, this.networkSpeedNotification = false, this.excludeChina = false, this.trayEnhancement = false, this.alwaysShowTitleBar = true, this.quickResponse = true, this.accessControl = defaultAccessControl});
+  const _VpnProps({this.enable = true, this.systemProxy = false, this.allowBypass = false, this.bypassPrivateRoute = true, this.dozeSuspend = true, this.smartAutoStop = false, this.smartAutoStopNetworks = '', this.storeFix = false, this.networkFix = false, this.disableQuic = false, this.networkSpeedNotification = false, this.excludeChina = false, this.trayEnhancement = false, this.enableTraySpeed = false, this.alwaysShowTitleBar = true, this.quickResponse = true, this.accessControl = defaultAccessControl});
   factory _VpnProps.fromJson(Map<String, dynamic> json) => _$VpnPropsFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -1164,6 +1165,7 @@ class _VpnProps implements VpnProps {
 @override@JsonKey() final  bool networkSpeedNotification;
 @override@JsonKey() final  bool excludeChina;
 @override@JsonKey() final  bool trayEnhancement;
+@override@JsonKey() final  bool enableTraySpeed;
 @override@JsonKey() final  bool alwaysShowTitleBar;
 @override@JsonKey() final  bool quickResponse;
 @override@JsonKey() final  AccessControl accessControl;
@@ -1181,16 +1183,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VpnProps&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.bypassPrivateRoute, bypassPrivateRoute) || other.bypassPrivateRoute == bypassPrivateRoute)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.smartAutoStop, smartAutoStop) || other.smartAutoStop == smartAutoStop)&&(identical(other.smartAutoStopNetworks, smartAutoStopNetworks) || other.smartAutoStopNetworks == smartAutoStopNetworks)&&(identical(other.storeFix, storeFix) || other.storeFix == storeFix)&&(identical(other.networkFix, networkFix) || other.networkFix == networkFix)&&(identical(other.disableQuic, disableQuic) || other.disableQuic == disableQuic)&&(identical(other.networkSpeedNotification, networkSpeedNotification) || other.networkSpeedNotification == networkSpeedNotification)&&(identical(other.excludeChina, excludeChina) || other.excludeChina == excludeChina)&&(identical(other.trayEnhancement, trayEnhancement) || other.trayEnhancement == trayEnhancement)&&(identical(other.alwaysShowTitleBar, alwaysShowTitleBar) || other.alwaysShowTitleBar == alwaysShowTitleBar)&&(identical(other.quickResponse, quickResponse) || other.quickResponse == quickResponse)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VpnProps&&(identical(other.enable, enable) || other.enable == enable)&&(identical(other.systemProxy, systemProxy) || other.systemProxy == systemProxy)&&(identical(other.allowBypass, allowBypass) || other.allowBypass == allowBypass)&&(identical(other.bypassPrivateRoute, bypassPrivateRoute) || other.bypassPrivateRoute == bypassPrivateRoute)&&(identical(other.dozeSuspend, dozeSuspend) || other.dozeSuspend == dozeSuspend)&&(identical(other.smartAutoStop, smartAutoStop) || other.smartAutoStop == smartAutoStop)&&(identical(other.smartAutoStopNetworks, smartAutoStopNetworks) || other.smartAutoStopNetworks == smartAutoStopNetworks)&&(identical(other.storeFix, storeFix) || other.storeFix == storeFix)&&(identical(other.networkFix, networkFix) || other.networkFix == networkFix)&&(identical(other.disableQuic, disableQuic) || other.disableQuic == disableQuic)&&(identical(other.networkSpeedNotification, networkSpeedNotification) || other.networkSpeedNotification == networkSpeedNotification)&&(identical(other.excludeChina, excludeChina) || other.excludeChina == excludeChina)&&(identical(other.trayEnhancement, trayEnhancement) || other.trayEnhancement == trayEnhancement)&&(identical(other.enableTraySpeed, enableTraySpeed) || other.enableTraySpeed == enableTraySpeed)&&(identical(other.alwaysShowTitleBar, alwaysShowTitleBar) || other.alwaysShowTitleBar == alwaysShowTitleBar)&&(identical(other.quickResponse, quickResponse) || other.quickResponse == quickResponse)&&(identical(other.accessControl, accessControl) || other.accessControl == accessControl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,enable,systemProxy,allowBypass,bypassPrivateRoute,dozeSuspend,smartAutoStop,smartAutoStopNetworks,storeFix,networkFix,disableQuic,networkSpeedNotification,excludeChina,trayEnhancement,alwaysShowTitleBar,quickResponse,accessControl);
+int get hashCode => Object.hash(runtimeType,enable,systemProxy,allowBypass,bypassPrivateRoute,dozeSuspend,smartAutoStop,smartAutoStopNetworks,storeFix,networkFix,disableQuic,networkSpeedNotification,excludeChina,trayEnhancement,enableTraySpeed,alwaysShowTitleBar,quickResponse,accessControl);
 
 @override
 String toString() {
-  return 'VpnProps(enable: $enable, systemProxy: $systemProxy, allowBypass: $allowBypass, bypassPrivateRoute: $bypassPrivateRoute, dozeSuspend: $dozeSuspend, smartAutoStop: $smartAutoStop, smartAutoStopNetworks: $smartAutoStopNetworks, storeFix: $storeFix, networkFix: $networkFix, disableQuic: $disableQuic, networkSpeedNotification: $networkSpeedNotification, excludeChina: $excludeChina, trayEnhancement: $trayEnhancement, alwaysShowTitleBar: $alwaysShowTitleBar, quickResponse: $quickResponse, accessControl: $accessControl)';
+  return 'VpnProps(enable: $enable, systemProxy: $systemProxy, allowBypass: $allowBypass, bypassPrivateRoute: $bypassPrivateRoute, dozeSuspend: $dozeSuspend, smartAutoStop: $smartAutoStop, smartAutoStopNetworks: $smartAutoStopNetworks, storeFix: $storeFix, networkFix: $networkFix, disableQuic: $disableQuic, networkSpeedNotification: $networkSpeedNotification, excludeChina: $excludeChina, trayEnhancement: $trayEnhancement, enableTraySpeed: $enableTraySpeed, alwaysShowTitleBar: $alwaysShowTitleBar, quickResponse: $quickResponse, accessControl: $accessControl)';
 }
 
 
@@ -1201,7 +1203,7 @@ abstract mixin class _$VpnPropsCopyWith<$Res> implements $VpnPropsCopyWith<$Res>
   factory _$VpnPropsCopyWith(_VpnProps value, $Res Function(_VpnProps) _then) = __$VpnPropsCopyWithImpl;
 @override @useResult
 $Res call({
- bool enable, bool systemProxy, bool allowBypass, bool bypassPrivateRoute, bool dozeSuspend, bool smartAutoStop, String smartAutoStopNetworks, bool storeFix, bool networkFix, bool disableQuic, bool networkSpeedNotification, bool excludeChina, bool trayEnhancement, bool alwaysShowTitleBar, bool quickResponse, AccessControl accessControl
+ bool enable, bool systemProxy, bool allowBypass, bool bypassPrivateRoute, bool dozeSuspend, bool smartAutoStop, String smartAutoStopNetworks, bool storeFix, bool networkFix, bool disableQuic, bool networkSpeedNotification, bool excludeChina, bool trayEnhancement, bool enableTraySpeed, bool alwaysShowTitleBar, bool quickResponse, AccessControl accessControl
 });
 
 
@@ -1218,7 +1220,7 @@ class __$VpnPropsCopyWithImpl<$Res>
 
 /// Create a copy of VpnProps
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? systemProxy = null,Object? allowBypass = null,Object? bypassPrivateRoute = null,Object? dozeSuspend = null,Object? smartAutoStop = null,Object? smartAutoStopNetworks = null,Object? storeFix = null,Object? networkFix = null,Object? disableQuic = null,Object? networkSpeedNotification = null,Object? excludeChina = null,Object? trayEnhancement = null,Object? alwaysShowTitleBar = null,Object? quickResponse = null,Object? accessControl = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? enable = null,Object? systemProxy = null,Object? allowBypass = null,Object? bypassPrivateRoute = null,Object? dozeSuspend = null,Object? smartAutoStop = null,Object? smartAutoStopNetworks = null,Object? storeFix = null,Object? networkFix = null,Object? disableQuic = null,Object? networkSpeedNotification = null,Object? excludeChina = null,Object? trayEnhancement = null,Object? enableTraySpeed = null,Object? alwaysShowTitleBar = null,Object? quickResponse = null,Object? accessControl = null,}) {
   return _then(_VpnProps(
 enable: null == enable ? _self.enable : enable // ignore: cast_nullable_to_non_nullable
 as bool,systemProxy: null == systemProxy ? _self.systemProxy : systemProxy // ignore: cast_nullable_to_non_nullable
@@ -1233,6 +1235,7 @@ as bool,disableQuic: null == disableQuic ? _self.disableQuic : disableQuic // ig
 as bool,networkSpeedNotification: null == networkSpeedNotification ? _self.networkSpeedNotification : networkSpeedNotification // ignore: cast_nullable_to_non_nullable
 as bool,excludeChina: null == excludeChina ? _self.excludeChina : excludeChina // ignore: cast_nullable_to_non_nullable
 as bool,trayEnhancement: null == trayEnhancement ? _self.trayEnhancement : trayEnhancement // ignore: cast_nullable_to_non_nullable
+as bool,enableTraySpeed: null == enableTraySpeed ? _self.enableTraySpeed : enableTraySpeed // ignore: cast_nullable_to_non_nullable
 as bool,alwaysShowTitleBar: null == alwaysShowTitleBar ? _self.alwaysShowTitleBar : alwaysShowTitleBar // ignore: cast_nullable_to_non_nullable
 as bool,quickResponse: null == quickResponse ? _self.quickResponse : quickResponse // ignore: cast_nullable_to_non_nullable
 as bool,accessControl: null == accessControl ? _self.accessControl : accessControl // ignore: cast_nullable_to_non_nullable
@@ -1534,7 +1537,7 @@ as bool,
 /// @nodoc
 mixin _$ProxiesStyle {
 
- ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; Map<String, String> get iconMap; int get concurrencyLimit;
+ ProxiesType get type; ProxiesSortType get sortType; ProxiesLayout get layout; ProxiesIconStyle get iconStyle; ProxyCardType get cardType; DelayAnimationType get delayAnimation; Map<String, String> get iconMap; int get concurrencyLimit; bool get showHiddenItems;
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1547,16 +1550,16 @@ $ProxiesStyleCopyWith<ProxiesStyle> get copyWith => _$ProxiesStyleCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other.iconMap, iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(iconMap),concurrencyLimit);
+int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(iconMap),concurrencyLimit,showHiddenItems);
 
 @override
 String toString() {
-  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit)';
+  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit, showHiddenItems: $showHiddenItems)';
 }
 
 
@@ -1567,7 +1570,7 @@ abstract mixin class $ProxiesStyleCopyWith<$Res>  {
   factory $ProxiesStyleCopyWith(ProxiesStyle value, $Res Function(ProxiesStyle) _then) = _$ProxiesStyleCopyWithImpl;
 @useResult
 $Res call({
- ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit
+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems
 });
 
 
@@ -1584,7 +1587,7 @@ class _$ProxiesStyleCopyWithImpl<$Res>
 
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,}) {
   return _then(_self.copyWith(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -1594,7 +1597,8 @@ as ProxiesIconStyle,cardType: null == cardType ? _self.cardType : cardType // ig
 as ProxyCardType,delayAnimation: null == delayAnimation ? _self.delayAnimation : delayAnimation // ignore: cast_nullable_to_non_nullable
 as DelayAnimationType,iconMap: null == iconMap ? _self.iconMap : iconMap // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,concurrencyLimit: null == concurrencyLimit ? _self.concurrencyLimit : concurrencyLimit // ignore: cast_nullable_to_non_nullable
-as int,
+as int,showHiddenItems: null == showHiddenItems ? _self.showHiddenItems : showHiddenItems // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -1679,10 +1683,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProxiesStyle() when $default != null:
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems);case _:
   return orElse();
 
 }
@@ -1700,10 +1704,10 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems)  $default,) {final _that = this;
 switch (_that) {
 case _ProxiesStyle():
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1720,10 +1724,10 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ProxiesType type,  ProxiesSortType sortType,  ProxiesLayout layout,  ProxiesIconStyle iconStyle,  ProxyCardType cardType,  DelayAnimationType delayAnimation,  Map<String, String> iconMap,  int concurrencyLimit,  bool showHiddenItems)?  $default,) {final _that = this;
 switch (_that) {
 case _ProxiesStyle() when $default != null:
-return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit);case _:
+return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.cardType,_that.delayAnimation,_that.iconMap,_that.concurrencyLimit,_that.showHiddenItems);case _:
   return null;
 
 }
@@ -1735,7 +1739,7 @@ return $default(_that.type,_that.sortType,_that.layout,_that.iconStyle,_that.car
 @JsonSerializable()
 
 class _ProxiesStyle implements ProxiesStyle {
-  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none, final  Map<String, String> iconMap = const {}, this.concurrencyLimit = 250}): _iconMap = iconMap;
+  const _ProxiesStyle({this.type = ProxiesType.tab, this.sortType = ProxiesSortType.none, this.layout = ProxiesLayout.standard, this.iconStyle = ProxiesIconStyle.none, this.cardType = ProxyCardType.shrink, this.delayAnimation = DelayAnimationType.none, final  Map<String, String> iconMap = const {}, this.concurrencyLimit = 250, this.showHiddenItems = false}): _iconMap = iconMap;
   factory _ProxiesStyle.fromJson(Map<String, dynamic> json) => _$ProxiesStyleFromJson(json);
 
 @override@JsonKey() final  ProxiesType type;
@@ -1752,6 +1756,7 @@ class _ProxiesStyle implements ProxiesStyle {
 }
 
 @override@JsonKey() final  int concurrencyLimit;
+@override@JsonKey() final  bool showHiddenItems;
 
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
@@ -1766,16 +1771,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other._iconMap, _iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProxiesStyle&&(identical(other.type, type) || other.type == type)&&(identical(other.sortType, sortType) || other.sortType == sortType)&&(identical(other.layout, layout) || other.layout == layout)&&(identical(other.iconStyle, iconStyle) || other.iconStyle == iconStyle)&&(identical(other.cardType, cardType) || other.cardType == cardType)&&(identical(other.delayAnimation, delayAnimation) || other.delayAnimation == delayAnimation)&&const DeepCollectionEquality().equals(other._iconMap, _iconMap)&&(identical(other.concurrencyLimit, concurrencyLimit) || other.concurrencyLimit == concurrencyLimit)&&(identical(other.showHiddenItems, showHiddenItems) || other.showHiddenItems == showHiddenItems));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(_iconMap),concurrencyLimit);
+int get hashCode => Object.hash(runtimeType,type,sortType,layout,iconStyle,cardType,delayAnimation,const DeepCollectionEquality().hash(_iconMap),concurrencyLimit,showHiddenItems);
 
 @override
 String toString() {
-  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit)';
+  return 'ProxiesStyle(type: $type, sortType: $sortType, layout: $layout, iconStyle: $iconStyle, cardType: $cardType, delayAnimation: $delayAnimation, iconMap: $iconMap, concurrencyLimit: $concurrencyLimit, showHiddenItems: $showHiddenItems)';
 }
 
 
@@ -1786,7 +1791,7 @@ abstract mixin class _$ProxiesStyleCopyWith<$Res> implements $ProxiesStyleCopyWi
   factory _$ProxiesStyleCopyWith(_ProxiesStyle value, $Res Function(_ProxiesStyle) _then) = __$ProxiesStyleCopyWithImpl;
 @override @useResult
 $Res call({
- ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit
+ ProxiesType type, ProxiesSortType sortType, ProxiesLayout layout, ProxiesIconStyle iconStyle, ProxyCardType cardType, DelayAnimationType delayAnimation, Map<String, String> iconMap, int concurrencyLimit, bool showHiddenItems
 });
 
 
@@ -1803,7 +1808,7 @@ class __$ProxiesStyleCopyWithImpl<$Res>
 
 /// Create a copy of ProxiesStyle
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? sortType = null,Object? layout = null,Object? iconStyle = null,Object? cardType = null,Object? delayAnimation = null,Object? iconMap = null,Object? concurrencyLimit = null,Object? showHiddenItems = null,}) {
   return _then(_ProxiesStyle(
 type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ProxiesType,sortType: null == sortType ? _self.sortType : sortType // ignore: cast_nullable_to_non_nullable
@@ -1813,7 +1818,8 @@ as ProxiesIconStyle,cardType: null == cardType ? _self.cardType : cardType // ig
 as ProxyCardType,delayAnimation: null == delayAnimation ? _self.delayAnimation : delayAnimation // ignore: cast_nullable_to_non_nullable
 as DelayAnimationType,iconMap: null == iconMap ? _self._iconMap : iconMap // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,concurrencyLimit: null == concurrencyLimit ? _self.concurrencyLimit : concurrencyLimit // ignore: cast_nullable_to_non_nullable
-as int,
+as int,showHiddenItems: null == showHiddenItems ? _self.showHiddenItems : showHiddenItems // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -2090,7 +2096,7 @@ as double,
 /// @nodoc
 mixin _$ThemeProps {
 
- int? get primaryColor; List<int> get primaryColors; ThemeMode get themeMode; DynamicSchemeVariant get schemeVariant; bool get pureBlack; TextScale get textScale; bool get useLightIcon; bool get useHarmonyFont; bool get invertTrayIcon;
+ int? get primaryColor; List<int> get primaryColors; ThemeMode get themeMode; DynamicSchemeVariant get schemeVariant; bool get pureBlack; TextScale get textScale; bool get useDarkIcon; bool get useHarmonyFont; bool get invertTrayIcon;
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2103,16 +2109,16 @@ $ThemePropsCopyWith<ThemeProps> get copyWith => _$ThemePropsCopyWithImpl<ThemePr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useLightIcon, useLightIcon) || other.useLightIcon == useLightIcon)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other.primaryColors, primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useDarkIcon, useDarkIcon) || other.useDarkIcon == useDarkIcon)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(primaryColors),themeMode,schemeVariant,pureBlack,textScale,useLightIcon,useHarmonyFont,invertTrayIcon);
+int get hashCode => Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(primaryColors),themeMode,schemeVariant,pureBlack,textScale,useDarkIcon,useHarmonyFont,invertTrayIcon);
 
 @override
 String toString() {
-  return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, pureBlack: $pureBlack, textScale: $textScale, useLightIcon: $useLightIcon, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
+  return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, pureBlack: $pureBlack, textScale: $textScale, useDarkIcon: $useDarkIcon, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
 }
 
 
@@ -2123,7 +2129,7 @@ abstract mixin class $ThemePropsCopyWith<$Res>  {
   factory $ThemePropsCopyWith(ThemeProps value, $Res Function(ThemeProps) _then) = _$ThemePropsCopyWithImpl;
 @useResult
 $Res call({
- int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, bool pureBlack, TextScale textScale, bool useLightIcon, bool useHarmonyFont, bool invertTrayIcon
+ int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, bool pureBlack, TextScale textScale, bool useDarkIcon, bool useHarmonyFont, bool invertTrayIcon
 });
 
 
@@ -2140,7 +2146,7 @@ class _$ThemePropsCopyWithImpl<$Res>
 
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? pureBlack = null,Object? textScale = null,Object? useLightIcon = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
   return _then(_self.copyWith(
 primaryColor: freezed == primaryColor ? _self.primaryColor : primaryColor // ignore: cast_nullable_to_non_nullable
 as int?,primaryColors: null == primaryColors ? _self.primaryColors : primaryColors // ignore: cast_nullable_to_non_nullable
@@ -2148,7 +2154,7 @@ as List<int>,themeMode: null == themeMode ? _self.themeMode : themeMode // ignor
 as ThemeMode,schemeVariant: null == schemeVariant ? _self.schemeVariant : schemeVariant // ignore: cast_nullable_to_non_nullable
 as DynamicSchemeVariant,pureBlack: null == pureBlack ? _self.pureBlack : pureBlack // ignore: cast_nullable_to_non_nullable
 as bool,textScale: null == textScale ? _self.textScale : textScale // ignore: cast_nullable_to_non_nullable
-as TextScale,useLightIcon: null == useLightIcon ? _self.useLightIcon : useLightIcon // ignore: cast_nullable_to_non_nullable
+as TextScale,useDarkIcon: null == useDarkIcon ? _self.useDarkIcon : useDarkIcon // ignore: cast_nullable_to_non_nullable
 as bool,useHarmonyFont: null == useHarmonyFont ? _self.useHarmonyFont : useHarmonyFont // ignore: cast_nullable_to_non_nullable
 as bool,invertTrayIcon: null == invertTrayIcon ? _self.invertTrayIcon : invertTrayIcon // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -2245,10 +2251,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useLightIcon,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ThemeProps() when $default != null:
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useLightIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   return orElse();
 
 }
@@ -2266,10 +2272,10 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useLightIcon,  bool useHarmonyFont,  bool invertTrayIcon)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  bool useHarmonyFont,  bool invertTrayIcon)  $default,) {final _that = this;
 switch (_that) {
 case _ThemeProps():
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useLightIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2286,10 +2292,10 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useLightIcon,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? primaryColor,  List<int> primaryColors,  ThemeMode themeMode,  DynamicSchemeVariant schemeVariant,  bool pureBlack,  TextScale textScale,  bool useDarkIcon,  bool useHarmonyFont,  bool invertTrayIcon)?  $default,) {final _that = this;
 switch (_that) {
 case _ThemeProps() when $default != null:
-return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useLightIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
+return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.schemeVariant,_that.pureBlack,_that.textScale,_that.useDarkIcon,_that.useHarmonyFont,_that.invertTrayIcon);case _:
   return null;
 
 }
@@ -2301,7 +2307,7 @@ return $default(_that.primaryColor,_that.primaryColors,_that.themeMode,_that.sch
 @JsonSerializable()
 
 class _ThemeProps implements ThemeProps {
-  const _ThemeProps({this.primaryColor, final  List<int> primaryColors = defaultPrimaryColors, this.themeMode = ThemeMode.system, this.schemeVariant = DynamicSchemeVariant.content, this.pureBlack = false, this.textScale = const TextScale(), this.useLightIcon = false, this.useHarmonyFont = false, this.invertTrayIcon = false}): _primaryColors = primaryColors;
+  const _ThemeProps({this.primaryColor, final  List<int> primaryColors = defaultPrimaryColors, this.themeMode = ThemeMode.system, this.schemeVariant = DynamicSchemeVariant.content, this.pureBlack = false, this.textScale = const TextScale(), this.useDarkIcon = false, this.useHarmonyFont = false, this.invertTrayIcon = false}): _primaryColors = primaryColors;
   factory _ThemeProps.fromJson(Map<String, dynamic> json) => _$ThemePropsFromJson(json);
 
 @override final  int? primaryColor;
@@ -2316,7 +2322,7 @@ class _ThemeProps implements ThemeProps {
 @override@JsonKey() final  DynamicSchemeVariant schemeVariant;
 @override@JsonKey() final  bool pureBlack;
 @override@JsonKey() final  TextScale textScale;
-@override@JsonKey() final  bool useLightIcon;
+@override@JsonKey() final  bool useDarkIcon;
 @override@JsonKey() final  bool useHarmonyFont;
 @override@JsonKey() final  bool invertTrayIcon;
 
@@ -2333,16 +2339,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other._primaryColors, _primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useLightIcon, useLightIcon) || other.useLightIcon == useLightIcon)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ThemeProps&&(identical(other.primaryColor, primaryColor) || other.primaryColor == primaryColor)&&const DeepCollectionEquality().equals(other._primaryColors, _primaryColors)&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.schemeVariant, schemeVariant) || other.schemeVariant == schemeVariant)&&(identical(other.pureBlack, pureBlack) || other.pureBlack == pureBlack)&&(identical(other.textScale, textScale) || other.textScale == textScale)&&(identical(other.useDarkIcon, useDarkIcon) || other.useDarkIcon == useDarkIcon)&&(identical(other.useHarmonyFont, useHarmonyFont) || other.useHarmonyFont == useHarmonyFont)&&(identical(other.invertTrayIcon, invertTrayIcon) || other.invertTrayIcon == invertTrayIcon));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(_primaryColors),themeMode,schemeVariant,pureBlack,textScale,useLightIcon,useHarmonyFont,invertTrayIcon);
+int get hashCode => Object.hash(runtimeType,primaryColor,const DeepCollectionEquality().hash(_primaryColors),themeMode,schemeVariant,pureBlack,textScale,useDarkIcon,useHarmonyFont,invertTrayIcon);
 
 @override
 String toString() {
-  return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, pureBlack: $pureBlack, textScale: $textScale, useLightIcon: $useLightIcon, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
+  return 'ThemeProps(primaryColor: $primaryColor, primaryColors: $primaryColors, themeMode: $themeMode, schemeVariant: $schemeVariant, pureBlack: $pureBlack, textScale: $textScale, useDarkIcon: $useDarkIcon, useHarmonyFont: $useHarmonyFont, invertTrayIcon: $invertTrayIcon)';
 }
 
 
@@ -2353,7 +2359,7 @@ abstract mixin class _$ThemePropsCopyWith<$Res> implements $ThemePropsCopyWith<$
   factory _$ThemePropsCopyWith(_ThemeProps value, $Res Function(_ThemeProps) _then) = __$ThemePropsCopyWithImpl;
 @override @useResult
 $Res call({
- int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, bool pureBlack, TextScale textScale, bool useLightIcon, bool useHarmonyFont, bool invertTrayIcon
+ int? primaryColor, List<int> primaryColors, ThemeMode themeMode, DynamicSchemeVariant schemeVariant, bool pureBlack, TextScale textScale, bool useDarkIcon, bool useHarmonyFont, bool invertTrayIcon
 });
 
 
@@ -2370,7 +2376,7 @@ class __$ThemePropsCopyWithImpl<$Res>
 
 /// Create a copy of ThemeProps
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? pureBlack = null,Object? textScale = null,Object? useLightIcon = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? primaryColor = freezed,Object? primaryColors = null,Object? themeMode = null,Object? schemeVariant = null,Object? pureBlack = null,Object? textScale = null,Object? useDarkIcon = null,Object? useHarmonyFont = null,Object? invertTrayIcon = null,}) {
   return _then(_ThemeProps(
 primaryColor: freezed == primaryColor ? _self.primaryColor : primaryColor // ignore: cast_nullable_to_non_nullable
 as int?,primaryColors: null == primaryColors ? _self._primaryColors : primaryColors // ignore: cast_nullable_to_non_nullable
@@ -2378,7 +2384,7 @@ as List<int>,themeMode: null == themeMode ? _self.themeMode : themeMode // ignor
 as ThemeMode,schemeVariant: null == schemeVariant ? _self.schemeVariant : schemeVariant // ignore: cast_nullable_to_non_nullable
 as DynamicSchemeVariant,pureBlack: null == pureBlack ? _self.pureBlack : pureBlack // ignore: cast_nullable_to_non_nullable
 as bool,textScale: null == textScale ? _self.textScale : textScale // ignore: cast_nullable_to_non_nullable
-as TextScale,useLightIcon: null == useLightIcon ? _self.useLightIcon : useLightIcon // ignore: cast_nullable_to_non_nullable
+as TextScale,useDarkIcon: null == useDarkIcon ? _self.useDarkIcon : useDarkIcon // ignore: cast_nullable_to_non_nullable
 as bool,useHarmonyFont: null == useHarmonyFont ? _self.useHarmonyFont : useHarmonyFont // ignore: cast_nullable_to_non_nullable
 as bool,invertTrayIcon: null == invertTrayIcon ? _self.invertTrayIcon : invertTrayIcon // ignore: cast_nullable_to_non_nullable
 as bool,

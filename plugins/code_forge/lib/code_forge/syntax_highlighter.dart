@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -30,10 +31,10 @@ class HighlightedLine {
 
 class _SpanData {
   final String text;
-  final String? scope;
+  final TextStyle? style;
   final List<_SpanData> children;
 
-  _SpanData(this.text, this.scope, [this.children = const []]);
+  _SpanData(this.text, this.style, [this.children = const []]);
 }
 
 class SyntaxHighlighter {
@@ -60,6 +61,8 @@ class SyntaxHighlighter {
   Future<void>? _preHighlightInFlight;
   int _preHighlightInFlightVersion = -1, _version = 0, _documentVersion = 0;
   bool _isEditing = false;
+  final Map<int, bool> _blockCommentCache = {};
+  int _blockCommentCacheVersion = -1;
 
   SyntaxHighlighter({
     required this.language,
@@ -163,8 +166,20 @@ class SyntaxHighlighter {
       _lineSemanticSpans
         ..clear()
         ..addAll(shiftedSemanticSpans);
-      _grammarCache.removeWhere((line, _) => line >= editLine);
-      _mergedCache.removeWhere((line, _) => line >= editLine);
+
+      final affectedLines = math.max(insertedLineBreaks, deletedLineBreaks);
+      final invalidateEnd = editLine + affectedLines;
+      _grammarCache.removeWhere(
+        (line, _) => line >= editLine && line <= invalidateEnd,
+      );
+      _mergedCache.removeWhere(
+        (line, _) => line >= editLine && line <= invalidateEnd,
+      );
+
+      final shiftStart = invalidateEnd + 1;
+      _shiftHighlightedCache(_grammarCache, shiftStart, lineBreakDelta);
+      _shiftHighlightedCache(_mergedCache, shiftStart, lineBreakDelta);
+
       _isEditing = false;
     } else if (insertedText.isNotEmpty || deletedText.isNotEmpty) {
       final lineSemanticSpans = _lineSemanticSpans[editLine];
@@ -236,12 +251,31 @@ class SyntaxHighlighter {
         _lineSemanticSpans[editLine] = updatedLineSemanticSpans;
       }
 
+      _grammarCache.remove(editLine);
+      _mergedCache.remove(editLine);
+
       _isEditing = false;
     } else {
       _isEditing = true;
     }
+  }
 
-    _version++;
+  void _shiftHighlightedCache(
+    Map<int, HighlightedLine> cache,
+    int shiftStart,
+    int delta,
+  ) {
+    if (delta == 0) return;
+    final entries = cache.entries.toList();
+    cache.clear();
+    for (final entry in entries) {
+      if (entry.key >= shiftStart) {
+        final newKey = entry.key + delta;
+        if (newKey >= 0) cache[newKey] = entry.value;
+      } else {
+        cache[entry.key] = entry.value;
+      }
+    }
   }
 
   void invalidateAll() {
@@ -273,6 +307,12 @@ class SyntaxHighlighter {
   }
 
   TextSpan? getLineSpan(int lineIndex, String lineText) {
+    final getLineTextFn = getLineText;
+    final isSubstring = getLineTextFn != null && getLineTextFn(lineIndex).length != lineText.length;
+    if (isSubstring) {
+      return _highlightLine(lineText);
+    }
+
     final mergedCache = _mergedCache[lineIndex];
     if (mergedCache != null &&
         mergedCache.version == _version &&
@@ -583,11 +623,20 @@ class SyntaxHighlighter {
     final getLineText = this.getLineText;
     if (getLineText == null) return false;
 
+    if (_blockCommentCacheVersion != _documentVersion) {
+      _blockCommentCache.clear();
+      _blockCommentCacheVersion = _documentVersion;
+    }
+
+    final cached = _blockCommentCache[lineIndex];
+    if (cached != null) return cached;
+
     final startLine = (lineIndex - _blockCommentLookbackLimit).clamp(
       0,
       lineIndex,
     );
 
+    bool result = false;
     for (int i = lineIndex; i >= startLine; i--) {
       final text = getLineText(i);
       if (text.isEmpty) continue;
@@ -605,16 +654,21 @@ class SyntaxHighlighter {
             pos = afterOpen + 2;
             continue;
           }
-          return i != lineIndex;
+          result = i != lineIndex;
+          _blockCommentCache[lineIndex] = result;
+          return result;
         }
 
         if (closeIdx >= 0 && (openIdx < 0 || closeIdx < openIdx)) {
-          return i == lineIndex;
+          result = i == lineIndex;
+          _blockCommentCache[lineIndex] = result;
+          return result;
         }
       }
     }
 
-    return false;
+    _blockCommentCache[lineIndex] = result;
+    return result;
   }
 
   TextSpan? _highlightLine(String lineText) {
@@ -900,8 +954,9 @@ class SyntaxHighlighter {
   Future<void> preHighlightLines(
     int startLine,
     int endLine,
-    String Function(int) getLineText,
-  ) async {
+    String Function(int) getLineText, {
+    bool forceIsolate = false,
+  }) async {
     if (_preHighlightInFlight != null &&
         _preHighlightInFlightVersion == _version) {
       return _preHighlightInFlight;
@@ -914,6 +969,7 @@ class SyntaxHighlighter {
       endLine,
       getLineText,
       requestVersion,
+      forceIsolate: forceIsolate,
     );
     _preHighlightInFlight = future;
 
@@ -931,8 +987,9 @@ class SyntaxHighlighter {
     int startLine,
     int endLine,
     String Function(int) getLineText,
-    int requestVersion,
-  ) async {
+    int requestVersion, {
+    bool forceIsolate = false,
+  }) async {
     _pruneCachesForViewport(startLine, endLine);
 
     final linesToProcess = <int, String>{};
@@ -949,7 +1006,7 @@ class SyntaxHighlighter {
 
     if (linesToProcess.isEmpty) return;
 
-    if (linesToProcess.length < 50) {
+    if (!forceIsolate && linesToProcess.length < 50) {
       if (requestVersion != _version) return;
       for (final entry in linesToProcess.entries) {
         if (requestVersion != _version) return;
@@ -1012,9 +1069,7 @@ class SyntaxHighlighter {
   TextSpan? _spanDataToTextSpan(_SpanData? data) {
     if (data == null) return null;
 
-    final style = data.scope != null
-        ? _resolvedTheme[data.scope]
-        : baseTextStyle;
+    final style = data.style ?? baseTextStyle;
 
     if (data.children.isEmpty) {
       return TextSpan(text: data.text, style: style);
@@ -1129,7 +1184,5 @@ _SpanData _textSpanToSpanData(TextSpan span) {
     }
   }
 
-  String? scope;
-
-  return _SpanData(span.text ?? '', scope, children);
+  return _SpanData(span.text ?? '', span.style, children);
 }

@@ -75,7 +75,11 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   Future<void> delayTestCurrentGroup() async {
     final currentGroupName = globalState.appController.getCurrentGroupName();
     final currentState = _keyMap[currentGroupName]?.currentState;
-    await delayTest(currentState?.proxies ?? [], currentState?.testUrl);
+    await delayTest(
+      currentState?.proxies ?? [],
+      testUrl: currentState?.testUrl,
+      groupName: currentGroupName,
+    );
   }
 
   Widget _buildMoreButton() {
@@ -193,8 +197,19 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   @override
   Widget build(BuildContext context) {
     ref.watch(themeSettingProvider.select((state) => state.textScale));
-    final state = ref.watch(proxiesTabStateProvider);
-    final groups = state.groups;
+    final groups =
+        ref.watch(proxiesTabStateProvider.select((state) => state.groups));
+    final columns =
+        ref.watch(proxiesTabStateProvider.select((state) => state.columns));
+    final cardType = ref.watch(
+      proxiesTabStateProvider.select((state) => state.proxyCardType),
+    );
+    final sortType = ref.watch(
+      proxiesTabStateProvider.select((state) => state.proxiesSortType),
+    );
+    final sortNum =
+        ref.watch(proxiesTabStateProvider.select((state) => state.sortNum));
+
     if (groups.isEmpty) {
       return NullStatus(
         label: appLocalizations.nullTip(appLocalizations.proxies),
@@ -219,10 +234,10 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
         child: ProxyGroupView(
           key: key,
           group: group,
-          columns: state.columns,
-          cardType: state.proxyCardType,
-          sortType: state.proxiesSortType,
-          sortNum: state.sortNum,
+          columns: columns,
+          cardType: cardType,
+          sortType: sortType,
+          sortNum: sortNum,
         ),
       );
     }).toList();
@@ -460,9 +475,14 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
 }
 
 class DelayTestButton extends ConsumerStatefulWidget {
+  final String groupName;
   final Future Function() onClick;
 
-  const DelayTestButton({super.key, required this.onClick});
+  const DelayTestButton({
+    super.key,
+    required this.groupName,
+    required this.onClick,
+  });
 
   @override
   ConsumerState<DelayTestButton> createState() => _DelayTestButtonState();
@@ -472,23 +492,24 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scale;
-  bool _isTesting = false;
+
+  bool get _isTesting => delayTestCoordinator.isTestingGroup(widget.groupName);
 
   Future<void> _healthcheck() async {
-    if (_isTesting) {
+    if (delayTestCoordinator.isTesting) {
       return;
     }
-    setState(() {
-      _isTesting = true;
-    });
-    _controller.forward();
     await widget.onClick();
-    if (mounted) {
-      setState(() {
-        _isTesting = false;
-      });
+  }
+
+  void _handleTestingChanged() {
+    if (!mounted) return;
+    if (_isTesting) {
+      _controller.forward();
+    } else {
       _controller.reverse();
     }
+    setState(() {});
   }
 
   @override
@@ -501,10 +522,21 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
     _scale = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0, 1)),
     );
+    delayTestCoordinator.addListener(_handleTestingChanged);
+    _handleTestingChanged();
+  }
+
+  @override
+  void didUpdateWidget(covariant DelayTestButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupName != widget.groupName) {
+      _handleTestingChanged();
+    }
   }
 
   @override
   void dispose() {
+    delayTestCoordinator.removeListener(_handleTestingChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -522,7 +554,10 @@ class _DelayTestButtonState extends ConsumerState<DelayTestButton>
           children: [
             FloatingActionButton.extended(
               heroTag: null,
-              onPressed: _healthcheck,
+              onPressed:
+                  delayTestCoordinator.isTesting || widget.groupName.isEmpty
+                  ? null
+                  : _healthcheck,
               icon: Transform.scale(
                 scale: contentScale,
                 child: const Icon(Icons.network_ping),

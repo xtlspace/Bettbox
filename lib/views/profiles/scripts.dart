@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 bool _isExtractingCustomOptions = false;
 const Duration _kMinLoadingDuration = Duration(seconds: 1);
+const Duration _kCachedMinLoadingDuration = Duration(milliseconds: 500);
 
 (Map<String, bool>, Map<String, String>) _processScriptData(
   Map<String, dynamic> data,
@@ -78,8 +79,11 @@ Future<void> showScriptCustomOptions(
             );
         final (options, icons) = _processScriptData(data, script);
 
-        final remaining = _kMinLoadingDuration.inMilliseconds -
-            stopwatch.elapsedMilliseconds;
+        final targetDuration = cached != null
+            ? _kCachedMinLoadingDuration
+            : _kMinLoadingDuration;
+        final remaining =
+            targetDuration.inMilliseconds - stopwatch.elapsedMilliseconds;
         if (remaining > 0) {
           await Future.delayed(Duration(milliseconds: remaining));
         }
@@ -623,7 +627,7 @@ class __ScriptCustomOptionsSheetState
       await _handleSave();
       return false;
     }
-    return res ?? false;
+    return res == false;
   }
 
   bool _isValidIconUrl(String? url) {
@@ -853,7 +857,7 @@ class _GroupSwitchOptionsSheetState
       await _handleSave();
       return false;
     }
-    return res ?? false;
+    return res == false;
   }
 
   Future<void> _handleSave() async {
