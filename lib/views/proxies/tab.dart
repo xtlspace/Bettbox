@@ -145,6 +145,20 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
     );
   }
 
+  Widget _buildDelayTestButton() {
+    return AnimatedBuilder(
+      animation: delayTestCoordinator,
+      builder: (_, _) {
+        final isTesting = delayTestCoordinator.isTesting;
+        return IconButton(
+          onPressed: isTesting ? null : delayTestCurrentGroup,
+          icon: Icon(Icons.network_ping),
+          tooltip: appLocalizations.startTest,
+        );
+      },
+    );
+  }
+
   void _tabControllerListener([int? index]) {
     int? groupIndex = index;
     if (groupIndex == -1) {
@@ -262,7 +276,9 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                     controller: _tabController,
                     padding: EdgeInsets.only(
                       left: 16,
-                      right: 16 + (value ? 16 : 0),
+                      right: globalState.isAndroidTV
+                          ? 48
+                          : (value ? 48 : 0),
                     ),
                     dividerColor: Colors.transparent,
                     isScrollable: true,
@@ -298,7 +314,19 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
                         ),
                     ],
                   ),
-                  if (value) Positioned(right: 0, child: child!),
+                  if (globalState.isAndroidTV)
+                    Positioned(
+                      right: 0,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildDelayTestButton(),
+                          if (value) child!,
+                        ],
+                      ),
+                    )
+                  else if (value)
+                    Positioned(right: 0, child: child!),
                 ],
               );
             },

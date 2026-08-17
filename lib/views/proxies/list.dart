@@ -300,7 +300,7 @@ class _GroupHeader extends ConsumerWidget {
     return CommonCard(
       radius: 16,
       type: CommonCardType.filled,
-      onPressed: onToggle,
+      onPressed: globalState.isAndroidTV ? null : onToggle,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

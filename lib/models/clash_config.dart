@@ -73,6 +73,17 @@ const defaultBypassPrivateRouteAddress = [
   '2000::/3',
 ];
 
+const defaultDesktopBypassPrivateRouteAddress = [
+  '127.0.0.0/8',
+  '::1/128',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+  '169.254.0.0/16',
+  'fd00::/8',
+  'fe80::/10',
+];
+
 int? _parseInt(dynamic value) {
   if (value == null) return null;
   if (value is num) return value.toInt();
@@ -274,7 +285,7 @@ abstract class Tun with _$Tun {
     @Default(false) bool enable,
     @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
-    @Default(TunStack.system) TunStack stack,
+    @Default(TunStack.mixed) TunStack stack,
     @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
     @JsonKey(name: 'route-address') @Default([]) List<String> routeAddress,
     @JsonKey(name: 'route-exclude-address')
@@ -284,7 +295,7 @@ abstract class Tun with _$Tun {
     @JsonKey(name: 'disable-icmp-forwarding')
     @Default(true)
     bool disableIcmpForwarding,
-    @Default(4064) int mtu,
+    @Default(9000) int mtu,
     @JsonKey(name: 'endpoint-independent-nat')
     @Default(false)
     bool endpointIndependentNat,
@@ -309,22 +320,16 @@ extension TunExt on Tun {
     bool bypassPrivateRoute, {
     String? fakeIpRange,
     String? fakeIpRangeV6,
+    List<String>? bypassPrivateRouteAddress,
   }) {
     if (system.isDesktop) {
       if (bypassPrivateRoute) {
         return copyWith(
           autoRoute: true,
           routeAddress: [],
-          routeExcludeAddress: [
-            '127.0.0.0/8',
-            '::1/128',
-            '10.0.0.0/8',
-            '172.16.0.0/12',
-            '192.168.0.0/16',
-            '169.254.0.0/16',
-            'fd00::/8',
-            'fe80::/10',
-          ],
+          routeExcludeAddress:
+              bypassPrivateRouteAddress ??
+              defaultDesktopBypassPrivateRouteAddress,
         );
       }
       return copyWith(
@@ -337,7 +342,9 @@ extension TunExt on Tun {
     if (bypassPrivateRoute) {
       return copyWith(
         autoRoute: true,
-        routeAddress: List<String>.from(defaultBypassPrivateRouteAddress),
+        routeAddress: List<String>.from(
+          bypassPrivateRouteAddress ?? defaultBypassPrivateRouteAddress,
+        ),
       );
     }
 
@@ -428,6 +435,14 @@ abstract class Dns with _$Dns {
     } catch (_) {
       return const Dns();
     }
+  }
+}
+
+extension DnsExt on Dns {
+  String effectiveFakeIpRangeV6({required bool ipv6Enabled}) {
+    if (fakeIpRangeV6.isNotEmpty) return fakeIpRangeV6;
+    if (ipv6Enabled) return '2001:2::1/48';
+    return '';
   }
 }
 
@@ -545,11 +560,7 @@ abstract class ParsedRule with _$ParsedRule {
         (item) => item.value == raw,
         orElse: () => RuleAction.MATCH,
       );
-      return ParsedRule(
-        ruleAction: action,
-        noResolve: noResolve,
-        src: src,
-      );
+      return ParsedRule(ruleAction: action, noResolve: noResolve, src: src);
     }
 
     final actionStr = raw.substring(0, firstComma).trim();
@@ -614,9 +625,10 @@ abstract class ParsedRule with _$ParsedRule {
 extension ParsedRuleExt on ParsedRule {
   String get value {
     if (ruleAction == RuleAction.MATCH) {
-      return [ruleAction.value, ruleTarget]
-          .where((e) => e != null && e.isNotEmpty)
-          .join(',');
+      return [
+        ruleAction.value,
+        ruleTarget,
+      ].where((e) => e != null && e.isNotEmpty).join(',');
     }
     final target = ruleAction == RuleAction.SUB_RULE ? subRule : ruleTarget;
     final main = ruleAction == RuleAction.RULE_SET ? ruleProvider : content;

@@ -54,7 +54,7 @@
   "disableQuic": "Отключить QUIC",
   "disableQuicDesc": "Отключить QUIC для решения сетевых проблем",
   "networkSpeedNotification": "Скорость в уведомлениях",
-  "networkSpeedNotificationDesc": "Показывать текущую скорость в панели уведомлений",
+  "networkSpeedNotificationDesc": "Показывать скорость и подписку в панели уведомлений",
   "alwaysShowTitleBar": "Кнопки заголовка",
   "alwaysShowTitleBarDesc": "Всегда показывать кнопки в правом верхнем углу",
   "trayEnhancement": "Улучшение трея",
@@ -660,5 +660,6 @@
   "ageKeyPairGeneratedSuccess": "Пара ключей X25519 создана, сохраните её в надёжном месте",
   "agePrivateKeyRequired": "Пожалуйста, сначала введите корректный закрытый ключ Age",
   "lineWrap": "Перенос строк",
-  "showHiddenItems": "Показать скрытые"
+  "showHiddenItems": "Показать скрытые",
+  "blockComment": "Комментарий"
 }

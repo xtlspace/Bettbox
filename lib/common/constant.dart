@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
+import 'package:bett_box/state.dart';
 import 'package:flutter/material.dart';
 
 const appName = AppIdentity.displayName;
@@ -57,6 +58,9 @@ double getFloatingBottomBarReserveHeight(BuildContext context) {
     mediaQuery.viewPadding.bottom,
     mediaQuery.padding.bottom,
   );
+  if (globalState.isAndroidTV) {
+    return 132.0 + (viewBottom > 12 ? viewBottom - 12 : 0);
+  }
   return 84.0 + (viewBottom > 12 ? viewBottom - 12 : 0);
 }
 

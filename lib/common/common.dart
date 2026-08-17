@@ -5,6 +5,7 @@ export 'constant.dart';
 export 'context.dart';
 export 'converter.dart';
 export 'datetime.dart';
+export 'dns_override.dart';
 export 'fixed.dart';
 export 'identity.dart';
 export 'function.dart';

@@ -48,11 +48,29 @@ class DashboardView extends ConsumerStatefulWidget {
 
 class _DashboardViewState extends ConsumerState<DashboardView> {
   final key = GlobalKey<SuperGridState>();
+  final GlobalKey<_DashboardStartSwitchState> _startSwitchKey = GlobalKey();
   final _isEditNotifier = ValueNotifier<bool>(false);
   final _addedWidgetsNotifier = ValueNotifier<List<GridItem>>([]);
 
   @override
-  dispose() {
+  void initState() {
+    super.initState();
+    if (globalState.isAndroidTV) {
+      globalState.focusDashboardStartSwitch = _requestStartSwitchFocus;
+    }
+  }
+
+  void _requestStartSwitchFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startSwitchKey.currentState?.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (globalState.focusDashboardStartSwitch == _requestStartSwitchFocus) {
+      globalState.focusDashboardStartSwitch = null;
+    }
     _isEditNotifier.dispose();
     _addedWidgetsNotifier.dispose();
     super.dispose();
@@ -110,7 +128,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         ),
       ),
-      if (showStartSwitch) const _DashboardStartSwitch(),
+      if (showStartSwitch)
+        _DashboardStartSwitch(key: _startSwitchKey),
     ];
   }
 
@@ -216,48 +235,53 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 16 +
                 (isMobileView ? getFloatingBottomBarReserveHeight(context) : 0),
           ),
-          child: _buildIsEdit((isEdit) {
-            if (isEdit) {
-              return SystemBackBlock(
-                child: CommonPopScope(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SuperGrid(
-                        key: key,
-                        crossAxisCount: columns,
-                        crossAxisSpacing: spacing,
-                        mainAxisSpacing: spacing,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildIsEdit((isEdit) {
+                if (isEdit) {
+                  return SystemBackBlock(
+                    child: CommonPopScope(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ...dashboardState.dashboardWidgets
-                              .where(
-                                (item) => item.platforms.contains(
-                                  SupportPlatform.currentPlatform,
-                                ),
-                              )
-                              .map((item) => item.widget),
+                          SuperGrid(
+                            key: key,
+                            crossAxisCount: columns,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            children: [
+                              ...dashboardState.dashboardWidgets
+                                  .where(
+                                    (item) => item.platforms.contains(
+                                      SupportPlatform.currentPlatform,
+                                    ),
+                                  )
+                                  .map((item) => item.widget),
+                            ],
+                            onUpdate: () {
+                              _handleSave();
+                            },
+                          ),
                         ],
-                        onUpdate: () {
-                          _handleSave();
-                        },
                       ),
-                    ],
-                  ),
-                  onPop: () {
-                    _handleUpdateIsEdit();
-                    return false;
-                  },
-                ),
-              );
-            } else {
-              return Grid(
-                crossAxisCount: columns,
-                crossAxisSpacing: spacing,
-                mainAxisSpacing: spacing,
-                children: [...children],
-              );
-            }
-          }),
+                      onPop: () {
+                        _handleUpdateIsEdit();
+                        return false;
+                      },
+                    ),
+                  );
+                } else {
+                  return Grid(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: spacing,
+                    mainAxisSpacing: spacing,
+                    children: [...children],
+                  );
+                }
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -433,7 +457,7 @@ class _DashboardTitleDialogState extends State<_DashboardTitleDialog> {
 }
 
 class _DashboardStartSwitch extends ConsumerStatefulWidget {
-  const _DashboardStartSwitch();
+  const _DashboardStartSwitch({super.key});
 
   @override
   ConsumerState<_DashboardStartSwitch> createState() =>
@@ -443,6 +467,31 @@ class _DashboardStartSwitch extends ConsumerStatefulWidget {
 class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
   bool _isDisabled = false;
   bool? _optimisticStart;
+  FocusNode? _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    if (globalState.isAndroidTV) {
+      _focusNode = FocusNode()..addListener(_onFocusChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode?.removeListener(_onFocusChange);
+    _focusNode?.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    globalState.isDashboardStartSwitchFocused =
+        _focusNode?.hasFocus ?? false;
+  }
+
+  void requestFocus() {
+    _focusNode?.requestFocus();
+  }
 
   void _handleStart() async {
     if (_isDisabled) return;
@@ -483,29 +532,24 @@ class _DashboardStartSwitchState extends ConsumerState<_DashboardStartSwitch> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Switch(
+        focusNode: _focusNode,
         value: displayStart,
         onChanged: canPress ? (_) => _handleStart() : null,
-        thumbColor: WidgetStateProperty.resolveWith<Color?>((
-          Set<WidgetState> states,
-        ) {
+        thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected) &&
               !states.contains(WidgetState.disabled)) {
             return theme.colorScheme.primary;
           }
           return null;
         }),
-        trackColor: WidgetStateProperty.resolveWith<Color?>((
-          Set<WidgetState> states,
-        ) {
+        trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected) &&
               !states.contains(WidgetState.disabled)) {
             return theme.colorScheme.primary.withValues(alpha: 0.2);
           }
           return null;
         }),
-        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((
-          Set<WidgetState> states,
-        ) {
+        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((states) {
           if (states.contains(WidgetState.selected) &&
               !states.contains(WidgetState.disabled)) {
             return Colors.transparent;

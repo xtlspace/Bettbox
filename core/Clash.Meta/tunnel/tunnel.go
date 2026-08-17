@@ -232,7 +232,6 @@ func Providers() map[string]P.ProxyProvider {
 	return providers
 }
 
-
 // RuleProviders return all loaded rule providers
 func RuleProviders() map[string]P.RuleProvider {
 	return ruleProviders

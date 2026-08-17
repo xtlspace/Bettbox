@@ -195,6 +195,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "bind": MessageLookupByLibrary.simpleMessage("Bind"),
     "blacklist": MessageLookupByLibrary.simpleMessage("Blacklist"),
     "blacklistMode": MessageLookupByLibrary.simpleMessage("Blacklist Mode"),
+    "blockComment": MessageLookupByLibrary.simpleMessage("Comment"),
     "bypassDomain": MessageLookupByLibrary.simpleMessage("Bypass Domain"),
     "bypassDomainDesc": MessageLookupByLibrary.simpleMessage(
       "Active only when System Proxy is on",
@@ -256,7 +257,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "columns": MessageLookupByLibrary.simpleMessage("Columns"),
     "compatible": MessageLookupByLibrary.simpleMessage("Compatible Mode"),
     "compatibleDesc": MessageLookupByLibrary.simpleMessage(
-      "Reduces some features for full Clash compatibility",
+      "Enabling this mode may limit some features, but provides full Clash support",
     ),
     "concurrencyLimit": MessageLookupByLibrary.simpleMessage(
       "Concurrency Limit",
@@ -474,7 +475,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Enhance FCM connection stability",
     ),
     "fcmTip": MessageLookupByLibrary.simpleMessage(
-      "FCM support depends on your device; results are for reference. Disable \'Allow Bypass VPN\' in network settings for accurate results.",
+      "FCM connection and support depend on the device itself, the results are for reference only. Due to system permission reasons, you need to disable \"Allow bypass VPN\" in settings to get accurate results",
     ),
     "fidelityScheme": MessageLookupByLibrary.simpleMessage("Fidelity"),
     "file": MessageLookupByLibrary.simpleMessage("File"),
@@ -694,7 +695,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Speed in Notification",
     ),
     "networkSpeedNotificationDesc": MessageLookupByLibrary.simpleMessage(
-      "Show current speed in the notification bar",
+      "Show speed and subscription info in notification bar",
     ),
     "networkType": MessageLookupByLibrary.simpleMessage("Network Type"),
     "neutralScheme": MessageLookupByLibrary.simpleMessage("Neutral"),
