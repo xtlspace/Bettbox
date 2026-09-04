@@ -110,7 +110,9 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     }
     final isPinned = system.isDesktop &&
         ref.read(windowSettingProvider.select((s) => s.isPinned));
-    final shouldRun = (isForeground || isPinned) && isVisible && !isMinimized;
+    final shouldRun = system.isDesktop
+        ? (isPinned || (isVisible && !isMinimized))
+        : isForeground;
 
     if (!shouldRun) {
       _dashboardRefreshDebounceTimer?.cancel();
@@ -180,7 +182,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
           .dashboardWidgets
           .contains(DashboardWidget.networkDetection);
       if (hasDetection) {
-        detectionState.startCheck(immediate: true);
+        detectionState.tryStartCheck();
       }
     }
     if (state == AppLifecycleState.resumed && system.isAndroid) {
@@ -261,7 +263,20 @@ class AppSidebarContainer extends ConsumerWidget {
     required BuildContext context,
     required Widget child,
   }) {
-    return Material(color: context.colorScheme.surfaceContainer, child: child);
+    final isLight = context.colorScheme.brightness == Brightness.light;
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colorScheme.surfaceContainerHigh,
+        border: Border(
+          right: BorderSide(
+            color: context.colorScheme.outlineVariant.withValues(
+              alpha: isLight ? 0.6 : 0.45,
+            ),
+          ),
+        ),
+      ),
+      child: Material(color: Colors.transparent, child: child),
+    );
   }
 
   @override
@@ -339,19 +354,44 @@ class AppSidebarContainer extends ConsumerWidget {
                                       autofocus: true,
                                       child: NavigationRail(
                                         backgroundColor: Colors.transparent,
+                                        indicatorColor:
+                                            context.colorScheme.primary
+                                                .withValues(
+                                                  alpha:
+                                                      context
+                                                              .colorScheme
+                                                              .brightness ==
+                                                          Brightness.light
+                                                      ? 0.20
+                                                      : 0.26,
+                                                ),
+                                        indicatorShape:
+                                            const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.all(
+                                                Radius.circular(16),
+                                              ),
+                                            ),
+                                        selectedIconTheme: IconThemeData(
+                                          color: context.colorScheme.primary,
+                                        ),
+                                        unselectedIconTheme: IconThemeData(
+                                          color:
+                                              context.colorScheme.onSurfaceVariant,
+                                        ),
                                         selectedLabelTextStyle: context
                                             .textTheme
                                             .labelLarge!
                                             .copyWith(
-                                              color:
-                                                  context.colorScheme.onSurface,
+                                              color: context.colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                         unselectedLabelTextStyle: context
                                             .textTheme
                                             .labelLarge!
                                             .copyWith(
-                                              color:
-                                                  context.colorScheme.onSurface,
+                                              color: context
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
                                             ),
                                         destinations: navigationItems
                                             .map(

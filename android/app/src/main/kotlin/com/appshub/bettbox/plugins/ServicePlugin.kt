@@ -79,6 +79,7 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
             "isSmartStopped" -> result.success(GlobalState.isSmartStopped)
             "getLocalIpAddresses" -> result.success(VpnPlugin.getLocalIpAddresses())
+            "getLocalGateways" -> result.success(VpnPlugin.getLocalGateways())
             "setQuickResponse" -> {
                 VpnPlugin.setQuickResponse(call.argument<Boolean>("enabled") ?: false)
                 result.success(true)
@@ -122,6 +123,11 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     }
                     runCatching { context.startService(intent) }
                 }
+                result.success(true)
+            }
+            "setHighPriorityNotification" -> {
+                val enabled = call.argument<Boolean>("enabled") ?: false
+                VpnPlugin.setHighPriorityNotification(enabled)
                 result.success(true)
             }
             else -> result.notImplemented()

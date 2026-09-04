@@ -69,9 +69,9 @@ class AppLocalizations {
     return Intl.message('Direct', name: 'direct', desc: '', args: []);
   }
 
-  /// `Dash`
+  /// `Home`
   String get dashboard {
-    return Intl.message('Dash', name: 'dashboard', desc: '', args: []);
+    return Intl.message('Home', name: 'dashboard', desc: '', args: []);
   }
 
   /// `Custom Dashboard Title`
@@ -354,10 +354,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Max 2 IPs/CIDRs, comma-separated`
+  /// `Enter IP, CIDR or Gateway:IP/CIDR`
   String get networkMatchHint {
     return Intl.message(
-      'Max 2 IPs/CIDRs, comma-separated',
+      'Enter IP, CIDR or Gateway:IP/CIDR',
       name: 'networkMatchHint',
       desc: '',
       args: [],
@@ -469,6 +469,36 @@ class AppLocalizations {
     );
   }
 
+  /// `High Priority`
+  String get notificationHighPriority {
+    return Intl.message(
+      'High Priority',
+      name: 'notificationHighPriority',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Adjust current notification bar to foreground high priority`
+  String get notificationHighPriorityDesc {
+    return Intl.message(
+      'Adjust current notification bar to foreground high priority',
+      name: 'notificationHighPriorityDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `High-priority notifications can alleviate background core keep-alive issues on some customized systems. If your VPN service is currently running normally, it is recommended to keep this option disabled. Are you sure you want to enable it?`
+  String get notificationHighPriorityTip {
+    return Intl.message(
+      'High-priority notifications can alleviate background core keep-alive issues on some customized systems. If your VPN service is currently running normally, it is recommended to keep this option disabled. Are you sure you want to enable it?',
+      name: 'notificationHighPriorityTip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Speed in Notification`
   String get networkSpeedNotification {
     return Intl.message(
@@ -519,20 +549,60 @@ class AppLocalizations {
     );
   }
 
-  /// `Control proxy groups in the system tray context menu`
+  /// `Control proxy groups in system tray menu`
   String get trayEnhancementDesc {
     return Intl.message(
-      'Control proxy groups in the system tray context menu',
+      'Control proxy groups in system tray menu',
       name: 'trayEnhancementDesc',
       desc: '',
       args: [],
     );
   }
 
-  /// `Network Speed`
+  /// `Tray Click Behavior`
+  String get trayClickBehavior {
+    return Intl.message(
+      'Tray Click Behavior',
+      name: 'trayClickBehavior',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Left Click`
+  String get leftClickBehavior {
+    return Intl.message(
+      'Left Click',
+      name: 'leftClickBehavior',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Right Click`
+  String get rightClickBehavior {
+    return Intl.message(
+      'Right Click',
+      name: 'rightClickBehavior',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show Window`
+  String get showPanel {
+    return Intl.message('Show Window', name: 'showPanel', desc: '', args: []);
+  }
+
+  /// `Open Menu`
+  String get showMenu {
+    return Intl.message('Open Menu', name: 'showMenu', desc: '', args: []);
+  }
+
+  /// `Tray Speed`
   String get enableTraySpeed {
     return Intl.message(
-      'Network Speed',
+      'Tray Speed',
       name: 'enableTraySpeed',
       desc: '',
       args: [],
@@ -1584,10 +1654,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Bettbox is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Forked from FlClash: Better Experience, Out of the box`
+  /// `Bettbox is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Our vision: Connecting AI, Accelerating Innovation`
   String get desc {
     return Intl.message(
-      'Bettbox is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Forked from FlClash: Better Experience, Out of the box',
+      'Bettbox is based on the powerful and flexible Mihomo (Clash.Meta) proxy kernel, dedicated to a superior user experience. Our vision: Connecting AI, Accelerating Innovation',
       name: 'desc',
       desc: '',
       args: [],
@@ -2159,9 +2229,9 @@ class AppLocalizations {
     return Intl.message('Test URL', name: 'testUrl', desc: '', args: []);
   }
 
-  /// `Start Test`
+  /// `Delay Test`
   String get startTest {
-    return Intl.message('Start Test', name: 'startTest', desc: '', args: []);
+    return Intl.message('Delay Test', name: 'startTest', desc: '', args: []);
   }
 
   /// `Add Profile`
@@ -2622,6 +2692,31 @@ class AppLocalizations {
   /// `Start`
   String get start {
     return Intl.message('Start', name: 'start', desc: '', args: []);
+  }
+
+  /// `No usage data`
+  String get noUsageData {
+    return Intl.message(
+      'No usage data',
+      name: 'noUsageData',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local File`
+  String get localFile {
+    return Intl.message('Local File', name: 'localFile', desc: '', args: []);
+  }
+
+  /// `Expired`
+  String get expired {
+    return Intl.message('Expired', name: 'expired', desc: '', args: []);
+  }
+
+  /// `Last edited`
+  String get lastEdit {
+    return Intl.message('Last edited', name: 'lastEdit', desc: '', args: []);
   }
 
   /// `Stop`
@@ -3759,9 +3854,14 @@ class AppLocalizations {
     return Intl.message('IP/CIDR', name: 'ipcidr', desc: '', args: []);
   }
 
-  /// `Domain`
+  /// `Organization / Domain`
   String get domain {
-    return Intl.message('Domain', name: 'domain', desc: '', args: []);
+    return Intl.message(
+      'Organization / Domain',
+      name: 'domain',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Reset`
@@ -4714,26 +4814,11 @@ class AppLocalizations {
     return Intl.message('Dark Icon', name: 'darkIcon', desc: '', args: []);
   }
 
-  /// `Manually switch dark desktop app icon`
+  /// `Manually switch dark app icon`
   String get darkIconDesc {
     return Intl.message(
-      'Manually switch dark desktop app icon',
+      'Manually switch dark app icon',
       name: 'darkIconDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Light Icon`
-  String get lightIcon {
-    return Intl.message('Light Icon', name: 'lightIcon', desc: '', args: []);
-  }
-
-  /// `Manually switch light desktop app icon`
-  String get lightIconDesc {
-    return Intl.message(
-      'Manually switch light desktop app icon',
-      name: 'lightIconDesc',
       desc: '',
       args: [],
     );
@@ -5397,6 +5482,186 @@ class AppLocalizations {
   /// `Comment`
   String get blockComment {
     return Intl.message('Comment', name: 'blockComment', desc: '', args: []);
+  }
+
+  /// `Locate`
+  String get locate {
+    return Intl.message('Locate', name: 'locate', desc: '', args: []);
+  }
+
+  /// `Minimize`
+  String get minimize {
+    return Intl.message('Minimize', name: 'minimize', desc: '', args: []);
+  }
+
+  /// `Maximize`
+  String get maximize {
+    return Intl.message('Maximize', name: 'maximize', desc: '', args: []);
+  }
+
+  /// `Restore`
+  String get restore {
+    return Intl.message('Restore', name: 'restore', desc: '', args: []);
+  }
+
+  /// `Pin`
+  String get pin {
+    return Intl.message('Pin', name: 'pin', desc: '', args: []);
+  }
+
+  /// `Unpin`
+  String get unpin {
+    return Intl.message('Unpin', name: 'unpin', desc: '', args: []);
+  }
+
+  /// `Close`
+  String get close {
+    return Intl.message('Close', name: 'close', desc: '', args: []);
+  }
+
+  /// `Auto Scroll`
+  String get autoScroll {
+    return Intl.message('Auto Scroll', name: 'autoScroll', desc: '', args: []);
+  }
+
+  /// `Export`
+  String get export {
+    return Intl.message('Export', name: 'export', desc: '', args: []);
+  }
+
+  /// `Clear`
+  String get clear {
+    return Intl.message('Clear', name: 'clear', desc: '', args: []);
+  }
+
+  /// `Back`
+  String get back {
+    return Intl.message('Back', name: 'back', desc: '', args: []);
+  }
+
+  /// `Close All`
+  String get closeAll {
+    return Intl.message('Close All', name: 'closeAll', desc: '', args: []);
+  }
+
+  /// `More IP Information`
+  String get moreIpInfo {
+    return Intl.message(
+      'More IP Information',
+      name: 'moreIpInfo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View Detailed IP Data`
+  String get viewDetailedIpData {
+    return Intl.message(
+      'View Detailed IP Data',
+      name: 'viewDetailedIpData',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `IP Address`
+  String get ipAddress {
+    return Intl.message('IP Address', name: 'ipAddress', desc: '', args: []);
+  }
+
+  /// `Country / Region`
+  String get countryOrRegion {
+    return Intl.message(
+      'Country / Region',
+      name: 'countryOrRegion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Province / City`
+  String get provinceAndCity {
+    return Intl.message(
+      'Province / City',
+      name: 'provinceAndCity',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Organization / ASN`
+  String get operatorOrAsn {
+    return Intl.message(
+      'Organization / ASN',
+      name: 'operatorOrAsn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Continent`
+  String get continent {
+    return Intl.message('Continent', name: 'continent', desc: '', args: []);
+  }
+
+  /// `Copied to clipboard`
+  String get copiedToClipboard {
+    return Intl.message(
+      'Copied to clipboard',
+      name: 'copiedToClipboard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Private / LAN IP Address`
+  String get privateIp {
+    return Intl.message(
+      'Private / LAN IP Address',
+      name: 'privateIp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `ISP`
+  String get isp {
+    return Intl.message('ISP', name: 'isp', desc: '', args: []);
+  }
+
+  /// `Network error, please try again later`
+  String get networkErrorRetryLater {
+    return Intl.message(
+      'Network error, please try again later',
+      name: 'networkErrorRetryLater',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `TUN Virtual Network Adapter`
+  String get tunVirtualAddress {
+    return Intl.message(
+      'TUN Virtual Network Adapter',
+      name: 'tunVirtualAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Install Time`
+  String get installTime {
+    return Intl.message(
+      'Install Time',
+      name: 'installTime',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update Time`
+  String get updateTime {
+    return Intl.message('Update Time', name: 'updateTime', desc: '', args: []);
   }
 }
 

@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:bett_box/plugins/app.dart';
+import 'package:bett_box/plugins/clipboard_ext.dart';
 import 'package:bett_box/plugins/tile.dart';
 import 'package:bett_box/plugins/vpn.dart';
 import 'package:bett_box/state.dart';
@@ -95,6 +96,9 @@ Future<void> _runApp() async {
   await android?.init();
 
   await window?.init();
+  if (system.isWindows) {
+    clipboardExt.init();
+  }
   HttpOverrides.global = BettboxHttpOverrides();
   runApp(ProviderScope(child: const Application()));
 }
@@ -109,7 +113,6 @@ Future<void> _service(List<String> flags) async {
     final quickStart = flags.contains('quick');
     final bootStart = flags.contains('boot');
     final clashLibHandler = ClashLibHandler();
-    var screenOn = true;
     final smartAutoStopLock = Lock();
 
     Future<void> checkSmartAutoStop() async {
@@ -123,11 +126,17 @@ Future<void> _service(List<String> flags) async {
           final isSmartStopped = await vpn?.isSmartStopped() ?? false;
           final candidateIps =
               await vpn?.getLocalIpAddresses() ?? const <String>[];
-          if (candidateIps.isEmpty) return;
+          final candidateGateways =
+              await vpn?.getLocalGateways() ?? const <String>[];
+          if (candidateIps.isEmpty && candidateGateways.isEmpty) return;
 
-          final shouldStop = candidateIps.any(
-            (ip) => NetworkMatcher.matchAny(ip, networks),
-          );
+          final shouldStop =
+              candidateIps.any(
+                (ip) => NetworkMatcher.matchAny(ip, networks),
+              ) ||
+              candidateGateways.any(
+                (gw) => NetworkMatcher.matchAnyGateway(gw, networks),
+              );
 
           if (shouldStop && !isSmartStopped) {
             final isRunning = await vpn?.getStatus() ?? false;
@@ -169,9 +178,6 @@ Future<void> _service(List<String> flags) async {
       _VpnListenerWithService(
         onDnsChanged: (String dns) {
           clashLibHandler.updateDns(dns);
-        },
-        onScreenStateChanged: (bool isOn) {
-          screenOn = isOn;
         },
         onNetworkChanged: checkSmartAutoStop,
       ),
@@ -228,23 +234,6 @@ Future<void> _service(List<String> flags) async {
               .firstOrNull;
           final profileName = profile?.label ?? 'Bettbox';
           await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
-          Timer.periodic(const Duration(seconds: 1), (timer) async {
-            if (!globalState.isService ||
-                !globalState.config.vpnProps.networkSpeedNotification) {
-              timer.cancel();
-              return;
-            }
-            if (!screenOn) {
-              return;
-            }
-            try {
-              final traffic = clashLibHandler.getTraffic();
-              await vpn?.updateNotificationSpeed(
-                profileName,
-                traffic.toString(),
-              );
-            } catch (_) {}
-          });
         }
 
         if (globalState.config.appSetting.openLogs) {
@@ -333,27 +322,18 @@ class _TileListenerWithService with TileListener {
 @immutable
 class _VpnListenerWithService with VpnListener {
   final Function(String dns) _onDnsChanged;
-  final Function(bool isOn) _onScreenStateChanged;
   final Function() _onNetworkChanged;
 
   const _VpnListenerWithService({
     required Function(String dns) onDnsChanged,
-    required Function(bool isOn) onScreenStateChanged,
     required Function() onNetworkChanged,
   })  : _onDnsChanged = onDnsChanged,
-        _onScreenStateChanged = onScreenStateChanged,
         _onNetworkChanged = onNetworkChanged;
 
   @override
   void onDnsChanged(String dns) {
     super.onDnsChanged(dns);
     _onDnsChanged(dns);
-  }
-
-  @override
-  void onScreenStateChanged(bool isOn) {
-    super.onScreenStateChanged(isOn);
-    _onScreenStateChanged(isOn);
   }
 
   @override

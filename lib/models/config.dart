@@ -185,7 +185,10 @@ abstract class AccessControl with _$AccessControl {
     @Default(AccessControlMode.rejectSelected) AccessControlMode mode,
     @Default([]) List<String> acceptList,
     @Default([]) List<String> rejectList,
-    @Default(AccessSortType.none) AccessSortType sort,
+    @Default([]) List<String> manualList,
+    @JsonKey(unknownEnumValue: AccessSortType.none)
+    @Default(AccessSortType.none)
+    AccessSortType sort,
     @Default(false) bool isFilterSystemApp,
     @Default(false) bool isFilterNonInternetApp,
   }) = _AccessControl;
@@ -228,9 +231,14 @@ abstract class VpnProps with _$VpnProps {
     @Default(false) bool storeFix,
     @Default(false) bool networkFix,
     @Default(false) bool disableQuic,
+    @Default(false) bool highPriorityNotification,
     @Default(false) bool networkSpeedNotification,
     @Default(false) bool excludeChina,
     @Default(false) bool trayEnhancement,
+    @Default(TrayClickBehavior.showPanel)
+    TrayClickBehavior trayLeftClickBehavior,
+    @Default(TrayClickBehavior.showMenu)
+    TrayClickBehavior trayRightClickBehavior,
     @Default(false) bool enableTraySpeed,
     @Default(true) bool alwaysShowTitleBar,
     @Default(true) bool quickResponse,
@@ -280,6 +288,7 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default({}) Map<String, String> iconMap,
     @Default(250) int concurrencyLimit,
     @Default(false) bool showHiddenItems,
+    @Default(false) bool hasCustomizedStyle,
   }) = _ProxiesStyle;
 
   factory ProxiesStyle.fromJson(Map<String, Object?>? json) =>
@@ -400,7 +409,26 @@ abstract class Config with _$Config {
       }
     } catch (_) {}
 
-    // 兼容 FlClash：currentProfileId 可能是 int 类型，需要转换为 String
+    // Migrate legacy AccessControl sort values: 'name' -> 'none', 'time' -> 'updateTime'
+    try {
+      void migrateSort(dynamic accessControl) {
+        if (accessControl is Map) {
+          final sort = accessControl['sort'];
+          if (sort == 'name') {
+            accessControl['sort'] = 'none';
+          } else if (sort == 'time') {
+            accessControl['sort'] = 'updateTime';
+          }
+        }
+      }
+
+      migrateSort(json['accessControl']);
+      if (json['vpnProps'] is Map) {
+        migrateSort((json['vpnProps'] as Map)['accessControl']);
+      }
+    } catch (_) {}
+
+    // Migrate legacy int profile IDs to string
     try {
       final currentProfileId = json['currentProfileId'];
       if (currentProfileId != null && currentProfileId is int) {
@@ -408,7 +436,6 @@ abstract class Config with _$Config {
       }
     } catch (_) {}
 
-    // 兼容 FlClash：profiles 中的 id 可能是 int 类型，需要转换为 String
     try {
       final profiles = json['profiles'];
       if (profiles != null && profiles is List) {

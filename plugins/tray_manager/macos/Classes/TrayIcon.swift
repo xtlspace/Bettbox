@@ -8,16 +8,13 @@
 import Cocoa
 
 public class TrayIcon: NSView {
-    private static let inactiveColor = NSColor(
-        srgbRed: 202.0 / 255.0,
-        green: 202.0 / 255.0,
-        blue: 202.0 / 255.0,
-        alpha: 1
-    )
+    private static var inactiveColor: NSColor {
+        NSColor.secondaryLabelColor
+    }
     private static let speedFontSize: CGFloat = 9.5
     private static let speedLineHeight: CGFloat = 10
-    private static let speedExtraWidth: CGFloat = 30
-    private static let speedMinimumWidth: CGFloat = 58
+    private static let speedPadding: CGFloat = 12
+    private static let speedMinimumWidth: CGFloat = 66
     private static let speedDisplayThreshold = 1000.0
     private static let speedUnits = ["B/s", "K/s", "M/s", "G/s", "T/s"]
     private static let speedScales = [
@@ -100,7 +97,7 @@ public class TrayIcon: NSView {
     ) {
         let uploadText = formatSpeed(upload)
         let downloadText = formatSpeed(download)
-        let title = "\(leftPad(uploadText, width: 6))\n\(leftPad(downloadText, width: 6))"
+        let title = "  \(leftPad(uploadText, width: 6))\n  \(leftPad(downloadText, width: 6))"
         if lastSpeedTitle == title && lastSpeedActive == active {
             return
         }
@@ -121,13 +118,13 @@ public class TrayIcon: NSView {
         paragraphStyle.maximumLineHeight = Self.speedLineHeight
         paragraphStyle.paragraphSpacingBefore = 0
 
+        let barHeight = button.bounds.height > 0
+            ? button.bounds.height
+            : NSStatusBar.system.thickness
         let glyphHeight = font.ascender - font.descender
-        let freeSpace = Self.speedLineHeight * 2 - button.bounds.height
+        let freeSpace = Self.speedLineHeight * 2 - barHeight
         let baselineOffset = -(glyphHeight / 3) + freeSpace / 2
-        button.title = title
-        let attributedTitle = NSMutableAttributedString(
-            attributedString: button.attributedTitle
-        )
+        let attributedTitle = NSMutableAttributedString(string: title)
         let fullRange = NSRange(
             location: 0,
             length: attributedTitle.length
@@ -148,11 +145,15 @@ public class TrayIcon: NSView {
             )
         }
 
+        let textWidth = ceil(attributedTitle.size().width)
+        let imageWidth = button.image?.size.width ?? 0
         statusItem.length = max(
-            ceil(attributedTitle.size().width) + Self.speedExtraWidth,
+            textWidth + imageWidth + Self.speedPadding,
             Self.speedMinimumWidth
         )
+        button.title = ""
         button.attributedTitle = attributedTitle
+        button.needsDisplay = true
         syncClickTargetFrame(button)
         lastSpeedTitle = title
         lastSpeedActive = active
@@ -163,7 +164,9 @@ public class TrayIcon: NSView {
         lastSpeedActive = nil
         statusItem?.length = NSStatusItem.variableLength
         if let button = statusItem?.button {
+            button.title = ""
             button.attributedTitle = NSAttributedString(string: "")
+            button.needsDisplay = true
             syncClickTargetFrame(button)
         }
     }
@@ -203,30 +206,8 @@ public class TrayIcon: NSView {
         guard let sourceImage else {
             return
         }
-        if isActive {
-            button.contentTintColor = nil
-            sourceImage.isTemplate = true
-            button.image = sourceImage
-            return
-        }
-        button.image = tintedImage(sourceImage, color: Self.inactiveColor)
+        button.image = sourceImage
         button.contentTintColor = nil
-    }
-
-    private func tintedImage(_ image: NSImage, color: NSColor) -> NSImage {
-        let tintedImage = NSImage(size: image.size)
-        tintedImage.lockFocus()
-        color.setFill()
-        NSRect(origin: .zero, size: image.size).fill()
-        image.draw(
-            in: NSRect(origin: .zero, size: image.size),
-            from: .zero,
-            operation: .destinationIn,
-            fraction: 1
-        )
-        tintedImage.unlockFocus()
-        tintedImage.isTemplate = false
-        return tintedImage
     }
 
     private func syncClickTargetFrame(_ button: NSStatusBarButton) {

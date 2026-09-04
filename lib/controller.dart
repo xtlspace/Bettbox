@@ -47,6 +47,7 @@ class AppController {
   Timer? _updateGroupsRetryTimer;
   int _coreGeneration = 0;
   int _setupGeneration = 0;
+  final Set<String> _updatingProfileIds = {};
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
 
@@ -386,23 +387,22 @@ class AppController {
   }
 
   Future<bool> _shouldUpdateDashboardTick() async {
-    final lifecycleState = WidgetsBinding.instance.lifecycleState;
-    final isPinned = system.isDesktop &&
-        _ref.read(windowSettingProvider.select((s) => s.isPinned));
-    if (!isPinned && lifecycleState != AppLifecycleState.resumed) return false;
-
     if (system.isDesktop) {
+      final isPinned =
+          _ref.read(windowSettingProvider.select((s) => s.isPinned));
+      if (isPinned) return true;
       if (await window?.isVisible == false) return false;
       if (await window?.isMinimized == true) return false;
+      return true;
     }
+
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    if (lifecycleState != AppLifecycleState.resumed) return false;
 
     return true;
   }
 
   Future<void> updateTraffic() async {
-    _ref.read(totalTrafficProvider.notifier).value = await clashCore
-        .getTotalTraffic();
-
     final shouldUpdateDashboard = await _shouldUpdateDashboardTick();
     final networkSpeedNotification =
         system.isAndroid &&
@@ -410,11 +410,16 @@ class AppController {
     final enableTraySpeed =
         system.isMacOS && _ref.read(vpnSettingProvider).enableTraySpeed;
 
+    final isScreenOn = globalState.isScreenOn;
+
     if (!shouldUpdateDashboard &&
-        !networkSpeedNotification &&
+        !(networkSpeedNotification && isScreenOn) &&
         !enableTraySpeed) {
       return;
     }
+
+    _ref.read(totalTrafficProvider.notifier).value = await clashCore
+        .getTotalTraffic();
 
     final traffic = await clashCore.getTraffic();
 
@@ -426,7 +431,7 @@ class AppController {
       await tray.updateSpeed(traffic);
     }
 
-    if (networkSpeedNotification) {
+    if (networkSpeedNotification && isScreenOn) {
       final currentProfileId = _ref.read(currentProfileIdProvider);
       final profiles = _ref.read(profilesProvider);
       final profile = profiles
@@ -475,12 +480,23 @@ class AppController {
   }
 
   Future<void> updateProfile(Profile profile, {bool validate = true}) async {
-    final newProfile = await profile.update(validate: validate);
-    _ref
-        .read(profilesProvider.notifier)
-        .setProfile(newProfile.copyWith(isUpdating: false));
-    if (profile.id == _ref.read(currentProfileIdProvider)) {
-      applyProfileDebounce(silence: true);
+    if (_updatingProfileIds.contains(profile.id)) {
+      _ref
+          .read(profilesProvider.notifier)
+          .setProfile(profile.copyWith(isUpdating: false));
+      return;
+    }
+    _updatingProfileIds.add(profile.id);
+    try {
+      final newProfile = await profile.update(validate: validate);
+      _ref.read(profilesProvider.notifier).setProfile(
+            newProfile.copyWith(isUpdating: false),
+          );
+      if (profile.id == _ref.read(currentProfileIdProvider)) {
+        applyProfileDebounce(silence: true);
+      }
+    } finally {
+      _updatingProfileIds.remove(profile.id);
     }
   }
 
@@ -704,15 +720,20 @@ class AppController {
         WidgetsBinding.instance.platformDispatcher.platformBrightness;
   }
 
+  bool _isProfileUpdateNeeded(Profile profile) {
+    if (!profile.autoUpdate) return false;
+    if (profile.type == ProfileType.file) return false;
+    if (profile.isUpdating) return false;
+    final lastUpdate = profile.lastUpdateDate;
+    if (lastUpdate == null) return true;
+    final expectedNextUpdate = lastUpdate.add(profile.autoUpdateDuration);
+    return DateTime.now().difference(expectedNextUpdate) >
+        const Duration(minutes: 1);
+  }
+
   Future<void> autoUpdateProfiles() async {
     for (final profile in _ref.read(profilesProvider)) {
-      if (!profile.autoUpdate) continue;
-      final isNotNeedUpdate = profile.lastUpdateDate
-          ?.add(profile.autoUpdateDuration)
-          .isBeforeNow;
-      if (isNotNeedUpdate == false || profile.type == ProfileType.file) {
-        continue;
-      }
+      if (!_isProfileUpdateNeeded(profile)) continue;
       try {
         await updateProfile(profile, validate: false);
       } catch (e) {
@@ -724,28 +745,17 @@ class AppController {
   }
 
   Future<void> checkAndUpdateMissedProfiles() async {
-    final now = DateTime.now();
     final profilesToUpdate = <Profile>[];
     for (final profile in _ref.read(profilesProvider)) {
-      if (!profile.autoUpdate) continue;
-      if (profile.type == ProfileType.file) continue;
-      if (profile.isUpdating) continue;
-      final lastUpdate = profile.lastUpdateDate;
-      if (lastUpdate == null) continue;
-      final expectedNextUpdate = lastUpdate.add(profile.autoUpdateDuration);
-      final isOverdue =
-          now.difference(expectedNextUpdate) > const Duration(minutes: 1);
-      if (isOverdue) {
-        profilesToUpdate.add(profile);
-      }
+      if (!_isProfileUpdateNeeded(profile)) continue;
+      profilesToUpdate.add(profile);
     }
     if (profilesToUpdate.isNotEmpty) {
+      var updated = false;
       for (final profile in profilesToUpdate) {
         try {
-          commonPrint.log(
-            '[MissedUpdate] Updating profile: ${profile.label ?? profile.id}',
-          );
           await updateProfile(profile, validate: false);
+          updated = true;
         } catch (e) {
           commonPrint.log(
             '[MissedUpdate] Failed to update ${profile.label ?? profile.id}: ${e.formatError}',
@@ -755,31 +765,21 @@ class AppController {
           await Future.delayed(const Duration(seconds: 2));
         }
       }
+      if (updated) {
+        commonPrint.log('Updating external providers');
+      }
     }
 
-    await _checkAndUpdateMissedExternalProviders();
+    await _syncExternalProviders();
   }
 
-  Future<void> _checkAndUpdateMissedExternalProviders() async {
+  Future<void> _syncExternalProviders() async {
     try {
       final providers = await clashCore.getExternalProviders();
       if (providers.isEmpty) return;
-      final now = DateTime.now();
-      for (final provider in providers) {
-        if (provider.vehicleType.toUpperCase() != 'HTTP') continue;
-        if (provider.isUpdating) continue;
-        final isOverdue =
-            now.difference(provider.updateAt) > const Duration(hours: 1);
-        if (isOverdue) {
-          commonPrint.log(
-            '[MissedUpdate] Updating external provider: ${provider.name}',
-          );
-          await clashCore.updateExternalProvider(providerName: provider.name);
-          setProvider(await clashCore.getExternalProvider(provider.name));
-        }
-      }
+      _ref.read(providersProvider.notifier).value = providers;
     } catch (e) {
-      commonPrint.log('[MissedUpdate] Failed to update external providers: $e');
+      commonPrint.log('[Sync] Failed to sync external providers: $e');
     }
   }
 
@@ -907,6 +907,37 @@ class AppController {
           _ref
               .read(profilesProvider.notifier)
               .setProfile(currentProfile.copyWith(selectedMap: selectedMap));
+        }
+      }
+
+      if (currentGroups.isNotEmpty) {
+        bool activeProxyChanged = false;
+        for (final newGroup in newGroups) {
+          final oldGroup = currentGroups.firstWhereOrNull(
+            (g) => g.name == newGroup.name,
+          );
+          if (oldGroup != null && oldGroup.now != newGroup.now) {
+            activeProxyChanged = true;
+            break;
+          }
+        }
+        if (activeProxyChanged) {
+          addCheckIpNumDebounce();
+        }
+      }
+
+      final proxiesStyle = _ref.read(proxiesStyleSettingProvider);
+      if (!proxiesStyle.hasCustomizedStyle) {
+        final hasGroupIcons = newGroups.any((g) => g.icon.trim().isNotEmpty);
+        if (hasGroupIcons &&
+            (proxiesStyle.type != ProxiesType.list ||
+                proxiesStyle.iconStyle != ProxiesIconStyle.icon)) {
+          _ref.read(proxiesStyleSettingProvider.notifier).updateState((state) {
+            return state.copyWith(
+              type: ProxiesType.list,
+              iconStyle: ProxiesIconStyle.icon,
+            );
+          });
         }
       }
 
@@ -1041,7 +1072,12 @@ class AppController {
   Future handleClear() async {
     await preferences.clearPreferences();
     commonPrint.log('clear preferences');
-    globalState.config = Config(themeProps: defaultThemeProps);
+    globalState.config = Config(
+      themeProps: defaultThemeProps,
+      networkProps: defaultNetworkProps.copyWith(
+        systemProxy: system.isDesktop,
+      ),
+    );
   }
 
   Future<void> autoCheckUpdate() async {
@@ -1258,7 +1294,7 @@ class AppController {
       }
     }
     await syncDesktopRuntimeState(preferCurrentState: true);
-    await updateTray(true);
+    await updateTray(true, false, true);
 
     await _handlePreference();
     await _handlerDisclaimer();

@@ -79,6 +79,13 @@ class Service {
         const [];
   }
 
+  Future<List<String>> getLocalGateways() async {
+    return await methodChannel.invokeListMethod<String>(
+          'getLocalGateways',
+        ) ??
+        const [];
+  }
+
   Future<bool?> setQuickResponse(bool enabled) async {
     return await methodChannel.invokeMethod<bool>('setQuickResponse', {
       'enabled': enabled,
@@ -102,6 +109,12 @@ class Service {
 
   Future<void> restoreNotification() async {
     await methodChannel.invokeMethod<void>('restoreNotification');
+  }
+
+  Future<bool?> setHighPriorityNotification(bool enabled) async {
+    return await methodChannel.invokeMethod<bool>('setHighPriorityNotification', {
+      'enabled': enabled,
+    });
   }
 
   Future<bool?> reconnectIpc() => methodChannel.invokeMethod<bool>('reconnectIpc');

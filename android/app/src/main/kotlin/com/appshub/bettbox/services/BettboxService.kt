@@ -67,10 +67,12 @@ class BettboxService : Service(), BaseServiceInterface {
 
     @SuppressLint("ForegroundServiceType")
     override suspend fun startForeground() {
-        ensureNotificationChannel()
+        val isSuspended = GlobalState.isSmartStopped
+        val isHighPriority = GlobalState.isNotificationHighPriority
+        ensureNotificationChannel(isSuspended, isHighPriority)
         val title: String
         val content: String
-        if (GlobalState.isSmartStopped) {
+        if (isSuspended) {
             title = getString(R.string.core_suspended)
             content = getString(R.string.smart_auto_stop_service_running)
         } else {
@@ -78,29 +80,15 @@ class BettboxService : Service(), BaseServiceInterface {
             content = getString(R.string.service_running)
         }
 
-        val builder = notificationBuilder()
-
-        val separator = " ‹ "
-        val combinedText = "$title$separator$content"
-        val spannable = SpannableString(combinedText).apply {
-            val startIndex = title.length + separator.length
-            if (startIndex in 1..combinedText.length) {
-                setSpan(
-                    RelativeSizeSpan(0.80f),
-                    startIndex,
-                    combinedText.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-        }
-        val notification = builder.setContentTitle(spannable)
-            .setContentText(null)
+        val builder = createBettboxNotificationBuilder(isSuspended, isHighPriority)
+        val notification = builder
+            .setContentTitle(title)
+            .setContentText(content)
             .setStyle(null)
-            .setTicker(combinedText)
             .build()
 
         if (!hasStartedForeground) {
-            this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
+            this.startForeground(notification, useSpecialType = !isSuspended)
             hasStartedForeground = true
         } else {
             getSystemService(android.app.NotificationManager::class.java)?.notify(GlobalState.NOTIFICATION_ID, notification)

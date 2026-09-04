@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -26,25 +25,12 @@ class ProvidersView extends ConsumerStatefulWidget {
 }
 
 class _ProvidersViewState extends ConsumerState<ProvidersView> {
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.read(providersProvider).isEmpty) {
-        globalState.appController.updateProviders();
-      }
+      globalState.appController.updateProviders();
     });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   Future<void> _updateProviders({String? type}) async {
@@ -119,6 +105,7 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
         actions: [
           IconButton(
             onPressed: _updateProviders,
+            tooltip: appLocalizations.update,
             icon: const Icon(Icons.sync),
           ),
         ],
@@ -150,6 +137,7 @@ class _ProvidersViewState extends ConsumerState<ProvidersView> {
                       actions: [
                         IconButton(
                           onPressed: section.onSync,
+                          tooltip: appLocalizations.update,
                           icon: const Icon(Icons.sync),
                           iconSize: 20,
                           splashRadius: 20,
@@ -316,7 +304,7 @@ class ProviderItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListItem(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(provider.name),
+      title: EmojiText(provider.name),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

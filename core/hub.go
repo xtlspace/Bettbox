@@ -29,6 +29,7 @@ import (
 	"github.com/metacubex/mihomo/hub/executor"
 	"github.com/metacubex/mihomo/listener"
 	"github.com/metacubex/mihomo/log"
+	mihomoNtp "github.com/metacubex/mihomo/ntp/ntp"
 	rulesProvider "github.com/metacubex/mihomo/rules/provider"
 	"github.com/metacubex/mihomo/tunnel"
 	"github.com/metacubex/mihomo/tunnel/statistic"
@@ -378,12 +379,6 @@ func handleUpdateGeoData(geoType string, geoName string, fn func(value string)) 
 				fn(err.Error())
 				return
 			}
-		case "GeoIp":
-			err := updater.UpdateGeoIpWithPath(path)
-			if err != nil {
-				fn(err.Error())
-				return
-			}
 		case "GeoSite":
 			err := updater.UpdateGeoSiteWithPath(path)
 			if err != nil {
@@ -609,6 +604,8 @@ func handleSetupConfig(bytes []byte) string {
 		_ = setupConfig(defaultSetupParams())
 		return err.Error()
 	}
+	clearSuspendedHealthChecks()
+	clearSuspendedWireGuard()
 	err = setupConfig(params)
 	if err != nil {
 		return err.Error()
@@ -623,9 +620,36 @@ func handleSuspend(suspended bool) bool {
 	if suspended {
 		log.Infoln("[APP] Suspend mode enabled")
 		tunnel.OnSuspend()
+		pauseHealthChecks()
+		pauseWireGuard()
+
+		mihomoNtp.ReCreateNTPService("", 0, "", nil, false)
+
+		statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
+			_ = c.Close()
+			return true
+		})
+
+		runtime.GC()
 	} else {
 		log.Infoln("[APP] Resume from suspend")
 		tunnel.OnRunning()
+		resumeHealthChecks()
+		resumeWireGuard()
+
+		runLock.Lock()
+		cfg := currentConfig
+		runLock.Unlock()
+		if cfg != nil && cfg.NTP != nil && cfg.NTP.Enable {
+			c := cfg.NTP
+			mihomoNtp.ReCreateNTPService(
+				net.JoinHostPort(c.Server, strconv.Itoa(c.Port)),
+				time.Duration(c.Interval),
+				c.DialerProxy,
+				tunnel.Tunnel,
+				c.WriteToSystem,
+			)
+		}
 	}
 	return true
 }

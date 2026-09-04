@@ -2312,7 +2312,7 @@ return $default(_that.enable,_that.listen,_that.preferH3,_that.cacheAlgorithm,_t
 @JsonSerializable()
 
 class _Dns implements Dns {
-  const _Dns({this.enable = true, this.listen = '0.0.0.0:10053', @JsonKey(name: 'prefer-h3') this.preferH3 = false, @JsonKey(name: 'cache-algorithm') this.cacheAlgorithm = CacheAlgorithm.arc, @JsonKey(name: 'use-hosts') this.useHosts = true, @JsonKey(name: 'use-system-hosts') this.useSystemHosts = true, @JsonKey(name: 'respect-rules') this.respectRules = false, this.ipv6 = false, @JsonKey(name: 'default-nameserver') final  List<String> defaultNameserver = const ['114.114.114.114'], @JsonKey(name: 'enhanced-mode') this.enhancedMode = DnsMode.fakeIp, @JsonKey(name: 'fake-ip-range') this.fakeIpRange = '198.18.0.1/15', @JsonKey(name: 'fake-ip-range6') this.fakeIpRangeV6 = '', @JsonKey(name: 'fake-ip-filter-mode') this.fakeIpFilterMode = FilterMode.blacklist, @JsonKey(name: 'fake-ip-filter') final  List<String> fakeIpFilter = const ['*', 'geosite:private', 'geosite:category-ntp', 'geosite:geolocation-cn', 'geosite:connectivity-check'], @JsonKey(name: 'fake-ip-ttl') this.fakeIpTtl = 1, @JsonKey(name: 'nameserver-policy') final  Map<String, String> nameserverPolicy = const {'+.internal.corp.com' : '10.0.0.1', 'geosite:cn' : '119.29.29.29', 'geosite:private' : 'system', '*' : 'system'}, final  List<String> nameserver = const ['1.1.1.1'], final  List<String> fallback = const [], @JsonKey(name: 'proxy-server-nameserver') final  List<String> proxyServerNameserver = const ['https://doh.pub/dns-query#DIRECT'], @JsonKey(name: 'direct-nameserver') final  List<String> directNameserver = const [], @JsonKey(name: 'direct-nameserver-follow-policy') this.directNameserverFollowPolicy = false, @JsonKey(name: 'fallback-filter') this.fallbackFilter = const FallbackFilter(), @JsonKey(name: 'fallback-lazy-query') this.fallbackLazyQuery = false}): _defaultNameserver = defaultNameserver,_fakeIpFilter = fakeIpFilter,_nameserverPolicy = nameserverPolicy,_nameserver = nameserver,_fallback = fallback,_proxyServerNameserver = proxyServerNameserver,_directNameserver = directNameserver;
+  const _Dns({this.enable = true, this.listen = '0.0.0.0:10053', @JsonKey(name: 'prefer-h3') this.preferH3 = false, @JsonKey(name: 'cache-algorithm') this.cacheAlgorithm = CacheAlgorithm.arc, @JsonKey(name: 'use-hosts') this.useHosts = true, @JsonKey(name: 'use-system-hosts') this.useSystemHosts = true, @JsonKey(name: 'respect-rules') this.respectRules = false, this.ipv6 = false, @JsonKey(name: 'default-nameserver') final  List<String> defaultNameserver = const ['114.114.114.114'], @JsonKey(name: 'enhanced-mode') this.enhancedMode = DnsMode.fakeIp, @JsonKey(name: 'fake-ip-range') this.fakeIpRange = '198.18.0.1/15', @JsonKey(name: 'fake-ip-range6') this.fakeIpRangeV6 = '', @JsonKey(name: 'fake-ip-filter-mode') this.fakeIpFilterMode = FilterMode.blacklist, @JsonKey(name: 'fake-ip-filter') final  List<String> fakeIpFilter = const ['*', 'geosite:private', 'geosite:category-ntp', 'geosite:geolocation-cn', 'geosite:connectivity-check'], @JsonKey(name: 'fake-ip-ttl') this.fakeIpTtl = 1, @JsonKey(name: 'nameserver-policy') final  Map<String, String> nameserverPolicy = const {'+.internal.corp.com' : '10.0.0.1', 'geosite:cn' : '119.29.29.29', 'geosite:private' : 'system', '*' : 'system'}, final  List<String> nameserver = const ['1.1.1.1'], final  List<String> fallback = const [], @JsonKey(name: 'proxy-server-nameserver') final  List<String> proxyServerNameserver = const ['https://120.53.53.53/dns-query#DIRECT'], @JsonKey(name: 'direct-nameserver') final  List<String> directNameserver = const [], @JsonKey(name: 'direct-nameserver-follow-policy') this.directNameserverFollowPolicy = false, @JsonKey(name: 'fallback-filter') this.fallbackFilter = const FallbackFilter(), @JsonKey(name: 'fallback-lazy-query') this.fallbackLazyQuery = false}): _defaultNameserver = defaultNameserver,_fakeIpFilter = fakeIpFilter,_nameserverPolicy = nameserverPolicy,_nameserver = nameserver,_fallback = fallback,_proxyServerNameserver = proxyServerNameserver,_directNameserver = directNameserver;
   factory _Dns.fromJson(Map<String, dynamic> json) => _$DnsFromJson(json);
 
 @override@JsonKey() final  bool enable;
@@ -3020,7 +3020,7 @@ as bool,
 /// @nodoc
 mixin _$GeoXUrl {
 
- String get mmdb; String get asn; String get geoip; String get geosite;
+ String get mmdb; String get asn; String get geosite;
 /// Create a copy of GeoXUrl
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3033,16 +3033,16 @@ $GeoXUrlCopyWith<GeoXUrl> get copyWith => _$GeoXUrlCopyWithImpl<GeoXUrl>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geoip, geoip) || other.geoip == geoip)&&(identical(other.geosite, geosite) || other.geosite == geosite));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geosite, geosite) || other.geosite == geosite));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mmdb,asn,geoip,geosite);
+int get hashCode => Object.hash(runtimeType,mmdb,asn,geosite);
 
 @override
 String toString() {
-  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geoip: $geoip, geosite: $geosite)';
+  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geosite: $geosite)';
 }
 
 
@@ -3053,7 +3053,7 @@ abstract mixin class $GeoXUrlCopyWith<$Res>  {
   factory $GeoXUrlCopyWith(GeoXUrl value, $Res Function(GeoXUrl) _then) = _$GeoXUrlCopyWithImpl;
 @useResult
 $Res call({
- String mmdb, String asn, String geoip, String geosite
+ String mmdb, String asn, String geosite
 });
 
 
@@ -3070,11 +3070,10 @@ class _$GeoXUrlCopyWithImpl<$Res>
 
 /// Create a copy of GeoXUrl
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? mmdb = null,Object? asn = null,Object? geoip = null,Object? geosite = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? mmdb = null,Object? asn = null,Object? geosite = null,}) {
   return _then(_self.copyWith(
 mmdb: null == mmdb ? _self.mmdb : mmdb // ignore: cast_nullable_to_non_nullable
 as String,asn: null == asn ? _self.asn : asn // ignore: cast_nullable_to_non_nullable
-as String,geoip: null == geoip ? _self.geoip : geoip // ignore: cast_nullable_to_non_nullable
 as String,geosite: null == geosite ? _self.geosite : geosite // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -3161,10 +3160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String mmdb,  String asn,  String geoip,  String geosite)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String mmdb,  String asn,  String geosite)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GeoXUrl() when $default != null:
-return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
+return $default(_that.mmdb,_that.asn,_that.geosite);case _:
   return orElse();
 
 }
@@ -3182,10 +3181,10 @@ return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String mmdb,  String asn,  String geoip,  String geosite)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String mmdb,  String asn,  String geosite)  $default,) {final _that = this;
 switch (_that) {
 case _GeoXUrl():
-return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
+return $default(_that.mmdb,_that.asn,_that.geosite);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3202,10 +3201,10 @@ return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String mmdb,  String asn,  String geoip,  String geosite)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String mmdb,  String asn,  String geosite)?  $default,) {final _that = this;
 switch (_that) {
 case _GeoXUrl() when $default != null:
-return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
+return $default(_that.mmdb,_that.asn,_that.geosite);case _:
   return null;
 
 }
@@ -3217,12 +3216,11 @@ return $default(_that.mmdb,_that.asn,_that.geoip,_that.geosite);case _:
 @JsonSerializable()
 
 class _GeoXUrl implements GeoXUrl {
-  const _GeoXUrl({this.mmdb = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.metadb', this.asn = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/GeoLite2-ASN.mmdb', this.geoip = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geoip.dat', this.geosite = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@release/geosite.dat'});
+  const _GeoXUrl({this.mmdb = 'https://github.com/appshubcc/bett-rules/releases/download/latest/geoip.metadb', this.asn = 'https://github.com/appshubcc/bett-rules/releases/download/latest/GeoLite2-ASN.mmdb', this.geosite = 'https://github.com/appshubcc/bett-rules/releases/download/latest/geosite.dat'});
   factory _GeoXUrl.fromJson(Map<String, dynamic> json) => _$GeoXUrlFromJson(json);
 
 @override@JsonKey() final  String mmdb;
 @override@JsonKey() final  String asn;
-@override@JsonKey() final  String geoip;
 @override@JsonKey() final  String geosite;
 
 /// Create a copy of GeoXUrl
@@ -3238,16 +3236,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geoip, geoip) || other.geoip == geoip)&&(identical(other.geosite, geosite) || other.geosite == geosite));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GeoXUrl&&(identical(other.mmdb, mmdb) || other.mmdb == mmdb)&&(identical(other.asn, asn) || other.asn == asn)&&(identical(other.geosite, geosite) || other.geosite == geosite));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,mmdb,asn,geoip,geosite);
+int get hashCode => Object.hash(runtimeType,mmdb,asn,geosite);
 
 @override
 String toString() {
-  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geoip: $geoip, geosite: $geosite)';
+  return 'GeoXUrl(mmdb: $mmdb, asn: $asn, geosite: $geosite)';
 }
 
 
@@ -3258,7 +3256,7 @@ abstract mixin class _$GeoXUrlCopyWith<$Res> implements $GeoXUrlCopyWith<$Res> {
   factory _$GeoXUrlCopyWith(_GeoXUrl value, $Res Function(_GeoXUrl) _then) = __$GeoXUrlCopyWithImpl;
 @override @useResult
 $Res call({
- String mmdb, String asn, String geoip, String geosite
+ String mmdb, String asn, String geosite
 });
 
 
@@ -3275,11 +3273,10 @@ class __$GeoXUrlCopyWithImpl<$Res>
 
 /// Create a copy of GeoXUrl
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? mmdb = null,Object? asn = null,Object? geoip = null,Object? geosite = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? mmdb = null,Object? asn = null,Object? geosite = null,}) {
   return _then(_GeoXUrl(
 mmdb: null == mmdb ? _self.mmdb : mmdb // ignore: cast_nullable_to_non_nullable
 as String,asn: null == asn ? _self.asn : asn // ignore: cast_nullable_to_non_nullable
-as String,geoip: null == geoip ? _self.geoip : geoip // ignore: cast_nullable_to_non_nullable
 as String,geosite: null == geosite ? _self.geosite : geosite // ignore: cast_nullable_to_non_nullable
 as String,
   ));

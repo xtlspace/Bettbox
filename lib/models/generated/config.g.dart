@@ -30,7 +30,7 @@ _AppSettingProps _$AppSettingPropsFromJson(Map<String, dynamic> json) =>
       openLogs: json['openLogs'] as bool? ?? true,
       closeConnections: json['closeConnections'] as bool? ?? true,
       testUrl: json['testUrl'] as String? ?? defaultTestUrl,
-      showStartSwitch: json['showStartSwitch'] as bool? ?? true,
+      showStartSwitch: json['showStartSwitch'] as bool? ?? false,
       enableNavBarHapticFeedback:
           json['enableNavBarHapticFeedback'] as bool? ?? true,
       autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
@@ -127,8 +127,17 @@ _AccessControl _$AccessControlFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      manualList:
+          (json['manualList'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       sort:
-          $enumDecodeNullable(_$AccessSortTypeEnumMap, json['sort']) ??
+          $enumDecodeNullable(
+            _$AccessSortTypeEnumMap,
+            json['sort'],
+            unknownValue: AccessSortType.none,
+          ) ??
           AccessSortType.none,
       isFilterSystemApp: json['isFilterSystemApp'] as bool? ?? false,
       isFilterNonInternetApp: json['isFilterNonInternetApp'] as bool? ?? false,
@@ -140,6 +149,7 @@ Map<String, dynamic> _$AccessControlToJson(_AccessControl instance) =>
       'mode': _$AccessControlModeEnumMap[instance.mode]!,
       'acceptList': instance.acceptList,
       'rejectList': instance.rejectList,
+      'manualList': instance.manualList,
       'sort': _$AccessSortTypeEnumMap[instance.sort]!,
       'isFilterSystemApp': instance.isFilterSystemApp,
       'isFilterNonInternetApp': instance.isFilterNonInternetApp,
@@ -152,8 +162,8 @@ const _$AccessControlModeEnumMap = {
 
 const _$AccessSortTypeEnumMap = {
   AccessSortType.none: 'none',
-  AccessSortType.name: 'name',
-  AccessSortType.time: 'time',
+  AccessSortType.installTime: 'installTime',
+  AccessSortType.updateTime: 'updateTime',
 };
 
 _WindowProps _$WindowPropsFromJson(Map<String, dynamic> json) => _WindowProps(
@@ -184,9 +194,22 @@ _VpnProps _$VpnPropsFromJson(Map<String, dynamic> json) => _VpnProps(
   storeFix: json['storeFix'] as bool? ?? false,
   networkFix: json['networkFix'] as bool? ?? false,
   disableQuic: json['disableQuic'] as bool? ?? false,
+  highPriorityNotification: json['highPriorityNotification'] as bool? ?? false,
   networkSpeedNotification: json['networkSpeedNotification'] as bool? ?? false,
   excludeChina: json['excludeChina'] as bool? ?? false,
   trayEnhancement: json['trayEnhancement'] as bool? ?? false,
+  trayLeftClickBehavior:
+      $enumDecodeNullable(
+        _$TrayClickBehaviorEnumMap,
+        json['trayLeftClickBehavior'],
+      ) ??
+      TrayClickBehavior.showPanel,
+  trayRightClickBehavior:
+      $enumDecodeNullable(
+        _$TrayClickBehaviorEnumMap,
+        json['trayRightClickBehavior'],
+      ) ??
+      TrayClickBehavior.showMenu,
   enableTraySpeed: json['enableTraySpeed'] as bool? ?? false,
   alwaysShowTitleBar: json['alwaysShowTitleBar'] as bool? ?? true,
   quickResponse: json['quickResponse'] as bool? ?? true,
@@ -206,13 +229,23 @@ Map<String, dynamic> _$VpnPropsToJson(_VpnProps instance) => <String, dynamic>{
   'storeFix': instance.storeFix,
   'networkFix': instance.networkFix,
   'disableQuic': instance.disableQuic,
+  'highPriorityNotification': instance.highPriorityNotification,
   'networkSpeedNotification': instance.networkSpeedNotification,
   'excludeChina': instance.excludeChina,
   'trayEnhancement': instance.trayEnhancement,
+  'trayLeftClickBehavior':
+      _$TrayClickBehaviorEnumMap[instance.trayLeftClickBehavior]!,
+  'trayRightClickBehavior':
+      _$TrayClickBehaviorEnumMap[instance.trayRightClickBehavior]!,
   'enableTraySpeed': instance.enableTraySpeed,
   'alwaysShowTitleBar': instance.alwaysShowTitleBar,
   'quickResponse': instance.quickResponse,
   'accessControl': instance.accessControl,
+};
+
+const _$TrayClickBehaviorEnumMap = {
+  TrayClickBehavior.showPanel: 'showPanel',
+  TrayClickBehavior.showMenu: 'showMenu',
 };
 
 _NetworkProps _$NetworkPropsFromJson(Map<String, dynamic> json) =>
@@ -271,6 +304,7 @@ _ProxiesStyle _$ProxiesStyleFromJson(Map<String, dynamic> json) =>
           const {},
       concurrencyLimit: (json['concurrencyLimit'] as num?)?.toInt() ?? 250,
       showHiddenItems: json['showHiddenItems'] as bool? ?? false,
+      hasCustomizedStyle: json['hasCustomizedStyle'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ProxiesStyleToJson(_ProxiesStyle instance) =>
@@ -284,6 +318,7 @@ Map<String, dynamic> _$ProxiesStyleToJson(_ProxiesStyle instance) =>
       'iconMap': instance.iconMap,
       'concurrencyLimit': instance.concurrencyLimit,
       'showHiddenItems': instance.showHiddenItems,
+      'hasCustomizedStyle': instance.hasCustomizedStyle,
     };
 
 const _$ProxiesTypeEnumMap = {ProxiesType.tab: 'tab', ProxiesType.list: 'list'};

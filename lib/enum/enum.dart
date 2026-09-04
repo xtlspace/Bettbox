@@ -86,6 +86,8 @@ enum Mode { rule, global, direct }
 
 enum IpClickBehavior { privacyProtection, manualRefresh, switchDomestic }
 
+enum TrayClickBehavior { showPanel, showMenu }
+
 enum ViewMode { mobile, laptop, desktop }
 
 enum LogLevel { debug, info, warning, error, silent }
@@ -116,7 +118,7 @@ enum TunStack { gvisor, system, mixed }
 
 enum AccessControlMode { acceptSelected, rejectSelected }
 
-enum AccessSortType { none, name, time }
+enum AccessSortType { none, installTime, updateTime }
 
 enum ProfileType { file, url }
 

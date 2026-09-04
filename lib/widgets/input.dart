@@ -3,6 +3,7 @@ import 'package:bett_box/models/common.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/dialog.dart';
 import 'package:bett_box/widgets/null_status.dart';
+import 'package:bett_box/widgets/text.dart';
 import 'package:flutter/material.dart';
 
 import 'card.dart';
@@ -62,12 +63,12 @@ class OptionsDialog<T> extends StatelessWidget {
                         child: value == option
                             ? SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
-                                child: Text(
+                                child: EmojiText(
                                   textBuilder(option),
                                   style: context.textTheme.bodyMedium,
                                 ),
                               )
-                            : Text(
+                            : EmojiText(
                                 textBuilder(option),
                                 style: context.textTheme.bodyMedium,
                                 overflow: TextOverflow.ellipsis,
@@ -119,6 +120,9 @@ class InputDialog extends StatefulWidget {
   final bool? obscureText;
   final bool autofocus;
   final bool delayedFocus;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
 
   const InputDialog({
     super.key,
@@ -132,6 +136,9 @@ class InputDialog extends StatefulWidget {
     this.labelText,
     this.autofocus = false,
     this.delayedFocus = false,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.textInputAction,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
@@ -175,13 +182,10 @@ class _InputDialogState extends State<InputDialog> {
   }
 
   Future<void> _handleUpdate() async {
-    // Trigger validation and check result
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
-      // Validation failed, keep dialog open
       return;
     }
-    // Validation passed, close dialog with value
     final text = textController.value.text;
     Navigator.of(context).pop<String>(text);
   }
@@ -221,8 +225,12 @@ class _InputDialogState extends State<InputDialog> {
               autofocus: widget.autofocus && !widget.delayedFocus,
               focusNode: _focusNode,
               obscureText: widget.obscureText ?? false,
-              keyboardType: TextInputType.url,
-              maxLines: widget.obscureText == true ? 1 : 5,
+              keyboardType: widget.keyboardType ??
+                  (widget.obscureText == true
+                      ? TextInputType.visiblePassword
+                      : TextInputType.text),
+              textInputAction: widget.textInputAction ?? TextInputAction.done,
+              maxLines: widget.obscureText == true ? 1 : widget.maxLines,
               minLines: 1,
               controller: textController,
               onFieldSubmitted: (_) {

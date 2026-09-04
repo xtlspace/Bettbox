@@ -18,6 +18,7 @@ import 'package:bett_box/widgets/popup.dart';
 import 'package:bett_box/widgets/scaffold.dart';
 import 'package:bett_box/widgets/scroll.dart';
 import 'package:bett_box/widgets/sheet.dart';
+import 'package:bett_box/widgets/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -182,7 +183,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                   radius: 16,
                   child: ListItem(
                     padding: const EdgeInsets.only(left: 12, right: 12),
-                    title: Text(script.label),
+                    title: EmojiText(script.label),
                     leading: Switch(
                       value: isSelected,
                       onChanged: (value) {
@@ -199,6 +200,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
                           onPressed: () {
                             open();
                           },
+                          tooltip: appLocalizations.more,
                           icon: Icon(Icons.more_vert),
                         );
                       },
@@ -437,6 +439,7 @@ class _ScriptsViewState extends ConsumerState<ScriptsView> {
       actions: [
         IconButton(
           onPressed: _handleShowScriptSettings,
+          tooltip: appLocalizations.settings,
           icon: Icon(Icons.settings),
         ),
       ],
@@ -473,7 +476,7 @@ class _ScriptSettingsSheet extends ConsumerWidget {
                     type: CommonCardType.filled,
                     child: ListTile(
                       contentPadding: const EdgeInsets.only(left: 16, right: 16),
-                      title: Text(profile.label ?? profile.id),
+                      title: EmojiText(profile.label ?? profile.id),
                       trailing: Switch(
                         value: profile.useScriptOverride,
                         onChanged: (value) async {

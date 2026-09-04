@@ -37,6 +37,17 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     super.initState();
     _initConnectivityListener();
     _initNativeNetworkListener();
+    _syncSmartStopped();
+  }
+
+  void _syncSmartStopped() async {
+    if (!system.isAndroid) return;
+    try {
+      final isStopped = await service?.isSmartStopped() ?? false;
+      if (mounted) {
+        ref.read(isSmartStoppedProvider.notifier).set(isStopped);
+      }
+    } catch (_) {}
   }
 
   void _initNativeNetworkListener() {
@@ -59,7 +70,15 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     service?.addNativeEventCallback(_nativeEventCallback);
   }
 
-  void _onNativeNetworkChanged() {
+  void _onNativeNetworkChanged() async {
+    if (system.isAndroid) {
+      try {
+        final isStopped = await service?.isSmartStopped() ?? false;
+        if (mounted) {
+          ref.read(isSmartStoppedProvider.notifier).set(isStopped);
+        }
+      } catch (_) {}
+    }
     final vpnProps = ref.read(vpnSettingProvider);
     if (!vpnProps.smartAutoStop) return;
     _debouncedCheckCurrentNetwork();
@@ -128,27 +147,32 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
 
       final isSmartStopped = ref.read(isSmartStoppedProvider);
 
-      // Get current IP(s) — always from native on Android for consistency
+      // Get current IP(s) and gateway(s) — always from native on Android
       List<String> candidateIps;
+      List<String> candidateGateways;
       if (system.isAndroid) {
         candidateIps = await _getNativeLocalIpAddresses();
+        candidateGateways = await _getNativeLocalGateways();
       } else {
         final ip = await _getLocalIpAddress();
         candidateIps = ip != null ? [ip] : [];
+        candidateGateways = await _getDesktopLocalGateways();
       }
 
-      if (candidateIps.isEmpty) {
-        commonPrint.log('Smart Auto Stop: No IP found. Skipping.');
+      if (candidateIps.isEmpty && candidateGateways.isEmpty) {
+        commonPrint.log('Smart Auto Stop: No IP/Gateway found. Skipping.');
         return;
       }
 
-      // Match: any IP matches any rule = should stop
-      final shouldStop = candidateIps.any(
-        (ip) => NetworkMatcher.matchAny(ip, networks),
-      );
+      // Match: any IP hits an IP rule, or any gateway hits a gateway rule
+      final shouldStop =
+          candidateIps.any((ip) => NetworkMatcher.matchAny(ip, networks)) ||
+          candidateGateways.any(
+            (gw) => NetworkMatcher.matchAnyGateway(gw, networks),
+          );
 
       commonPrint.log(
-        'SmartAutoStop: IPs=${candidateIps.join(",")}, RuleMatch=$shouldStop, SmartStopped=$isSmartStopped',
+        'SmartAutoStop: IPs=${candidateIps.join(",")}, Gateways=${candidateGateways.join(",")}, RuleMatch=$shouldStop, SmartStopped=$isSmartStopped',
       );
 
       // Dedup: only act on state transitions
@@ -183,6 +207,28 @@ class _SmartAutoStopManagerState extends ConsumerState<SmartAutoStopManager> {
     // Fallback to Flutter layer
     final ip = await _getLocalIpAddress();
     return ip != null ? [ip] : [];
+  }
+
+  Future<List<String>> _getNativeLocalGateways() async {
+    try {
+      final serviceInstance = service;
+      if (serviceInstance != null) {
+        final gateways = await serviceInstance.getLocalGateways();
+        if (gateways.isNotEmpty) return gateways;
+      }
+    } catch (e) {
+      commonPrint.log('Smart Auto Stop: Native gateway error: $e');
+    }
+    return [];
+  }
+
+  Future<List<String>> _getDesktopLocalGateways() async {
+    try {
+      return await utils.getLocalGateways();
+    } catch (e) {
+      commonPrint.log('Smart Auto Stop: Desktop gateway error: $e');
+      return [];
+    }
   }
 
   Future<String?> _getLocalIpAddress() async {

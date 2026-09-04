@@ -1,5 +1,6 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/common/network_matcher.dart';
+import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/plugins/app.dart';
 import 'package:bett_box/plugins/service.dart';
 import 'package:bett_box/providers/config.dart';
@@ -42,8 +43,8 @@ class SmartAutoStopSection extends ConsumerWidget {
             thickness: 1,
             color: context.colorScheme.outlineVariant.withValues(
               alpha: context.colorScheme.brightness == Brightness.light
-                  ? 0.3
-                  : 0.2,
+                  ? 0.6
+                  : 0.45,
             ),
             indent: 16,
             endIndent: 16,
@@ -432,8 +433,8 @@ class DisableQuicSection extends ConsumerWidget {
             thickness: 1,
             color: context.colorScheme.outlineVariant.withValues(
               alpha: context.colorScheme.brightness == Brightness.light
-                  ? 0.3
-                  : 0.2,
+                  ? 0.6
+                  : 0.45,
             ),
             indent: 16,
             endIndent: 16,
@@ -453,6 +454,62 @@ class DisableQuicSection extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class HighPriorityNotificationItem extends ConsumerWidget {
+  const HighPriorityNotificationItem({super.key});
+
+  Future<bool> _showConfirmDialog(BuildContext context) async {
+    final result = await globalState.showCommonDialog<bool>(
+      child: CommonDialog(
+        title: appLocalizations.notificationHighPriority,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop(false);
+            },
+            child: Text(appLocalizations.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop(true);
+            },
+            child: Text(appLocalizations.confirm),
+          ),
+        ],
+        child: Text(appLocalizations.notificationHighPriorityTip),
+      ),
+    );
+    return result == true;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final highPriority = ref.watch(
+      vpnSettingProvider.select((state) => state.highPriorityNotification),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.notificationHighPriority),
+      subtitle: Text(appLocalizations.notificationHighPriorityDesc),
+      delegate: SwitchDelegate(
+        value: highPriority,
+        onChanged: (bool value) async {
+          if (value) {
+            final confirm = await _showConfirmDialog(context);
+            if (!confirm) return;
+          }
+          ref
+              .read(vpnSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(highPriorityNotification: value),
+              );
+          if (system.isAndroid) {
+            await service?.setHighPriorityNotification(value);
+          }
+        },
+      ),
     );
   }
 }
@@ -488,20 +545,79 @@ class NetworkSpeedNotificationItem extends ConsumerWidget {
 class TraySection extends ConsumerWidget {
   const TraySection({super.key});
 
+  Future<void> _showTrayClickBehaviorDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    required TrayClickBehavior leftBehavior,
+    required TrayClickBehavior rightBehavior,
+  }) async {
+    final result = await globalState
+        .showCommonDialog<
+          ({TrayClickBehavior leftBehavior, TrayClickBehavior rightBehavior})
+        >(
+          child: _TrayClickBehaviorDialog(
+            leftBehavior: leftBehavior,
+            rightBehavior: rightBehavior,
+          ),
+        );
+    if (result == null) return;
+    ref
+        .read(vpnSettingProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(
+            trayLeftClickBehavior: result.leftBehavior,
+            trayRightClickBehavior: result.rightBehavior,
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trayEnhancement = ref.watch(
-      vpnSettingProvider.select((state) => state.trayEnhancement),
+    final (trayEnhancement, leftBehavior, rightBehavior) = ref.watch(
+      vpnSettingProvider.select(
+        (state) => (
+          state.trayEnhancement,
+          state.trayLeftClickBehavior,
+          state.trayRightClickBehavior,
+        ),
+      ),
     );
     final enableTraySpeed = ref.watch(
       vpnSettingProvider.select((state) => state.enableTraySpeed),
     );
 
+    final showClickBehaviorSetting = system.isMacOS;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ListItem.switchItem(
-          title: Text(appLocalizations.trayEnhancement),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(appLocalizations.trayEnhancement),
+              if (showClickBehaviorSetting) ...[
+                const SizedBox(width: 6),
+                Tooltip(
+                  message: appLocalizations.trayClickBehavior,
+                  child: InkResponse(
+                    radius: 16,
+                    onTap: () => _showTrayClickBehaviorDialog(
+                      context,
+                      ref,
+                      leftBehavior: leftBehavior,
+                      rightBehavior: rightBehavior,
+                    ),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: 18,
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
           subtitle: Text(appLocalizations.trayEnhancementDesc),
           delegate: SwitchDelegate(
             value: trayEnhancement,
@@ -519,8 +635,8 @@ class TraySection extends ConsumerWidget {
             thickness: 1,
             color: context.colorScheme.outlineVariant.withValues(
               alpha: context.colorScheme.brightness == Brightness.light
-                  ? 0.3
-                  : 0.2,
+                  ? 0.6
+                  : 0.45,
             ),
             indent: 16,
             endIndent: 16,
@@ -544,6 +660,101 @@ class TraySection extends ConsumerWidget {
   }
 }
 
+class _TrayClickBehaviorDialog extends StatefulWidget {
+  final TrayClickBehavior leftBehavior;
+  final TrayClickBehavior rightBehavior;
+
+  const _TrayClickBehaviorDialog({
+    required this.leftBehavior,
+    required this.rightBehavior,
+  });
+
+  @override
+  State<_TrayClickBehaviorDialog> createState() =>
+      _TrayClickBehaviorDialogState();
+}
+
+class _TrayClickBehaviorDialogState extends State<_TrayClickBehaviorDialog> {
+  late TrayClickBehavior _leftBehavior;
+  late TrayClickBehavior _rightBehavior;
+
+  @override
+  void initState() {
+    super.initState();
+    _leftBehavior = widget.leftBehavior;
+    _rightBehavior = widget.rightBehavior;
+  }
+
+  List<ButtonSegment<TrayClickBehavior>> get _segments => [
+    ButtonSegment(
+      value: TrayClickBehavior.showPanel,
+      icon: const Icon(Icons.dashboard_outlined),
+      label: Text(appLocalizations.showPanel),
+    ),
+    ButtonSegment(
+      value: TrayClickBehavior.showMenu,
+      icon: const Icon(Icons.menu),
+      label: Text(appLocalizations.showMenu),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonDialog(
+      title: appLocalizations.trayClickBehavior,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).pop((leftBehavior: _leftBehavior, rightBehavior: _rightBehavior));
+          },
+          child: Text(appLocalizations.confirm),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            appLocalizations.leftClickBehavior,
+            style: context.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<TrayClickBehavior>(
+            segments: _segments,
+            selected: {_leftBehavior},
+            showSelectedIcon: false,
+            expandedInsets: EdgeInsets.zero,
+            onSelectionChanged: (selection) {
+              setState(() => _leftBehavior = selection.first);
+            },
+          ),
+          const SizedBox(height: 20),
+          Text(
+            appLocalizations.rightClickBehavior,
+            style: context.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<TrayClickBehavior>(
+            segments: _segments,
+            selected: {_rightBehavior},
+            showSelectedIcon: false,
+            expandedInsets: EdgeInsets.zero,
+            onSelectionChanged: (selection) {
+              setState(() => _rightBehavior = selection.first);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class OtherSettingView extends ConsumerWidget {
   const OtherSettingView({super.key});
 
@@ -555,6 +766,7 @@ class OtherSettingView extends ConsumerWidget {
       if (system.isAndroid) const QuickResponseItem(),
       const StoreFixItem(),
       const DisableQuicSection(),
+      if (system.isAndroid) const HighPriorityNotificationItem(),
       if (system.isAndroid) const NetworkSpeedNotificationItem(),
       if (!system.isAndroid) const TraySection(),
       if (system.isWindows) const HighPriorityItem(),
@@ -566,6 +778,6 @@ class OtherSettingView extends ConsumerWidget {
       return const Center(child: Text('No settings available'));
     }
 
-    return generateListView(items);
+    return generateListView(generateSection(items: items));
   }
 }

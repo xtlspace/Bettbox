@@ -124,13 +124,18 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
         setMtu(options.mtu.coerceIn(1280..65535).takeIf { it > 0 } ?: 1480)
 
-        options.accessControl.takeIf { it.enable }?.let { ac ->
-            when (ac.mode) {
-                AccessControlMode.acceptSelected -> (ac.acceptList + packageName).forEach {
-                    runCatching { addAllowedApplication(it) }
+        val accessControl = options.accessControl
+        if (accessControl.enable) {
+            when (accessControl.mode) {
+                AccessControlMode.acceptSelected -> {
+                    (accessControl.acceptList + packageName).filter { it.isNotBlank() }.distinct().forEach { appPkg ->
+                        runCatching { addAllowedApplication(appPkg) }
+                            .onFailure { Log.e(TAG, "Failed to allow package $appPkg: ${it.message}", it) }
+                    }
                 }
-                AccessControlMode.rejectSelected -> (ac.rejectList - packageName).forEach {
-                    runCatching { addDisallowedApplication(it) }
+                AccessControlMode.rejectSelected -> (accessControl.rejectList - packageName).filter { it.isNotBlank() }.distinct().forEach { appPkg ->
+                    runCatching { addDisallowedApplication(appPkg) }
+                        .onFailure { Log.e(TAG, "Failed to disallow package $appPkg: ${it.message}", it) }
                 }
             }
         }
@@ -144,7 +149,13 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             setHttpProxy(ProxyInfo.buildDirectProxy("127.0.0.1", options.port, options.bypassDomain))
         }
 
-        establish()?.detachFd()?.also { return it }
+        val fd = runCatching { establish()?.detachFd() }.getOrElse { e ->
+            Log.e(TAG, "Establish VPN exception: ${e.message}")
+            null
+        }
+        if (fd != null && fd > 0) {
+            return fd
+        }
         Log.e(TAG, "Establish VPN rejected by system")
         -1
     }
@@ -161,6 +172,8 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             }
         } else if (intent?.action == "RESTORE_NOTIFICATION") {
             isSpeedNotificationEnabled = false
+            pendingSpeedProfile = null
+            pendingSpeedInfo = null
             if (hasStartedForeground) {
                 CoroutineScope(Dispatchers.Main).launch {
                     startForeground()
@@ -207,10 +220,12 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
     @SuppressLint("ForegroundServiceType")
     override suspend fun startForeground() {
-        ensureNotificationChannel()
+        val isSuspended = GlobalState.isSmartStopped
+        val isHighPriority = GlobalState.isNotificationHighPriority
+        ensureNotificationChannel(isSuspended, isHighPriority)
         val title: String
         val content: String
-        if (GlobalState.isSmartStopped) {
+        if (isSuspended) {
             title = getString(R.string.core_suspended)
             content = getString(R.string.smart_auto_stop_service_running)
         } else {
@@ -219,24 +234,11 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
         }
 
         lastNotificationText = null
-        val builder = notificationBuilder()
-
-        val separator = " ︙ "
-        val combinedText = "$title$separator$content"
-        val spannable = android.text.SpannableString(combinedText)
-        val startIndex = title.length + separator.length
-        if (startIndex in 1..combinedText.length) {
-            spannable.setSpan(
-                android.text.style.RelativeSizeSpan(0.80f),
-                startIndex,
-                combinedText.length,
-                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-        }
-        val notification = builder.setContentTitle(spannable)
-            .setContentText(null)
+        val builder = createBettboxNotificationBuilder(isSuspended, isHighPriority)
+        val notification = builder
+            .setContentTitle(title)
+            .setContentText(content)
             .setStyle(null)
-            .setTicker(combinedText)
             .build()
 
         val isFirstTime = !hasStartedForeground
@@ -246,12 +248,12 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
 
         val pendingProfile = pendingSpeedProfile
         val pendingSpeed = pendingSpeedInfo
-        if (isFirstTime && isSpeedNotificationEnabled && pendingProfile != null && pendingSpeed != null) {
+        if (!isSuspended && GlobalState.isSpeedNotificationEnabled && pendingProfile != null && pendingSpeed != null) {
             updateNotificationSpeed(pendingProfile, pendingSpeed)
             return
         }
 
-        this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
+        this.startForeground(notification, useSpecialType = !isSuspended)
     }
 
     @SuppressLint("ForegroundServiceType")
@@ -268,34 +270,29 @@ class BettboxVpnService : VpnService(), BaseServiceInterface {
             return
         }
 
-        val separator = " ︙ "
-        val combinedText = "$profileName$separator$speedInfo"
+        val combinedText = "$profileName\n$speedInfo"
         if (combinedText == lastNotificationText) {
             return
         }
         lastNotificationText = combinedText
 
         val builder = notificationBuilder()
-        val spannable = android.text.SpannableString(combinedText)
-        val startIndex = profileName.length + separator.length
-        if (startIndex in 1..combinedText.length) {
-            spannable.setSpan(
-                android.text.style.RelativeSizeSpan(0.80f),
-                startIndex,
-                combinedText.length,
-                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-        }
-        val notification = builder.setContentTitle(spannable)
-            .setContentText(null)
+        val notification = builder
+            .setContentTitle(profileName)
+            .setContentText(speedInfo)
             .setStyle(null)
-            .setTicker(combinedText)
             .build()
 
-        if (hasStartedForeground) {
+        if (!hasStartedForeground) {
+            hasStartedForeground = true
             runCatching {
                 this.startForeground(notification, useSpecialType = !GlobalState.isSmartStopped)
             }.onFailure { Log.e(TAG, "updateNotificationSpeed startForeground error: ${it.message}") }
+        } else {
+            runCatching {
+                getSystemService(android.app.NotificationManager::class.java)
+                    ?.notify(GlobalState.NOTIFICATION_ID, notification)
+            }.onFailure { Log.e(TAG, "updateNotificationSpeed notify error: ${it.message}") }
         }
     }
 

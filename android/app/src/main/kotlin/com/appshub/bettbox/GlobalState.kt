@@ -33,6 +33,8 @@ object GlobalState {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     const val NOTIFICATION_CHANNEL = "Bettbox"
+    const val NOTIFICATION_CHANNEL_HIGH = "Bettbox_High"
+    const val NOTIFICATION_CHANNEL_SUSPENDED = "Bettbox_Suspended"
     const val NOTIFICATION_ID = 1
 
     private const val TOGGLE_DEBOUNCE_MS = 1000L
@@ -65,6 +67,9 @@ object GlobalState {
 
     @Volatile
     var isSpeedNotificationEnabled: Boolean = false
+
+    @Volatile
+    var isNotificationHighPriority: Boolean = false
 
     fun updateRunState(newState: RunState) {
         if (newState != RunState.PENDING) {

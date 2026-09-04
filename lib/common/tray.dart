@@ -70,9 +70,10 @@ class Tray {
             WidgetsBinding.instance.platformDispatcher.platformBrightness,
         isStart: isStart,
         invertTrayIcon:
-            system.isWindows && globalState.config.themeProps.invertTrayIcon,
+            (system.isWindows || (system.isMacOS && !isStart)) &&
+            globalState.config.themeProps.invertTrayIcon,
       ),
-      isTemplate: system.isMacOS,
+      isTemplate: system.isMacOS && isStart,
     );
     if (system.isMacOS) {
       await trayManager.setActive(isStart);
@@ -148,8 +149,8 @@ class Tray {
       label: trayState.isStart ? appLocalizations.stop : appLocalizations.start,
       onClick: (_) async {
         final appController = globalState.appController;
-        await appController.updateStatus(!trayState.isStart);
-        await appController.updateTray();
+        await appController.updateStatus(!globalState.isStart);
+        await appController.updateTray(false, false, true);
       },
       checked: false,
     );
