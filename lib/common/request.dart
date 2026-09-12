@@ -195,7 +195,7 @@ class Request {
         }
       }
     } catch (e) {
-      commonPrint.log('Check update failed: ${e.formatError}');
+      commonPrint.log('Check update failed: ${e.formatErrorLog}');
     }
     return null;
   }
@@ -204,9 +204,8 @@ class Request {
     final locale = Intl.getCurrentLocale().toLowerCase();
     final isZh = locale.startsWith('zh');
     return [
-      if (ipInfoToken.isNotEmpty)
-        'https://api.ipinfo.io/lite/me?token=$ipInfoToken',
-      isZh ? 'https://api.myip.la/cn?json' : 'https://api.myip.la/en?json',
+      isZh ? 'http://ip-api.com/json/?lang=zh-CN' : 'http://ip-api.com/json',
+      'https://get.geojs.io/v1/ip/geo.json',
     ];
   }
 
@@ -214,7 +213,6 @@ class Request {
     'https://myip.ipip.net/json',
   ];
 
-  // 备用 Cloudflare 探测源
   final List<String> _cloudflareIpInfoSources = [
     'https://ip.sb/cdn-cgi/trace',
     'https://api.ip.sb/cdn-cgi/trace',
@@ -248,7 +246,8 @@ class Request {
     );
 
     final Completer<Result<IpInfo?>> firstCompleter = Completer();
-    IpInfo? mergedInfo;
+    IpInfo? primaryInfo;
+    IpInfo? fallbackInfo;
     int completedCount = 0;
     Timer? cleanupTimer;
 
@@ -265,14 +264,17 @@ class Request {
       completedCount++;
       if (completedCount == sources.length) {
         if (!firstCompleter.isCompleted) {
-          firstCompleter.complete(Result.success(mergedInfo));
+          final res = primaryInfo ?? fallbackInfo;
+          if (res != null) onUpdate?.call(res);
+          firstCompleter.complete(Result.success(res));
         }
         cleanup();
       }
     }
 
-    for (final url in sources) {
-      final isIpInfo = url.contains('ipinfo.io');
+    for (int i = 0; i < sources.length; i++) {
+      final url = sources[i];
+      final isPrimary = i == 0;
       dio
           .get<Uint8List>(
             url,
@@ -290,22 +292,31 @@ class Request {
                 if (text.startsWith('{')) {
                   final jsonMap = json.decode(text);
                   if (jsonMap is Map<String, dynamic>) {
-                    ipInfo = IpInfo.fromJson(jsonMap);
+                    if (url.contains('ip-api.com') && jsonMap['status'] != 'success') {
+                      ipInfo = null;
+                    } else {
+                      ipInfo = IpInfo.fromJson(jsonMap);
+                    }
                   }
                 } else {
                   ipInfo = IpInfo.fromCloudflareTrace(text);
                 }
 
                 if (ipInfo != null) {
-                  mergedInfo = mergedInfo == null
-                      ? ipInfo
-                      : mergedInfo!.merge(
-                          ipInfo,
-                          otherIsAuthoritative: isIpInfo,
-                        );
-                  onUpdate?.call(mergedInfo!);
-                  if (!firstCompleter.isCompleted) {
-                    firstCompleter.complete(Result.success(mergedInfo));
+                  if (isPrimary) {
+                    primaryInfo = ipInfo;
+                    onUpdate?.call(ipInfo);
+                    if (!firstCompleter.isCompleted) {
+                      firstCompleter.complete(Result.success(ipInfo));
+                    }
+                  } else {
+                    fallbackInfo = ipInfo;
+                    if (sources.length == 1) {
+                      onUpdate?.call(ipInfo);
+                      if (!firstCompleter.isCompleted) {
+                        firstCompleter.complete(Result.success(ipInfo));
+                      }
+                    }
                   }
                 }
               } catch (_) {}
@@ -324,7 +335,7 @@ class Request {
 
     return await firstCompleter.future.timeout(
       effectiveTimeout,
-      onTimeout: () => Result.success(mergedInfo),
+      onTimeout: () => Result.success(primaryInfo ?? fallbackInfo),
     );
   }
 

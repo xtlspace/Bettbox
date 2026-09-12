@@ -109,11 +109,7 @@ class ServicePlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "restoreNotification" -> {
                 val context = com.appshub.bettbox.BettboxApplication.getAppContext()
                 if (context != null) {
-                    com.appshub.bettbox.GlobalState.isSpeedNotificationEnabled = false
-                    android.service.quicksettings.TileService.requestListeningState(
-                        context,
-                        android.content.ComponentName(context, com.appshub.bettbox.services.BettboxTileService::class.java)
-                    )
+                    GlobalState.isSpeedNotificationEnabled = false
 
                     val intent = android.content.Intent(
                         context, 
