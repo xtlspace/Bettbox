@@ -169,8 +169,13 @@ _Tun _$TunFromJson(Map<String, dynamic> json) => _Tun(
   enable: json['enable'] as bool? ?? false,
   device: json['device'] as String? ?? tunDeviceName,
   autoRoute: json['auto-route'] as bool? ?? false,
-  stack:
-      $enumDecodeNullable(_$TunStackEnumMap, json['stack']) ?? TunStack.mixed,
+  stack: $enumDecodeNullable(_$TunStackEnumMap, json['stack']) ?? TunStack.mips,
+  congestionController:
+      $enumDecodeNullable(
+        _$CongestionControllerEnumMap,
+        json['congestion-controller'],
+      ) ??
+      CongestionController.bbr3,
   dnsHijack:
       (json['dns-hijack'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -198,6 +203,8 @@ Map<String, dynamic> _$TunToJson(_Tun instance) => <String, dynamic>{
   'device': instance.device,
   'auto-route': instance.autoRoute,
   'stack': _$TunStackEnumMap[instance.stack]!,
+  'congestion-controller':
+      _$CongestionControllerEnumMap[instance.congestionController]!,
   'dns-hijack': instance.dnsHijack,
   'route-address': instance.routeAddress,
   'route-exclude-address': instance.routeExcludeAddress,
@@ -213,6 +220,13 @@ const _$TunStackEnumMap = {
   TunStack.system: 'system',
   TunStack.mixed: 'mixed',
   TunStack.mips: 'mips',
+};
+
+const _$CongestionControllerEnumMap = {
+  CongestionController.cubic: 'cubic',
+  CongestionController.reno: 'reno',
+  CongestionController.bbr: 'bbr',
+  CongestionController.bbr3: 'bbr3',
 };
 
 _FallbackFilter _$FallbackFilterFromJson(
@@ -449,6 +463,16 @@ _ClashConfig _$ClashConfigFromJson(Map<String, dynamic> json) => _ClashConfig(
   tproxyPort: (json['tproxy-port'] as num?)?.toInt() ?? 0,
   mode: $enumDecodeNullable(_$ModeEnumMap, json['mode']) ?? Mode.rule,
   allowLan: json['allow-lan'] as bool? ?? false,
+  authentication:
+      (json['authentication'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  skipAuthPrefixes:
+      (json['skip-auth-prefixes'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      defaultSkipAuthPrefixes,
   logLevel:
       $enumDecodeNullable(_$LogLevelEnumMap, json['log-level']) ??
       LogLevel.error,
@@ -527,6 +551,8 @@ Map<String, dynamic> _$ClashConfigToJson(_ClashConfig instance) =>
       'tproxy-port': instance.tproxyPort,
       'mode': _$ModeEnumMap[instance.mode]!,
       'allow-lan': instance.allowLan,
+      'authentication': instance.authentication,
+      'skip-auth-prefixes': instance.skipAuthPrefixes,
       'log-level': _$LogLevelEnumMap[instance.logLevel]!,
       'ipv6': instance.ipv6,
       'find-process-mode': _$FindProcessModeEnumMap[instance.findProcessMode]!,

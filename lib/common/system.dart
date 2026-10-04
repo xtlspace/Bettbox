@@ -81,7 +81,7 @@ class System {
     if (await checkIsAdmin()) return AuthorizeCode.none;
 
     if (system.isWindows) {
-      if (await windows?._isHelperHealthy() ?? false) return AuthorizeCode.none;
+      if (await windows?.isHelperHealthy() ?? false) return AuthorizeCode.none;
       final result = await windows?.registerService();
       return result == true ? AuthorizeCode.success : AuthorizeCode.error;
     }
@@ -359,14 +359,14 @@ class Windows {
 
   Future<bool> _registerService() async {
     await HelperAuthManager.ensureAuthKey();
-    if (await _isHelperHealthy()) return true;
+    if (await isHelperHealthy()) return true;
 
     if (!await _configureHelperService()) return false;
 
     return _waitForHelperHealthy();
   }
 
-  Future<bool> _isHelperHealthy() async {
+  Future<bool> isHelperHealthy() async {
     final result = await Process.run('sc', ['query', appHelperService]);
     if (result.exitCode != 0) return false;
 
@@ -376,7 +376,7 @@ class Windows {
   }
 
   Future<bool> _pingHelper() async {
-    final coreSHA256 = globalState.coreSHA256;
+    final coreSHA256 = await globalState.getOrCalcCoreSHA256();
     if (coreSHA256 == null || coreSHA256.isEmpty) return false;
     return helperClient.ping(coreSHA256);
   }
@@ -430,7 +430,7 @@ class Windows {
   Future<bool> _waitForHelperHealthy() async {
     for (var attempt = 0; attempt < 20; attempt++) {
       await Future.delayed(const Duration(milliseconds: 250));
-      if (await _isHelperHealthy()) return true;
+      if (await isHelperHealthy()) return true;
 
       if (attempt > 0 && attempt % 4 == 0) {
         final check = await Process.run('sc', ['query', appHelperService]);

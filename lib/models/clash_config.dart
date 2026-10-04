@@ -21,6 +21,7 @@ const defaultGeoXUrl = GeoXUrl();
 
 const defaultMixedPort = 7890;
 const defaultKeepAliveInterval = 30;
+const defaultSkipAuthPrefixes = ['127.0.0.1/8', '::1/128'];
 
 const defaultBypassPrivateRouteAddress = [
   '198.51.100.0/30',
@@ -285,7 +286,10 @@ abstract class Tun with _$Tun {
     @Default(false) bool enable,
     @Default(tunDeviceName) String device,
     @JsonKey(name: 'auto-route') @Default(false) bool autoRoute,
-    @Default(TunStack.mixed) TunStack stack,
+    @Default(TunStack.mips) TunStack stack,
+    @JsonKey(name: 'congestion-controller')
+    @Default(CongestionController.bbr3)
+    CongestionController congestionController,
     @JsonKey(name: 'dns-hijack') @Default(['any:53']) List<String> dnsHijack,
     @JsonKey(name: 'route-address') @Default([]) List<String> routeAddress,
     @JsonKey(name: 'route-exclude-address')
@@ -705,6 +709,10 @@ abstract class ClashConfig with _$ClashConfig {
     @Default(0) @JsonKey(name: 'tproxy-port') int tproxyPort,
     @Default(Mode.rule) Mode mode,
     @Default(false) @JsonKey(name: 'allow-lan') bool allowLan,
+    @Default([]) List<String> authentication,
+    @Default(defaultSkipAuthPrefixes)
+    @JsonKey(name: 'skip-auth-prefixes')
+    List<String> skipAuthPrefixes,
     @Default(LogLevel.error) @JsonKey(name: 'log-level') LogLevel logLevel,
     @Default(true) bool ipv6,
     @Default(FindProcessMode.off)

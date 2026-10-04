@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bett_box/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -168,6 +170,7 @@ class Utils {
     'TSN': 'CN',
     'DLC': 'CN',
     'SHE': 'CN',
+    'CHN': 'CN',
     'CHINA': 'CN',
     'SYD': 'AU',
     'MEL': 'AU',
@@ -410,7 +413,10 @@ class Utils {
     'LED': 'RU',
     'OVB': 'RU',
     'SVX': 'RU',
+    'RUS': 'RU',
     'RUSSIA': 'RU',
+    'MSQ': 'BY',
+    'BELARUS': 'BY',
     'SOF': 'BG',
     'ZAG': 'HR',
     'BTS': 'SK',
@@ -975,6 +981,23 @@ class Utils {
   }
 
   Future<List<String>> getLocalGateways() async {
+    if (system.isAndroid) {
+      try {
+        final gateways = await const MethodChannel('service')
+            .invokeListMethod<String>('getLocalGateways');
+        if (gateways != null && gateways.isNotEmpty) {
+          return gateways;
+        }
+      } catch (_) {
+        try {
+          final gateways = await const MethodChannel('vpn')
+              .invokeListMethod<String>('getLocalGateways');
+          if (gateways != null && gateways.isNotEmpty) {
+            return gateways;
+          }
+        } catch (_) {}
+      }
+    }
     if (Platform.isLinux) {
       return _getLinuxGateways();
     }
@@ -986,6 +1009,141 @@ class Utils {
     }
     return [];
   }
+
+  Future<String> getNetworkType() async {
+    try {
+      final connectivityList = await Connectivity().checkConnectivity();
+      String type = '';
+      if (connectivityList.contains(ConnectivityResult.wifi)) {
+        type = 'Wi-Fi';
+      } else if (connectivityList.contains(ConnectivityResult.ethernet)) {
+        type = 'Ethernet';
+      } else if (connectivityList.contains(ConnectivityResult.mobile)) {
+        type = 'Cellular';
+      }
+
+      final interfaces = await NetworkInterface.list(includeLoopback: false)
+        ..sort((a, b) {
+          if (a.isWifi && !b.isWifi) return -1;
+          if (!a.isWifi && b.isWifi) return 1;
+          if (a.includesIPv4 && !b.includesIPv4) return -1;
+          if (!a.includesIPv4 && b.includesIPv4) return 1;
+          return 0;
+        });
+
+      String ifaceName = '';
+      for (final iface in interfaces) {
+        final nameLower = iface.name.toLowerCase();
+        if (nameLower.contains('tun') ||
+            nameLower.contains('vpn') ||
+            nameLower.contains('tap') ||
+            nameLower.contains('ppp') ||
+            nameLower.contains('wintun')) {
+          continue;
+        }
+        ifaceName = iface.name;
+        break;
+      }
+
+      if (type.isNotEmpty && ifaceName.isNotEmpty) {
+        if (type.toLowerCase() == ifaceName.toLowerCase()) {
+          return type;
+        }
+        return '$type ($ifaceName)';
+      }
+      if (type.isNotEmpty) return type;
+      if (ifaceName.isNotEmpty) return ifaceName;
+    } catch (_) {}
+    return '';
+  }
+
+  Future<List<String>> getSystemDns() async {
+    if (system.isAndroid) {
+      try {
+        final dnsStr = await const MethodChannel('service')
+            .invokeMethod<String>('getCurrentDns');
+        if (dnsStr != null && dnsStr.isNotEmpty) {
+          return _parseDnsString(dnsStr);
+        }
+      } catch (_) {
+        try {
+          final dnsStr = await const MethodChannel('vpn')
+              .invokeMethod<String>('getCurrentDns');
+          if (dnsStr != null && dnsStr.isNotEmpty) {
+            return _parseDnsString(dnsStr);
+          }
+        } catch (_) {}
+      }
+      return [];
+    }
+    if (Platform.isMacOS) {
+      return await MacOS().systemDns ?? [];
+    }
+    if (Platform.isWindows) {
+      return _getWindowsDns();
+    }
+    if (Platform.isLinux) {
+      return _getLinuxDns();
+    }
+    return [];
+  }
+
+  List<String> _parseDnsString(String dnsStr) {
+    return dnsStr
+        .split(',')
+        .map((e) => e.trim().replaceFirst(RegExp(r':53$'), ''))
+        .where((e) => e.isNotEmpty && !e.startsWith('198.18.') && e != '127.0.0.1')
+        .toSet()
+        .toList();
+  }
+
+  Future<List<String>> _getWindowsDns() async {
+    try {
+      final result = await Process.run(
+        'powershell',
+        [
+          '-NoProfile',
+          '-Command',
+          r'$route = Get-NetRoute -DestinationPrefix "0.0.0.0/0" | Where-Object { $_.InterfaceAlias -notmatch "(?i)(tun|tap|wintun|meta|clash|vpn)" -and $_.NextHop -ne "0.0.0.0" } | Sort-Object RouteMetric | Select-Object -First 1; if ($route) { (Get-DnsClientServerAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4).ServerAddresses } else { (Get-DnsClientServerAddress -AddressFamily IPv4).ServerAddresses }',
+        ],
+      );
+      if (result.exitCode != 0) return [];
+      final lines = result.stdout.toString().split('\n');
+      final servers = <String>[];
+      for (final line in lines) {
+        final server = line.trim();
+        if (server.isEmpty) continue;
+        if (!RegExp(r'^\d{1,3}(\.\d{1,3}){3}$').hasMatch(server)) continue;
+        if (server.startsWith('198.18.') || server == '127.0.0.1') continue;
+        servers.add(server);
+      }
+      return servers.toSet().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<String>> _getLinuxDns() async {
+    try {
+      final file = File('/etc/resolv.conf');
+      if (!await file.exists()) return [];
+      final lines = await file.readAsLines();
+      final servers = <String>[];
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.startsWith('nameserver ')) {
+          final server = trimmed.substring('nameserver '.length).trim();
+          if (server.isNotEmpty && !server.startsWith('198.18.') && server != '127.0.0.1') {
+            servers.add(server);
+          }
+        }
+      }
+      return servers.toSet().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
 
   Future<List<String>> _getLinuxGateways() async {
     try {
@@ -1114,6 +1272,30 @@ class Utils {
     return patched.replaceAllMapped(regExp, (match) {
       return '${match.group(1)}false${match.group(3)}';
     });
+  }
+
+  String encryptSecret(String raw) {
+    if (raw.isEmpty) return raw;
+    const salt = 'Bettbox';
+    final step1 = base64.encode(utf8.encode(raw));
+    final step2 = base64.encode(utf8.encode('$salt:$step1'));
+    return 'ENC~$step2';
+  }
+
+  String decryptSecret(String text) {
+    if (!text.startsWith('ENC~')) return text;
+    try {
+      const salt = 'Bettbox';
+      final cipher = text.substring(4);
+      final salted = utf8.decode(base64.decode(cipher));
+      if (salted.startsWith('$salt:')) {
+        final step1 = salted.substring(salt.length + 1);
+        return utf8.decode(base64.decode(step1));
+      }
+      return text;
+    } catch (_) {
+      return text;
+    }
   }
 }
 

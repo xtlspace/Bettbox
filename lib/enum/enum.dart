@@ -116,6 +116,8 @@ enum ProxiesSortType { none, delay, name }
 
 enum TunStack { gvisor, system, mixed, mips }
 
+enum CongestionController { cubic, reno, bbr, bbr3 }
+
 enum AccessControlMode { acceptSelected, rejectSelected }
 
 enum AccessSortType { none, installTime, updateTime }
@@ -245,6 +247,12 @@ enum ActionMethod {
   sideLoadExternalProvider,
   startLog,
   stopLog,
+  getLogs,
+  clearLogs,
+  startTrackRequests,
+  stopTrackRequests,
+  getRequests,
+  clearRequests,
   startListener,
   stopListener,
   getCountryCode,
@@ -470,4 +478,24 @@ enum DelayAnimationType {
   fadingFour,
   wave,
   doubleBounce,
+  chasingDots,
+  cubeGrid,
+  dancingSquare,
+  dualRing,
+  fadingCube,
+  fadingGrid,
+  foldingCube,
+  hourGlass,
+  pianoWave,
+  pouringHourGlass,
+  pouringHourGlassRefined,
+  pulsingGrid,
+  pumpingHeart,
+  ring,
+  ripple,
+  rotatingPlain,
+  spinningCircle,
+  squareCircle,
+  wanderingCubes,
+  waveSpinner,
 }

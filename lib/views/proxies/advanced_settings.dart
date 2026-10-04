@@ -19,6 +19,7 @@ class ProxiesAdvancedSettings extends ConsumerWidget {
           const _ConcurrencyLimitItem(),
           const _HealthCheckTimeoutItem(),
           const _DelayAnimationItem(),
+          const _IconConfigItem(),
         ],
       ),
     );
@@ -213,45 +214,84 @@ class _HealthCheckTimeoutItem extends ConsumerWidget {
 class _DelayAnimationItem extends ConsumerWidget {
   const _DelayAnimationItem();
 
-  String _getTextForDelayAnimation(DelayAnimationType type) {
-    return switch (type) {
-      DelayAnimationType.none => appLocalizations.noAnimation,
-      DelayAnimationType.rotatingCircle => appLocalizations.rotatingCircle,
-      DelayAnimationType.pulse => appLocalizations.pulse,
-      DelayAnimationType.spinningLines => appLocalizations.spinningLines,
-      DelayAnimationType.threeInOut => appLocalizations.threeInOut,
-      DelayAnimationType.threeBounce => appLocalizations.threeBounce,
-      DelayAnimationType.circle => appLocalizations.circle,
-      DelayAnimationType.fadingCircle => appLocalizations.fadingCircle,
-      DelayAnimationType.fadingFour => appLocalizations.fadingFour,
-      DelayAnimationType.wave => appLocalizations.wave,
-      DelayAnimationType.doubleBounce => appLocalizations.doubleBounce,
-    };
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final delayAnimation = ref.watch(
       proxiesStyleSettingProvider.select((state) => state.delayAnimation),
     );
 
-    return ListItem<DelayAnimationType>.options(
+    return ListItem(
       leading: const Icon(Icons.animation),
       title: Text(appLocalizations.delayAnimation),
       subtitle: Text(appLocalizations.delayAnimationDesc),
-      delegate: OptionsDelegate(
-        title: appLocalizations.delayAnimation,
-        options: DelayAnimationType.values,
-        value: delayAnimation,
-        textBuilder: (value) => _getTextForDelayAnimation(value),
-        onChanged: (value) {
-          if (value != null) {
-            ref.read(proxiesStyleSettingProvider.notifier).updateState(
-                  (state) => state.copyWith(delayAnimation: value),
-                );
-          }
-        },
+      onTap: () async {
+        final value = await globalState.showCommonDialog<DelayAnimationType>(
+          child: DelayAnimationPickerDialog(
+            title: appLocalizations.delayAnimation,
+            initialValue: delayAnimation,
+          ),
+        );
+        if (value != null) {
+          ref.read(proxiesStyleSettingProvider.notifier).updateState(
+                (state) => state.copyWith(delayAnimation: value),
+              );
+        }
+      },
+    );
+  }
+}
+
+class _IconConfigItem extends StatelessWidget {
+  const _IconConfigItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem(
+      leading: const Icon(Icons.style_outlined),
+      title: Text(appLocalizations.iconConfiguration),
+      subtitle: Text(appLocalizations.iconConfigurationDesc),
+      onTap: () {
+        showExtend(
+          context,
+          builder: (_, type) {
+            return AdaptiveSheetScaffold(
+              type: type,
+              body: const _IconConfigView(),
+              title: appLocalizations.iconConfiguration,
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _IconConfigView extends ConsumerWidget {
+  const _IconConfigView();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final iconMap = ref.watch(
+      proxiesStyleSettingProvider.select((state) => state.iconMap),
+    );
+    return MapInputPage(
+      title: appLocalizations.iconConfiguration,
+      map: iconMap,
+      keyLabel: appLocalizations.regExp,
+      valueLabel: appLocalizations.icon,
+      titleBuilder: (item) => EmojiText(item.key),
+      leadingBuilder: (item) => Container(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: CommonTargetIcon(src: item.value, size: 42),
       ),
+      subtitleBuilder: (item) =>
+          Text(item.value, maxLines: 2, overflow: TextOverflow.ellipsis),
+      onChange: (value) {
+        ref
+            .read(proxiesStyleSettingProvider.notifier)
+            .updateState((state) => state.copyWith(iconMap: value));
+      },
     );
   }
 }

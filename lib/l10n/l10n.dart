@@ -539,6 +539,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Keep in Dock`
+  String get keepDockIcon {
+    return Intl.message(
+      'Keep in Dock',
+      name: 'keepDockIcon',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep the app icon in the Dock`
+  String get keepDockIconDesc {
+    return Intl.message(
+      'Keep the app icon in the Dock',
+      name: 'keepDockIconDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Tray Enhancement`
   String get trayEnhancement {
     return Intl.message(
@@ -1169,10 +1189,10 @@ class AppLocalizations {
     return Intl.message('QR Code', name: 'qrcode', desc: '', args: []);
   }
 
-  /// `Scan QR code to get profile`
+  /// `Scan QR code to import profile`
   String get qrcodeDesc {
     return Intl.message(
-      'Scan QR code to get profile',
+      'Scan QR code to import profile',
       name: 'qrcodeDesc',
       desc: '',
       args: [],
@@ -1774,6 +1794,26 @@ class AppLocalizations {
     );
   }
 
+  /// `Select Backup Version`
+  String get selectBackupVersion {
+    return Intl.message(
+      'Select Backup Version',
+      name: 'selectBackupVersion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No backup file found`
+  String get noBackupFileFound {
+    return Intl.message(
+      'No backup file found',
+      name: 'noBackupFileFound',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Restore Successful`
   String get recoverySuccess {
     return Intl.message(
@@ -2049,16 +2089,6 @@ class AppLocalizations {
     return Intl.message(
       'Attach HTTP proxy to VpnService',
       name: 'vpnSystemProxyDesc',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.`
-  String get vpnSystemProxyConfirmDesc {
-    return Intl.message(
-      'HTTP proxy is generally not recommended on non-desktop platforms. Only enable this feature when necessary and you fully understand the implications.',
-      name: 'vpnSystemProxyConfirmDesc',
       desc: '',
       args: [],
     );
@@ -2424,6 +2454,166 @@ class AppLocalizations {
     return Intl.message(
       'Double Bounce',
       name: 'doubleBounce',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Chasing Dots`
+  String get chasingDots {
+    return Intl.message(
+      'Chasing Dots',
+      name: 'chasingDots',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cube Grid`
+  String get cubeGrid {
+    return Intl.message('Cube Grid', name: 'cubeGrid', desc: '', args: []);
+  }
+
+  /// `Dancing Square`
+  String get dancingSquare {
+    return Intl.message(
+      'Dancing Square',
+      name: 'dancingSquare',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Dual Ring`
+  String get dualRing {
+    return Intl.message('Dual Ring', name: 'dualRing', desc: '', args: []);
+  }
+
+  /// `Fading Cube`
+  String get fadingCube {
+    return Intl.message('Fading Cube', name: 'fadingCube', desc: '', args: []);
+  }
+
+  /// `Fading Grid`
+  String get fadingGrid {
+    return Intl.message('Fading Grid', name: 'fadingGrid', desc: '', args: []);
+  }
+
+  /// `Folding Cube`
+  String get foldingCube {
+    return Intl.message(
+      'Folding Cube',
+      name: 'foldingCube',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hourglass`
+  String get hourGlass {
+    return Intl.message('Hourglass', name: 'hourGlass', desc: '', args: []);
+  }
+
+  /// `Piano Wave`
+  String get pianoWave {
+    return Intl.message('Piano Wave', name: 'pianoWave', desc: '', args: []);
+  }
+
+  /// `Pouring Hourglass`
+  String get pouringHourGlass {
+    return Intl.message(
+      'Pouring Hourglass',
+      name: 'pouringHourGlass',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refined Hourglass`
+  String get pouringHourGlassRefined {
+    return Intl.message(
+      'Refined Hourglass',
+      name: 'pouringHourGlassRefined',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pulsing Grid`
+  String get pulsingGrid {
+    return Intl.message(
+      'Pulsing Grid',
+      name: 'pulsingGrid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pumping Heart`
+  String get pumpingHeart {
+    return Intl.message(
+      'Pumping Heart',
+      name: 'pumpingHeart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ring`
+  String get ring {
+    return Intl.message('Ring', name: 'ring', desc: '', args: []);
+  }
+
+  /// `Ripple`
+  String get ripple {
+    return Intl.message('Ripple', name: 'ripple', desc: '', args: []);
+  }
+
+  /// `Rotating Plain`
+  String get rotatingPlain {
+    return Intl.message(
+      'Rotating Plain',
+      name: 'rotatingPlain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Spinning Circle`
+  String get spinningCircle {
+    return Intl.message(
+      'Spinning Circle',
+      name: 'spinningCircle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Square Circle`
+  String get squareCircle {
+    return Intl.message(
+      'Square Circle',
+      name: 'squareCircle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wandering Cubes`
+  String get wanderingCubes {
+    return Intl.message(
+      'Wandering Cubes',
+      name: 'wanderingCubes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wave Spinner`
+  String get waveSpinner {
+    return Intl.message(
+      'Wave Spinner',
+      name: 'waveSpinner',
       desc: '',
       args: [],
     );
@@ -4029,6 +4219,16 @@ class AppLocalizations {
     return Intl.message('Stack Mode', name: 'stackMode', desc: '', args: []);
   }
 
+  /// `Congestion Controller`
+  String get congestionController {
+    return Intl.message(
+      'Congestion Controller',
+      name: 'congestionController',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Strict Route`
   String get strictRoute {
     return Intl.message(
@@ -4174,6 +4374,16 @@ class AppLocalizations {
     return Intl.message(
       'Icon Configuration',
       name: 'iconConfiguration',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customize proxy group ICON icons`
+  String get iconConfigurationDesc {
+    return Intl.message(
+      'Customize proxy group ICON icons',
+      name: 'iconConfigurationDesc',
       desc: '',
       args: [],
     );
@@ -5269,6 +5479,16 @@ class AppLocalizations {
     );
   }
 
+  /// `Other Settings`
+  String get scriptOtherOptions {
+    return Intl.message(
+      'Other Settings',
+      name: 'scriptOtherOptions',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Wakelock`
   String get wakelock {
     return Intl.message('Wakelock', name: 'wakelock', desc: '', args: []);
@@ -5467,6 +5687,16 @@ class AppLocalizations {
   /// `Wrap Lines`
   String get lineWrap {
     return Intl.message('Wrap Lines', name: 'lineWrap', desc: '', args: []);
+  }
+
+  /// `Auto Sticky Header`
+  String get autoStickyHeader {
+    return Intl.message(
+      'Auto Sticky Header',
+      name: 'autoStickyHeader',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Show Hidden Items`
@@ -5814,6 +6044,16 @@ class AppLocalizations {
     );
   }
 
+  /// `More Streaming Unlock Items`
+  String get mediaUnlockMoreStreamingPlatforms {
+    return Intl.message(
+      'More Streaming Unlock Items',
+      name: 'mediaUnlockMoreStreamingPlatforms',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Show more IP details`
   String get mediaUnlockExtraDetails {
     return Intl.message(
@@ -5982,6 +6222,226 @@ class AppLocalizations {
   /// `Flagged`
   String get flagged {
     return Intl.message('Flagged', name: 'flagged', desc: '', args: []);
+  }
+
+  /// `Scan / LAN Import`
+  String get tvScanImport {
+    return Intl.message(
+      'Scan / LAN Import',
+      name: 'tvScanImport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Scan QR or push profile to TV via LAN`
+  String get tvScanImportDesc {
+    return Intl.message(
+      'Scan QR or push profile to TV via LAN',
+      name: 'tvScanImportDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ensure phone and TV are on the same Wi-Fi network`
+  String get tvScanStep1 {
+    return Intl.message(
+      'Ensure phone and TV are on the same Wi-Fi network',
+      name: 'tvScanStep1',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Scan the QR code with a supported camera or browser`
+  String get tvScanStep2 {
+    return Intl.message(
+      'Scan the QR code with a supported camera or browser',
+      name: 'tvScanStep2',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste subscription URL or upload profile on the webpage and push`
+  String get tvScanStep3 {
+    return Intl.message(
+      'Paste subscription URL or upload profile on the webpage and push',
+      name: 'tvScanStep3',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Or enter directly in phone browser:`
+  String get tvScanManualUrl {
+    return Intl.message(
+      'Or enter directly in phone browser:',
+      name: 'tvScanManualUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Waiting for profile from phone...`
+  String get tvScanWaiting {
+    return Intl.message(
+      'Waiting for profile from phone...',
+      name: 'tvScanWaiting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Profile received, importing...`
+  String get tvScanSuccess {
+    return Intl.message(
+      'Profile received, importing...',
+      name: 'tvScanSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No available LAN detected, please check Wi-Fi`
+  String get tvScanNoNetwork {
+    return Intl.message(
+      'No available LAN detected, please check Wi-Fi',
+      name: 'tvScanNoNetwork',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `User Authentication`
+  String get userAuth {
+    return Intl.message(
+      'User Authentication',
+      name: 'userAuth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Skip Local Authentication`
+  String get skipLocalAuth {
+    return Intl.message(
+      'Skip Local Authentication',
+      name: 'skipLocalAuth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Allow local machine to access proxy without credentials`
+  String get skipLocalAuthDesc {
+    return Intl.message(
+      'Allow local machine to access proxy without credentials',
+      name: 'skipLocalAuthDesc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Username`
+  String get username {
+    return Intl.message('Username', name: 'username', desc: '', args: []);
+  }
+
+  /// `Add User`
+  String get addUser {
+    return Intl.message('Add User', name: 'addUser', desc: '', args: []);
+  }
+
+  /// `Edit User`
+  String get editUser {
+    return Intl.message('Edit User', name: 'editUser', desc: '', args: []);
+  }
+
+  /// `No authentication configured, LAN connections do not require credentials`
+  String get userAuthEmpty {
+    return Intl.message(
+      'No authentication configured, LAN connections do not require credentials',
+      name: 'userAuthEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Username cannot contain colons`
+  String get usernameCannotContainColon {
+    return Intl.message(
+      'Username cannot contain colons',
+      name: 'usernameCannotContainColon',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `LAN & Gateway`
+  String get intranetAndGateway {
+    return Intl.message(
+      'LAN & Gateway',
+      name: 'intranetAndGateway',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gateway`
+  String get defaultGateway {
+    return Intl.message('Gateway', name: 'defaultGateway', desc: '', args: []);
+  }
+
+  /// `LAN Sharing`
+  String get lanSharing {
+    return Intl.message('LAN Sharing', name: 'lanSharing', desc: '', args: []);
+  }
+
+  /// `Shared Address`
+  String get sharedAddress {
+    return Intl.message(
+      'Shared Address',
+      name: 'sharedAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS Resolution`
+  String get dnsResolution {
+    return Intl.message(
+      'DNS Resolution',
+      name: 'dnsResolution',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DNS`
+  String get systemDns {
+    return Intl.message('DNS', name: 'systemDns', desc: '', args: []);
+  }
+
+  /// `Enabled`
+  String get enabled {
+    return Intl.message('Enabled', name: 'enabled', desc: '', args: []);
+  }
+
+  /// `Disabled`
+  String get disabled {
+    return Intl.message('Disabled', name: 'disabled', desc: '', args: []);
+  }
+
+  /// `Open Gateway`
+  String get openRouterAdmin {
+    return Intl.message(
+      'Open Gateway',
+      name: 'openRouterAdmin',
+      desc: '',
+      args: [],
+    );
   }
 }
 
