@@ -67,7 +67,7 @@ Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**
 * **Cross-Platform Desktop**: 
 **Windows 8.1+:** (x64/arm64)
 **Linux Kernel 5.4+:** (x64/arm64)
-**macOS 10.15+:** (Intel/Apple Silicon)
+**macOS 12.0+:** (Intel/Apple Silicon)
 * **Android 8.0+:** Android (ARMv8/ ARMv7/ x86_64/ Universal) 
 * **Android TV:** Fully adapted, optional ARMv7 32-bit
 * **HarmonyOS NEXT:** Supported via [[ZhuoYiTong]](https://harmonyos.cool/android-app)
@@ -109,7 +109,7 @@ Please visit the **[[Releases]](https://github.com/appshubcc/Bettbox/releases)**
 Building on Windows:
 
 * Requires a Windows PC (OS ≥ Windows 10)
-* Dependencies: Git, Visual Studio, Flutter 3.44.x, Golang, Inno Setup, Rust
+* Dependencies: Git, Visual Studio, Flutter 3.47.x, Golang, Inno Setup, Rust
 ```bash
 * flutter pub get
 * dart .\setup.dart windows --arch amd64 --out core (Build Core only)

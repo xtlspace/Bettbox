@@ -67,7 +67,7 @@ Bettbox意为: Better Experience, Out of the box - 更好的体验，亦开箱�
 * **全平台桌面端**: 
 **Windows 8.1+:** (x64/arm64)
 **Linux Kernel 5.4+:** (x64/arm64)
-**macOS 10.15+:** (Intel/Apple Silicon)
+**macOS 12.0+:** (Intel/Apple Silicon)
 * **Android 8.0+:** Android (ARMv8/ ARMv7/ x86_64/ Universal) 
 * **Android TV:** 已完整适配，可选 ARMv7 32位
 * **鸿蒙 NEXT:** 可配合 [[卓易通]](https://harmonyos.cool/android-app) 使用
@@ -109,7 +109,7 @@ Bettbox意为: Better Experience, Out of the box - 更好的体验，亦开箱�
 以 Windows 平台构建为例：
 
 * 你需要一台 Windows 设备（系统 ≥ Windows 10）
-* 其他必要环境：Git，Visual Studio，Flutter 3.44.x，Golang，Inno Setup，Rust
+* 其他必要环境：Git，Visual Studio，Flutter 3.47.x，Golang，Inno Setup，Rust
 ```bash
 * flutter pub get (获取相关依赖)
 * dart .\setup.dart windows --arch amd64 --out core (仅构建Core核心)
