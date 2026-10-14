@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/providers/config.dart';
 import 'package:bett_box/state.dart';
-import 'package:bett_box/widgets/list.dart';
-import 'package:flutter/material.dart';
+import 'package:bett_box/widgets/widgets.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AboutView extends StatelessWidget {
@@ -21,19 +21,6 @@ class AboutView extends StatelessWidget {
     globalState.appController.checkUpdateResultHandle(
       data: data,
       handleError: true,
-    );
-  }
-
-  List<Widget> _buildMoreSection(BuildContext context) {
-    return generateSection(
-      title: appLocalizations.more,
-      items: [
-        _LinkGridTile(
-          title: appLocalizations.checkUpdate,
-          icon: Icons.refresh,
-          onTap: () => _checkUpdate(context),
-        ),
-      ],
     );
   }
 
@@ -96,12 +83,18 @@ class AboutView extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
-      ..._buildMoreSection(context),
+      ...generateSection(
+        items: [
+          _LinkTile(
+            title: appLocalizations.checkUpdate,
+            icon: Icons.refresh,
+            external: false,
+            onTap: () => _checkUpdate(context),
+          ),
+        ],
+      ),
     ];
-    return Padding(
-      padding: kMaterialListPadding.copyWith(top: 16, bottom: 16),
-      child: generateListView(items),
-    );
+    return generateListView(items);
   }
 }
 
@@ -151,37 +144,71 @@ class _DeveloperModeDetectorState extends State<_DeveloperModeDetector> {
   }
 }
 
-class _LinkGridTile extends StatelessWidget {
+class _LinkTile extends StatelessWidget {
+  final String? prefix;
   final String title;
-  final IconData? icon;
+  final IconData icon;
+  final bool external;
   final VoidCallback onTap;
 
-  const _LinkGridTile({required this.title, this.icon, required this.onTap});
+  const _LinkTile({
+    this.prefix,
+    required this.title,
+    required this.icon,
+    this.external = true,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final prefix = this.prefix;
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.opacity12,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 19, color: colorScheme.primary),
+                ),
+                const Spacer(),
+                Icon(
+                  external ? Icons.arrow_outward : Icons.arrow_forward,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant.opacity50,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text.rich(
+              TextSpan(
+                children: [
+                  if (prefix != null)
+                    TextSpan(
+                      text: '$prefix ',
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant.opacity80,
+                      ),
+                    ),
+                  TextSpan(text: title),
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (icon != null) ...[
-              const SizedBox(width: 4),
-              Icon(
-                icon,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
           ],
         ),
       ),

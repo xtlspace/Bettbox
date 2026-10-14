@@ -204,7 +204,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool openLogs,
     @Default(true) bool closeConnections,
     @Default(true) bool logAiSearch,
-    @Default(false) bool flushDnsOnNetworkChange,
+    @Default(true) bool flushDnsOnNetworkChange,
     @Default(defaultTestUrl) String testUrl,
     @Default(true) bool showStartSwitch,
     @Default(StartSwitchStyle.outlined) StartSwitchStyle startSwitchStyle,
