@@ -504,6 +504,20 @@ jobs:
           merge-multiple: true
           skip-decompress: true
 
+      - name: Create Chinese-named copies
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cd dist
+          copy() { [ -f "$1" ] && cp "$1" "$2" || echo "skip: $1"; }
+          copy "Bettbox-${version}-windows-amd64-setup.exe"             "Bettbox-${version}-Win-amd64首选.exe"
+          copy "Bettbox-${version}-windows-arm64-setup.exe"             "Bettbox-${version}-Win-arm64.exe"
+          copy "Bettbox-${version}-windows-amd64-compatible-setup.exe"  "Bettbox-${version}-Win-amd64兼容.exe"
+          copy "Bettbox-${version}-macos-amd64.dmg"                     "Bettbox-${version}-amd64-英特尔芯片.dmg"
+          copy "Bettbox-${version}-macos-arm64.dmg"                     "Bettbox-${version}-arm64-M芯片.dmg"
+          copy "Bettbox-${version}-android-arm64-v8a.apk"               "Bettbox-${version}-arm64首选.apk"
+          copy "Bettbox-${version}-android-universal.apk"               "Bettbox-${version}-兼容.apk"
+          ls -la
+
       - name: Generate release.md
         run: |
           printf '%s\n' "- Fixes and improvements" "- Recommended version update" > release.md
