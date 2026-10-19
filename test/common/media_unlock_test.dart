@@ -111,12 +111,12 @@ void main() {
       expect(MediaPlatform.tiktok.isMonochrome, false);
     });
     test(
-      'defaultPinnedMediaPlatforms has 3 items: reddit, gemini, cloudflare',
+      'defaultPinnedMediaPlatforms has 3 items: youtube, openai, github',
       () {
         expect(defaultPinnedMediaPlatforms, [
-          MediaPlatform.reddit,
-          MediaPlatform.gemini,
-          MediaPlatform.cloudflare,
+          MediaPlatform.youtube,
+          MediaPlatform.openai,
+          MediaPlatform.github,
         ]);
       },
     );

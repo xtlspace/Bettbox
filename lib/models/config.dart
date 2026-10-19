@@ -48,26 +48,26 @@ const defaultAccessControl = AccessControl();
 final defaultThemeProps = ThemeProps(primaryColor: defaultPrimaryColor);
 
 const List<DashboardWidget> defaultDashboardWidgets = [
-  DashboardWidget.networkSpeed,
+  DashboardWidget.intranetIp,
+  DashboardWidget.networkDetection,
+  DashboardWidget.startButton,
+  DashboardWidget.trafficUsage,
+  DashboardWidget.outboundMode,
   DashboardWidget.systemProxyButton,
   DashboardWidget.tunButton,
-  DashboardWidget.outboundMode,
-  DashboardWidget.networkDetection,
-  DashboardWidget.intranetIp,
-  DashboardWidget.trafficUsage,
-  DashboardWidget.memoryInfo,
+  DashboardWidget.networkSpeedSmall,
+  DashboardWidget.mediaUnlock,
   DashboardWidget.connectionsCount,
-  DashboardWidget.startButton,
 ];
 
 const List<DashboardWidget> defaultAndroidDashboardWidgets = [
-  DashboardWidget.outboundModeV2,
-  DashboardWidget.networkSpeed,
-  DashboardWidget.trafficUsage,
-  DashboardWidget.networkDetection,
-  DashboardWidget.connectionsCount,
-  DashboardWidget.memoryInfo,
+  DashboardWidget.outboundMode,
   DashboardWidget.startButton,
+  DashboardWidget.connectionsCount,
+  DashboardWidget.networkDetection,
+  DashboardWidget.trafficUsage,
+  DashboardWidget.networkSpeedSmall,
+  DashboardWidget.mediaUnlock,
 ];
 
 List<DashboardWidget> dashboardWidgetsSafeFromJson(
@@ -137,9 +137,9 @@ List<SidebarFlyoutEntry> sidebarFlyoutEntriesSafeFromJson(
 }
 
 const List<MediaPlatform> defaultPinnedMediaPlatforms = [
-  MediaPlatform.reddit,
-  MediaPlatform.gemini,
-  MediaPlatform.cloudflare,
+  MediaPlatform.youtube,
+  MediaPlatform.openai,
+  MediaPlatform.github,
 ];
 
 List<MediaPlatform> pinnedMediaPlatformsSafeFromJson(
