@@ -126,7 +126,7 @@ const profilesStoreKey = PageStorageKey<String>('profiles');
 const defaultPrimaryColor = 0xFF1976D2;
 
 
-const maxLength = 256;
+const maxLength = 512;
 const maxLogLength = 512;
 
 final mainIsolate = 'BettboxMainIsolate';
