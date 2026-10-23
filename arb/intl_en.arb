@@ -200,6 +200,7 @@
   "core": "Core",
   "showStartSwitch": "Linkage Switch",
   "showStartSwitchDesc": "Show standalone switch on homepage",
+  "desc": "XTLS修改版Bettbox，针对网站微调，增加易用性，致力于更好的体验。",  
   "startSwitchStyle": "Style",
   "startSwitchTonal": "Tonal",
   "startSwitchOutlined": "Outlined",
