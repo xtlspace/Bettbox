@@ -99,7 +99,7 @@ _AppSettingProps _$AppSettingPropsFromJson(
       MrsTapAction.viewRules,
   mrsResolveDns: json['mrsResolveDns'] as bool? ?? true,
   ipRiskDetail: json['ipRiskDetail'] as bool? ?? false,
-  ipRiskAlert: json['ipRiskAlert'] as bool? ?? true,
+  ipRiskAlert: json['ipRiskAlert'] as bool? ?? false,
   iperfOptions: json['iperfOptions'] == null
       ? const IperfOptions()
       : IperfOptions.fromJson(json['iperfOptions'] as Map<String, dynamic>),
