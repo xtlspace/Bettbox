@@ -1383,10 +1383,24 @@ class DetectionState {
     return _instance!;
   }
 
-  static final _protectedIpInfo = IpInfo(
-    ip: '168.168.6.8',
-    countryCode: 'TW',
-    country: 'Taiwan(China)',
+  static String protectedCountryCode([Locale? locale]) {
+    final effective =
+        locale ??
+        utils.getLocaleForString(globalState.config.appSetting.locale) ??
+        PlatformDispatcher.instance.locale;
+    return switch (effective.languageCode.toLowerCase()) {
+      'ja' => 'JP',
+      'ko' => 'KR',
+      'ru' => 'RU',
+      'fa' => 'IR',
+      _ => 'CN',
+    };
+  }
+
+  static IpInfo protectedIpInfo([Locale? locale]) => IpInfo(
+    ip: '10.0.0.108',
+    countryCode: protectedCountryCode(locale),
+    country: 'Protected Mode',
     asn: 'AS 166188',
   );
 
@@ -1395,7 +1409,7 @@ class DetectionState {
 
   IpInfo? _maskIpInfo(IpInfo? ipInfo) {
     if (ipInfo == null) return null;
-    return _isIpMasked ? _protectedIpInfo : ipInfo;
+    return _isIpMasked ? protectedIpInfo() : ipInfo;
   }
 
   void toggleIpPrivacy() {

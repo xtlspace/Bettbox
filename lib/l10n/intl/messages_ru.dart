@@ -990,7 +990,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "go": MessageLookupByLibrary.simpleMessage("Перейти"),
     "goDownload": MessageLookupByLibrary.simpleMessage("Перейти к загрузке"),
     "groupOrderTip": MessageLookupByLibrary.simpleMessage(
-      "Проверяются сверху вниз, перетащите для изменения порядка",
+      "Перетащите для порядка отображения; пользовательские маршруты в приоритете",
     ),
     "harmonyFont": MessageLookupByLibrary.simpleMessage("Исправление шрифта"),
     "harmonyFontDesc": MessageLookupByLibrary.simpleMessage(
@@ -1086,6 +1086,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inputCorrectHotkey": MessageLookupByLibrary.simpleMessage(
       "Введите корректное сочетание клавиш",
     ),
+    "install": MessageLookupByLibrary.simpleMessage("Установить"),
     "installTime": MessageLookupByLibrary.simpleMessage("Время установки"),
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("Умный выбор"),
     "intelligentSelectedConfirm": MessageLookupByLibrary.simpleMessage(
@@ -2182,6 +2183,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Показать проверенные правила",
     ),
     "rule": MessageLookupByLibrary.simpleMessage("По правилам"),
+    "ruleAdded": MessageLookupByLibrary.simpleMessage("Правило добавлено"),
     "ruleCount": m67,
     "ruleCountIncluded": m68,
     "ruleHits": MessageLookupByLibrary.simpleMessage("Срабатывания правил"),
@@ -2651,13 +2653,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось загрузить обновление",
     ),
+    "updateDownloadStarted": MessageLookupByLibrary.simpleMessage(
+      "Загрузка обновления началась",
+    ),
+    "updateDownloaded": MessageLookupByLibrary.simpleMessage(
+      "Обновление загружено",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Обновление загружается",
+    ),
     "updateInstallFailed": MessageLookupByLibrary.simpleMessage(
       "Не удалось установить обновление",
     ),
     "updateReadyAppTip": m77,
-    "updateReadyVpnTip": MessageLookupByLibrary.simpleMessage(
-      "Пакет новой версии готов. Для корректной работы перед обновлением запущенная служба VPN будет остановлена. Подтвердите, чтобы начать установку.",
-    ),
     "updateTime": MessageLookupByLibrary.simpleMessage("Время обновления"),
     "updateTip": MessageLookupByLibrary.simpleMessage("Обновление"),
     "upload": MessageLookupByLibrary.simpleMessage("Отправка"),

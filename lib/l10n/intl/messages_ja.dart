@@ -805,7 +805,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "go": MessageLookupByLibrary.simpleMessage("移動"),
     "goDownload": MessageLookupByLibrary.simpleMessage("ダウンロードへ"),
     "groupOrderTip": MessageLookupByLibrary.simpleMessage(
-      "上から順に照合されます。ドラッグで並べ替え",
+      "ドラッグで表示順を変更（カスタム振り分けを優先照合）",
     ),
     "harmonyFont": MessageLookupByLibrary.simpleMessage("フォント修復"),
     "harmonyFontDesc": MessageLookupByLibrary.simpleMessage(
@@ -883,6 +883,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inputCorrectHotkey": MessageLookupByLibrary.simpleMessage(
       "正しいショートカットキーを入力してください",
     ),
+    "install": MessageLookupByLibrary.simpleMessage("インストール"),
     "installTime": MessageLookupByLibrary.simpleMessage("インストール日時"),
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("スマート選択"),
     "intelligentSelectedConfirm": MessageLookupByLibrary.simpleMessage(
@@ -1745,6 +1746,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "routeTraceViewRules": MessageLookupByLibrary.simpleMessage("確認したルールを表示"),
     "rule": MessageLookupByLibrary.simpleMessage("ルール"),
+    "ruleAdded": MessageLookupByLibrary.simpleMessage("ルールを追加しました"),
     "ruleCount": m67,
     "ruleCountIncluded": m68,
     "ruleHits": MessageLookupByLibrary.simpleMessage("ルールヒット"),
@@ -2120,13 +2122,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
       "アップデートのダウンロードに失敗しました",
     ),
+    "updateDownloadStarted": MessageLookupByLibrary.simpleMessage(
+      "新バージョンのダウンロードを開始しました",
+    ),
+    "updateDownloaded": MessageLookupByLibrary.simpleMessage(
+      "新バージョンのダウンロードが完了しました",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "新バージョンをダウンロード中です",
+    ),
     "updateInstallFailed": MessageLookupByLibrary.simpleMessage(
       "アップデートのインストールに失敗しました",
     ),
     "updateReadyAppTip": m77,
-    "updateReadyVpnTip": MessageLookupByLibrary.simpleMessage(
-      "新しいバージョンのパッケージの準備ができました。サービスを保護するため、アップグレード前に実行中の VPN サービスを停止します。確認するとインストールを開始します。",
-    ),
     "updateTime": MessageLookupByLibrary.simpleMessage("更新日時"),
     "updateTip": MessageLookupByLibrary.simpleMessage("アップグレードのお知らせ"),
     "upload": MessageLookupByLibrary.simpleMessage("送信"),

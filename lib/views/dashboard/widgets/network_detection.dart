@@ -179,12 +179,15 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
 
   Widget _buildTile(BuildContext context, DashboardTileSize size) {
     final isTall = size == DashboardTileSize.tall;
+    final locale = Localizations.maybeLocaleOf(context);
     return SizedBox(
       height: getWidgetHeight(context, size.rows),
       child: ValueListenableBuilder<NetworkDetectionState>(
         valueListenable: detectionState.state,
         builder: (_, state, _) {
-          final ipInfo = state.ipInfo;
+          final ipInfo = state.ipInfo != null && detectionState.isIpMasked
+              ? DetectionState.protectedIpInfo(locale)
+              : state.ipInfo;
           final location = ipInfo == null
               ? ''
               : [
@@ -312,12 +315,15 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
   @override
   Widget build(BuildContext context) {
     if (widget.size case final size?) return _buildTile(context, size);
+    final locale = Localizations.maybeLocaleOf(context);
     return SizedBox(
       height: getWidgetHeight(context, 1),
       child: ValueListenableBuilder<NetworkDetectionState>(
         valueListenable: detectionState.state,
         builder: (_, state, _) {
-          final ipInfo = state.ipInfo;
+          final ipInfo = state.ipInfo != null && detectionState.isIpMasked
+              ? DetectionState.protectedIpInfo(locale)
+              : state.ipInfo;
           final isLoading = state.isLoading;
           return CommonCard(
             onPressed: ipInfo != null ? _showMoreIpInfoDialog : null,

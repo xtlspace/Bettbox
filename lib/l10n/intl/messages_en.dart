@@ -960,7 +960,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "go": MessageLookupByLibrary.simpleMessage("Go"),
     "goDownload": MessageLookupByLibrary.simpleMessage("Download Now"),
     "groupOrderTip": MessageLookupByLibrary.simpleMessage(
-      "Matched from top to bottom, drag to reorder",
+      "Drag to reorder display; custom routes match first",
     ),
     "harmonyFont": MessageLookupByLibrary.simpleMessage("Font Fix"),
     "harmonyFontDesc": MessageLookupByLibrary.simpleMessage(
@@ -1050,6 +1050,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inputCorrectHotkey": MessageLookupByLibrary.simpleMessage(
       "Enter a valid hotkey",
     ),
+    "install": MessageLookupByLibrary.simpleMessage("Install"),
     "installTime": MessageLookupByLibrary.simpleMessage("Install Time"),
     "intelligentSelected": MessageLookupByLibrary.simpleMessage("Smart Select"),
     "intelligentSelectedConfirm": MessageLookupByLibrary.simpleMessage(
@@ -2088,6 +2089,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "View checked rules",
     ),
     "rule": MessageLookupByLibrary.simpleMessage("Rule"),
+    "ruleAdded": MessageLookupByLibrary.simpleMessage("Rule added"),
     "ruleCount": m67,
     "ruleCountIncluded": m68,
     "ruleHits": MessageLookupByLibrary.simpleMessage("Rule hits"),
@@ -2527,13 +2529,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateDownloadFailed": MessageLookupByLibrary.simpleMessage(
       "Update download failed",
     ),
+    "updateDownloadStarted": MessageLookupByLibrary.simpleMessage(
+      "Update download started",
+    ),
+    "updateDownloaded": MessageLookupByLibrary.simpleMessage(
+      "Update downloaded",
+    ),
+    "updateDownloading": MessageLookupByLibrary.simpleMessage(
+      "Update is downloading",
+    ),
     "updateInstallFailed": MessageLookupByLibrary.simpleMessage(
       "Update install failed",
     ),
     "updateReadyAppTip": m77,
-    "updateReadyVpnTip": MessageLookupByLibrary.simpleMessage(
-      "The new version package is ready. To keep the service safe, the running VPN service will be stopped before upgrading. Confirm to start the installation.",
-    ),
     "updateTime": MessageLookupByLibrary.simpleMessage("Update Time"),
     "updateTip": MessageLookupByLibrary.simpleMessage("Upgrade Notice"),
     "upload": MessageLookupByLibrary.simpleMessage("Upload"),
