@@ -11,10 +11,6 @@ part 'generated/config.freezed.dart';
 part 'generated/config.g.dart';
 
 const defaultBypassDomain = [
-  '*.jd.com',
-  '*.zhihu.com',
-  '*.zhimg.com',
-  '*.360buyimg.com',
   'localhost',
   '127.*',
   '[::1]',
@@ -45,7 +41,7 @@ const defaultNetworkProps = NetworkProps();
 const defaultProxiesStyle = ProxiesStyle();
 const defaultWindowProps = WindowProps();
 const defaultAccessControl = AccessControl();
-const defaultThemeProps = ThemeProps();
+final defaultThemeProps = ThemeProps(usePhosphorIcons: system.isAndroid);
 
 const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.intranetIp,
@@ -69,6 +65,14 @@ const List<DashboardWidget> defaultAndroidDashboardWidgets = [
   DashboardWidget.networkSpeedSmall,
   DashboardWidget.mediaUnlock,
 ];
+
+const Map<String, String> defaultAndroidDashboardSizes = {
+  'networkDetection': 'wide',
+  'connectionsCount': 'tall',
+  'memoryInfo': 'tall',
+  'trafficUsage': 'wide',
+  'startButton': 'wide',
+};
 
 final _dashboardWidgetNames = {
   for (final entry in _$DashboardWidgetEnumMap.entries) entry.value: entry.key,
@@ -206,6 +210,7 @@ abstract class AppSettingProps with _$AppSettingProps {
     String? startSwitchOffLabel,
     @Default(false) bool enableNavBarHapticFeedback,
     @Default(false) bool autoCheckUpdate,
+    @Default(false) bool autoDownloadUpdate,
     @Default(false) bool showLabel,
     @Default(true) bool disclaimerAccepted,
     @Default(true) bool minimizeOnExit,
@@ -233,7 +238,8 @@ abstract class AppSettingProps with _$AppSettingProps {
     @Default(true) bool ipRiskAlert,
     @Default(IperfOptions()) IperfOptions iperfOptions,
     @Default(LocalPingOptions()) LocalPingOptions localPingOptions,
-    @Default(<String, String>{}) Map<String, String> mobileDashboardSizes,
+    @Default(defaultAndroidDashboardSizes)
+    Map<String, String> mobileDashboardSizes,
     @Default(<String, String>{}) Map<String, String> desktopDashboardSizes,
   }) = _AppSettingProps;
 
@@ -345,11 +351,23 @@ abstract class VpnProps with _$VpnProps {
   }
 }
 
+const _removedBypassDomain = {
+  '::1',
+  '*jd.com',
+  '*.jd.com',
+  '*zhihu.com',
+  '*.zhihu.com',
+  '*zhimg.com',
+  '*.zhimg.com',
+  '*360buyimg.com',
+  '*.360buyimg.com',
+};
+
 List<String> bypassDomainSafeFromJson(List<dynamic>? bypassDomain) {
   try {
     return bypassDomain
             ?.map((e) => e.toString())
-            .where((e) => e != '::1')
+            .where((e) => !_removedBypassDomain.contains(e))
             .toList() ??
         defaultBypassDomain;
   } catch (_) {
@@ -358,8 +376,9 @@ List<String> bypassDomainSafeFromJson(List<dynamic>? bypassDomain) {
 }
 
 int concurrencyLimitFromJson(Object? value) {
-  if (value is! int || value > 32) return maxDelayTestConcurrency;
-  return value < 1 ? 1 : value;
+  if (value is! int) return defaultDelayTestConcurrency;
+  if (value > defaultDelayTestConcurrency) return maxDelayTestConcurrency;
+  return value < 4 ? 4 : value;
 }
 
 @freezed
@@ -398,7 +417,7 @@ abstract class ProxiesStyle with _$ProxiesStyle {
     @Default(DelayAnimationType.pulse) DelayAnimationType delayAnimation,
     @Default(true) bool syncDelayAnimation,
     @Default({}) Map<String, String> iconMap,
-    @Default(maxDelayTestConcurrency)
+    @Default(defaultDelayTestConcurrency)
     @JsonKey(fromJson: concurrencyLimitFromJson)
     int concurrencyLimit,
     @Default(false) bool autoStickyHeader,
@@ -430,8 +449,8 @@ abstract class ThemeProps with _$ThemeProps {
     @Default(ThemeMode.system) ThemeMode themeMode,
     @Default(DynamicSchemeVariant.content) DynamicSchemeVariant schemeVariant,
     @Default(TextScale()) TextScale textScale,
-    @Default(false) bool useDarkIcon,
     @Default(false) bool useHarmonyFont,
+    @Default(true) bool usePhosphorIcons,
     @Default(false) bool invertTrayIcon,
   }) = _ThemeProps;
 
@@ -443,7 +462,10 @@ abstract class ThemeProps with _$ThemeProps {
       return defaultThemeProps;
     }
     try {
-      return ThemeProps.fromJson(json);
+      final props = ThemeProps.fromJson(json);
+      return json.containsKey('usePhosphorIcons')
+          ? props
+          : props.copyWith(usePhosphorIcons: system.isAndroid);
     } catch (_) {
       return defaultThemeProps;
     }
@@ -476,7 +498,7 @@ extension ScriptPropsExt on ScriptProps {
       try {
         next.add(await script.writeContent(script.content));
       } catch (e) {
-        commonPrint.error('Failed to store script ${script.label}: $e');
+        commonPrint.error('Save ${script.label} failed: $e', module: 'Script');
         next.add(script);
       }
     }
@@ -501,10 +523,8 @@ abstract class CustomRoute with _$CustomRoute {
 
 @freezed
 abstract class CustomRegion with _$CustomRegion {
-  const factory CustomRegion({
-    required String name,
-    required String regex,
-  }) = _CustomRegion;
+  const factory CustomRegion({required String name, required String regex}) =
+      _CustomRegion;
 
   factory CustomRegion.fromJson(Map<String, Object?> json) =>
       _$CustomRegionFromJson(json);
@@ -520,6 +540,7 @@ abstract class ManagedProps with _$ManagedProps {
     @Default([]) List<String> removed,
     List<String>? regions,
     @Default([]) List<CustomRegion> customRegions,
+    @Default([]) List<Rule> rules,
   }) = _ManagedProps;
 
   factory ManagedProps.fromJson(Map<String, Object?> json) =>
@@ -553,6 +574,7 @@ abstract class Config with _$Config {
     ClashConfig patchClashConfig,
     @Default(ScriptProps()) ScriptProps scriptProps,
     @Default(ManagedProps()) ManagedProps managedProps,
+    @Default([]) List<ProxyNode> nodes,
     @Default('') String nodeExcludeFilter,
     @Default(5000) int healthCheckTimeout,
   }) = _Config;
@@ -642,9 +664,38 @@ abstract class Config with _$Config {
       }
     } catch (_) {}
 
+    try {
+      final patch = json['patchClashConfig'];
+      final sniffer = patch is Map ? patch['sniffer'] : null;
+      final skip = sniffer is Map ? sniffer['skip-dst-address'] : null;
+      if (sniffer is Map &&
+          skip is List &&
+          skip.length == _legacySkipDstAddress.length &&
+          _legacySkipDstAddress.containsAll(skip)) {
+        sniffer.remove('skip-dst-address');
+      }
+    } catch (_) {}
+
     return Config.fromJson(json);
   }
 }
+
+const _legacySkipDstAddress = {
+  '91.108.56.0/22',
+  '91.108.4.0/22',
+  '91.108.8.0/22',
+  '91.108.16.0/22',
+  '91.108.12.0/22',
+  '149.154.160.0/20',
+  '91.105.192.0/23',
+  '91.108.20.0/22',
+  '185.76.151.0/24',
+  '2001:b28:f23d::/48',
+  '2001:b28:f23f::/48',
+  '2001:67c:4e8::/48',
+  '2001:b28:f23c::/48',
+  '2a0a:f280::/32',
+};
 
 extension ConfigExt on Config {
   Profile? get currentProfile {

@@ -186,24 +186,31 @@ class _DnsQueryPageState extends ConsumerState<DnsQueryPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ToolSegmented<_DnsMode>(
-                  values: _DnsMode.values,
-                  value: _mode == _DnsMode.follow && !isStart
+                SegmentButtonGroup<_DnsMode>(
+                  options: [
+                    for (final mode in _DnsMode.values)
+                      SegmentOption(
+                        value: mode,
+                        label: _modeLabel(mode),
+                        enabled: mode != _DnsMode.follow || isStart,
+                      ),
+                  ],
+                  selected: _mode == _DnsMode.follow && !isStart
                       ? _DnsMode.system
                       : _mode,
                   enabled: !_compare,
-                  isEnabled: (mode) => mode != _DnsMode.follow || isStart,
-                  labelOf: _modeLabel,
-                  onChanged: (mode) => setState(() {
+                  onSelected: (mode) => setState(() {
                     _mode = mode;
                     _lastMode = mode;
                   }),
                 ),
                 if (showServer) ...[
                   const SizedBox(height: 12),
-                  ToolTvField(
-                    controller: _serverController,
-                    child: TextField(
+                  TvTextField(
+                    builder: (tv) => TextField(
+                      focusNode: tv.focusNode,
+                      readOnly: tv.readOnly,
+                      showCursor: tv.showCursor,
                       controller: _serverController,
                       autocorrect: false,
                       keyboardType: TextInputType.url,
@@ -213,7 +220,7 @@ class _DnsQueryPageState extends ConsumerState<DnsQueryPage>
                         hintText: appLocalizations.dnsQueryServerHint,
                         suffixIcon: IconButton(
                           onPressed: _pickServer,
-                          icon: const Icon(Icons.expand_more_rounded),
+                          icon: const AppIcon(Icons.expand_more_rounded),
                         ),
                       ),
                     ),

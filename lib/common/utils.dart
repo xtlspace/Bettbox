@@ -615,27 +615,6 @@ class Utils {
     return valueRaw.substring(valueRaw.length - 2);
   }
 
-  String generateRandomString({int minLength = 10, int maxLength = 100}) {
-    const latinChars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random();
-
-    int length = minLength + random.nextInt(maxLength - minLength + 1);
-
-    String result = '';
-    for (int i = 0; i < length; i++) {
-      if (random.nextBool()) {
-        result += String.fromCharCode(
-          0x4E00 + random.nextInt(0x9FA5 - 0x4E00 + 1),
-        );
-      } else {
-        result += latinChars[random.nextInt(latinChars.length)];
-      }
-    }
-
-    return result;
-  }
-
   String get uuidV4 {
     final Random random = Random();
     final bytes = List.generate(16, (_) => random.nextInt(256));
@@ -830,24 +809,6 @@ class Utils {
     return WidgetsBinding.instance.platformDispatcher.views.first;
   }
 
-  List<String> parseReleaseBody(String? body) {
-    if (body == null) return [];
-    const pattern = r'^\s*-\s+(.+)';
-    final regex = RegExp(pattern, multiLine: true);
-    return regex
-        .allMatches(body)
-        .map((match) => match.group(1)?.trim() ?? '')
-        .where(
-          (item) =>
-              item.isNotEmpty &&
-              !item.startsWith('---') &&
-              !item.startsWith(':') &&
-              !item.startsWith('|') &&
-              !item.startsWith('['),
-        )
-        .toList();
-  }
-
   ViewMode getViewMode(double viewWidth) {
     if (viewWidth <= maxMobileWidth) return ViewMode.mobile;
     if (viewWidth <= maxLaptopWidth) return ViewMode.laptop;
@@ -955,17 +916,15 @@ class Utils {
   Future<List<String>> getLocalGateways() async {
     if (system.isAndroid) {
       try {
-        final gateways = await const MethodChannel(
-          'service',
-        ).invokeListMethod<String>('getLocalGateways');
+        final gateways = await const MethodChannel('service')
+            .invokeListMethod<String>('getLocalGateways');
         if (gateways != null && gateways.isNotEmpty) {
           return gateways;
         }
       } catch (_) {
         try {
-          final gateways = await const MethodChannel(
-            'vpn',
-          ).invokeListMethod<String>('getLocalGateways');
+          final gateways = await const MethodChannel('vpn')
+              .invokeListMethod<String>('getLocalGateways');
           if (gateways != null && gateways.isNotEmpty) {
             return gateways;
           }
@@ -988,9 +947,8 @@ class Utils {
       final primary = (await getNetworkInfo()).ip;
       if (primary.isNotEmpty && !primary.contains(':')) add(primary);
       if (system.isAndroid) {
-        final list = await const MethodChannel(
-          'service',
-        ).invokeListMethod<String>('getLocalIpAddresses');
+        final list = await const MethodChannel('service')
+            .invokeListMethod<String>('getLocalIpAddresses');
         for (final address in list ?? const <String>[]) {
           add(address);
         }
@@ -1034,9 +992,8 @@ class Utils {
   Future<NetworkInfo> getNetworkInfo() async {
     try {
       if (system.isAndroid) {
-        final info = await const MethodChannel(
-          'service',
-        ).invokeMapMethod<String, Object?>('getNetworkInfo');
+        final info = await const MethodChannel('service')
+            .invokeMapMethod<String, Object?>('getNetworkInfo');
         return info == null ? const NetworkInfo() : NetworkInfo.fromJson(info);
       }
       final routes = await _getDefaultRoutes();
@@ -1186,7 +1143,7 @@ class Utils {
       routes.sort((a, b) => a.metric.compareTo(b.metric));
       return routes.map((e) => e.route).toList();
     } catch (e) {
-      commonPrint.warn('Smart Auto Stop: Linux gateway error: $e');
+      commonPrint.warn('Read gateway failed: $e', module: 'AutoStop');
       return [];
     }
   }
@@ -1210,7 +1167,7 @@ class Utils {
       if (gateway.isEmpty || gateway.contains(':')) return [];
       return [(gateway: gateway, interfaceName: interfaceName)];
     } catch (e) {
-      commonPrint.warn('Smart Auto Stop: macOS gateway error: $e');
+      commonPrint.warn('Read gateway failed: $e', module: 'AutoStop');
       return [];
     }
   }
@@ -1236,7 +1193,7 @@ class Utils {
       }
       return routes;
     } catch (e) {
-      commonPrint.warn('Smart Auto Stop: Windows gateway error: $e');
+      commonPrint.warn('Read gateway failed: $e', module: 'AutoStop');
       return [];
     }
   }
@@ -1246,12 +1203,12 @@ class Utils {
     return SingleActivator(trigger, control: control, meta: !control);
   }
 
-  FutureOr<T> handleWatch<T>(Function function) async {
+  FutureOr<T> handleWatch<T>(FutureOr<T> Function() function) async {
     if (kDebugMode) {
       final stopwatch = Stopwatch()..start();
       final res = await function();
       stopwatch.stop();
-      commonPrint.debug('Time：${stopwatch.elapsedMilliseconds} ms');
+      commonPrint.debug('Took ${stopwatch.elapsedMilliseconds} ms');
       return res;
     }
     return await function();

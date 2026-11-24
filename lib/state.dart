@@ -30,7 +30,7 @@ import 'common/common.dart';
 import 'controller.dart';
 import 'models/models.dart';
 
-typedef UpdateTasks = List<FutureOr Function()>;
+typedef UpdateTasks = List<FutureOr<void> Function()>;
 
 class GlobalState {
   static GlobalState? _instance;
@@ -56,6 +56,8 @@ class GlobalState {
   set config(Config value) => _config = value;
   late AppState appState;
   bool isPre = true;
+
+  bool get isPreRelease => isPre && !kDebugMode && !AppIdentity.isDev;
   String? coreSHA256;
   late PackageInfo packageInfo;
   Function? updateCurrentDelayDebounce;
@@ -79,6 +81,7 @@ class GlobalState {
   Timer? _backgroundCoreGcTimer;
   Timer? _backgroundCleanupTimer;
   final Lock _scriptEvaluateLock = Lock();
+  int _relayStamp = 0;
   bool isInit = false;
 
   bool get hasMediaUnlockWidget {
@@ -127,6 +130,7 @@ class GlobalState {
   set appController(AppController appController) {
     _appController = appController;
     isInit = true;
+    commonPrint.flush();
   }
 
   GlobalState._internal();
@@ -138,15 +142,7 @@ class GlobalState {
 
   Future<void> initApp(int version) async {
     isExiting = false;
-    if (system.isLinux && appPath.isAppImage) {
-      await appPath.ensureAppImageCoreSynced();
-    }
     coreSHA256 = const String.fromEnvironment('CORE_SHA256');
-    if (system.isWindows &&
-        !kDebugMode &&
-        (coreSHA256 == null || coreSHA256!.isEmpty)) {
-      coreSHA256 = await _calcCoreSHA256();
-    }
     isPre = const String.fromEnvironment('APP_ENV') != 'stable';
     appState = AppState(
       brightness: WidgetsBinding.instance.platformDispatcher.platformBrightness,
@@ -158,8 +154,16 @@ class GlobalState {
       totalTraffic: Traffic(),
       systemUiOverlayStyle: const SystemUiOverlayStyle(),
     );
-    await _initDynamicColor();
-    await init();
+    await Future.wait([
+      if (system.isLinux && appPath.isAppImage)
+        appPath.ensureAppImageCoreSynced(),
+      if (system.isWindows &&
+          !kDebugMode &&
+          (coreSHA256 == null || coreSHA256!.isEmpty))
+        _calcCoreSHA256().then((value) => coreSHA256 = value),
+      _initDynamicColor(),
+      init(deferBackup: !isService),
+    ]);
   }
 
   Future<String?> getOrCalcCoreSHA256() async {
@@ -207,7 +211,7 @@ class GlobalState {
         return digest.toString();
       });
     } catch (e) {
-      commonPrint.warn('Failed to calculate core SHA256: $e');
+      commonPrint.warn('Core hash failed: $e');
       return null;
     }
   }
@@ -221,14 +225,17 @@ class GlobalState {
     } catch (_) {}
   }
 
-  Future<void> init() async {
-    packageInfo = await PackageInfo.fromPlatform();
-    if (system.isAndroid) {
-      _isAndroidTV = await app.isAndroidTV();
-    }
-    await ManagedScript.loadBundledVersion();
+  Future<void> init({bool deferBackup = false}) async {
+    final (_, _, _, loadedConfig) = await (
+      PackageInfo.fromPlatform().then((value) => packageInfo = value),
+      system.isAndroid
+          ? app.isAndroidTV().then((value) => _isAndroidTV = value)
+          : Future<void>.value(),
+      ManagedScript.loadBundledVersion(),
+      preferences.getConfig(deferBackup: deferBackup),
+    ).wait;
     config =
-        await preferences.getConfig() ??
+        loadedConfig ??
         Config(
           themeProps: defaultThemeProps,
           patchClashConfig: defaultClashConfig,
@@ -252,7 +259,12 @@ class GlobalState {
   @visibleForTesting
   set isAndroidTV(bool value) => _isAndroidTV = value;
 
-  String get ua => config.patchClashConfig.globalUa ?? packageInfo.ua;
+  String get platformUa => '${packageInfo.ua}/${system.platformArch}';
+
+  String get ua {
+    final custom = config.patchClashConfig.globalUa;
+    return custom != null && custom.isNotEmpty ? custom : platformUa;
+  }
 
   Future<void> startUpdateTasks([UpdateTasks? tasks]) async {
     if (tasks != null) {
@@ -377,7 +389,7 @@ class GlobalState {
         appController.updateTraffic,
       ]);
     } catch (e) {
-      commonPrint.warn('Sync VPN state error: $e');
+      commonPrint.warn('Sync VPN state failed: $e');
     }
   }
 
@@ -421,7 +433,10 @@ class GlobalState {
   Future<void> _checkAndRunBackgroundCoreGc() async {
     if (!backgroundMode.value) return;
     try {
-      await clashCore.requestGc(forceFreeOSMemory: true, purge: false);
+      await clashCore.requestGc(
+        forceFreeOSMemory: true,
+        purge: system.isAndroid,
+      );
     } catch (e) {
       commonPrint.debug('Background requestGc ignored: $e');
     }
@@ -443,6 +458,7 @@ class GlobalState {
     android?.purgeMemory();
     system.purgeMemory();
     windows?.emptyWorkingSet();
+    await system.releaseCodePages();
   }
 
   Future<void> handleStart([
@@ -469,7 +485,7 @@ class GlobalState {
     await startUpdateTasks(tasks);
   }
 
-  Future updateStartTime() async {
+  Future<void> updateStartTime() async {
     startTime = await clashLib?.getRunTime();
   }
 
@@ -483,13 +499,13 @@ class GlobalState {
         );
         providerContainer
                 .read(providers_state.wakelockStateProvider.notifier)
-                .state =
+                .value =
             enabled;
       }
     }
   }
 
-  Future handleStop([bool includeVpnService = true]) async {
+  Future<void> handleStop([bool includeVpnService = true]) async {
     startTime = null;
     if (system.isAndroid && isService) {
       await clashLibHandler?.stopListener();
@@ -513,6 +529,7 @@ class GlobalState {
     String? title,
     required InlineSpan message,
     String? confirmText,
+    String? cancelText,
     bool cancelable = true,
   }) async {
     return await showCommonDialog<bool>(
@@ -526,7 +543,7 @@ class GlobalState {
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
-                  child: Text(appLocalizations.cancel),
+                  child: Text(cancelText ?? appLocalizations.cancel),
                 ),
               TextButton(
                 onPressed: () {
@@ -541,9 +558,8 @@ class GlobalState {
               child: SingleChildScrollView(
                 child: SelectableText.rich(
                   TextSpan(
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(fontSize: 15, height: 1.5),
+                    style: Theme.of(context).textTheme.bodyLarge
+                        ?.copyWith(fontSize: 15, height: 1.5),
                     children: [message],
                   ),
                   style: const TextStyle(overflow: TextOverflow.visible),
@@ -602,62 +618,6 @@ class GlobalState {
     );
   }
 
-  bool _dialogWarmedUp = false;
-
-  void warmupCommonDialog() {
-    if (_dialogWarmedUp) return;
-    _dialogWarmedUp = true;
-
-    final state = navigatorKey.currentState;
-    if (state == null) return;
-    final overlayState = state.overlay;
-    if (overlayState == null) return;
-
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          entry.remove();
-          entry.dispose();
-        });
-        return Offstage(
-          offstage: true,
-          child: RepaintBoundary(
-            child: Material(
-              type: MaterialType.transparency,
-              child: FadeTransition(
-                opacity: const AlwaysStoppedAnimation(1.0),
-                child: ScaleTransition(
-                  scale: const AlwaysStoppedAnimation(1.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: const [
-                        BoxShadow(blurRadius: 10, color: Colors.black12),
-                      ],
-                    ),
-                    child: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_outline),
-                        SizedBox(height: 8),
-                        Text('warmup'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    overlayState.insert(entry);
-  }
-
   void showNotifier(
     String text, {
     VoidCallback? onAction,
@@ -684,15 +644,15 @@ class GlobalState {
         return;
       }
     }
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    unawaited(launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication));
   }
 
   Future<void> migrateOldData(Config config) async {
     final clashConfig = await preferences.getClashConfig();
     if (clashConfig != null) {
       config = config.copyWith(patchClashConfig: clashConfig);
-      preferences.clearClashConfig();
-      preferences.saveConfig(config);
+      unawaited(preferences.clearClashConfig());
+      unawaited(preferences.saveConfig(config));
     }
 
     if (config.appSetting.locale == null) {
@@ -700,7 +660,7 @@ class GlobalState {
       config = config.copyWith(
         appSetting: config.appSetting.copyWith(locale: systemLocale.toString()),
       );
-      preferences.saveConfig(config);
+      unawaited(preferences.saveConfig(config));
       this.config = config;
     }
 
@@ -720,11 +680,7 @@ class GlobalState {
     await prefs?.remove(customSidebarIconKey);
 
     final synced = config.managedProps.syncedVersion;
-    if (synced != null &&
-        ManagedScript.bundledVersion.isNotEmpty &&
-        !ManagedScript.isCustom(config.managedProps) &&
-        ManagedScript.compareVersions(synced, ManagedScript.bundledVersion) <
-            0) {
+    if (synced != null && !ManagedScript.isCustom(config.managedProps)) {
       await ManagedScript.restore();
       config = config.copyWith(
         managedProps: config.managedProps.copyWith(syncedVersion: null),
@@ -800,6 +756,13 @@ class GlobalState {
     );
   }
 
+  Future<({String yaml, String uri})> getProxyConfig(String name) async {
+    return clashCore.getProxyConfig(
+      await buildSetupParams(patchConfig: config.patchClashConfig),
+      name,
+    );
+  }
+
   Future<String> validatePatchedConfig({
     required ClashConfig patchConfig,
   }) async {
@@ -814,18 +777,46 @@ class GlobalState {
     final managed = profile.runsManagedScript;
     try {
       final script = managed
-          ? await ManagedScript.script(config.managedProps)
+          ? await ManagedScript.script(
+              config.managedProps,
+              nodeNames: config.nodes.regionNodeNames,
+            )
           : config.scriptProps.scriptOf(profile);
       if (script == null) return '';
-      return await writeScriptedConfig(profile, script, managed: managed);
+      final refresh = managed && providerRefreshProfileId == profile.id;
+      if (refresh) providerRefreshProfileId = null;
+      return await writeScriptedConfig(
+        profile,
+        script,
+        managed: managed,
+        refresh: refresh,
+      );
     } catch (e) {
-      commonPrint.error('Script execution failed: $e');
+      commonPrint.error('Execution failed: $e', module: 'Script');
       showNotifier('${appLocalizations.profileParseErrorDesc}: $e');
-      if (managed && ManagedScript.syncedVersion(config.managedProps) != null) {
-        return await writeBundledManagedConfig(profile);
+      if (!managed) return '';
+      if (ManagedScript.syncedVersion(config.managedProps) != null) {
+        final bundled = await writeBundledManagedConfig(profile);
+        if (bundled.isNotEmpty) return bundled;
       }
-      return '';
+      final last = await _lastManagedConfig(profile);
+      if (last.isEmpty) rethrow;
+      return last;
     }
+  }
+
+  String? providerRefreshProfileId;
+
+  Future<String> _lastManagedConfig(Profile profile) async {
+    final relayPath = await appPath.relayPath;
+    final separator = Platform.pathSeparator;
+    final cacheFile = File(
+      '$relayPath${separator}cache-${profile.id}-managed.json',
+    );
+    if (!await cacheFile.exists()) return '';
+    final file = File('$relayPath${separator}scripted-$_nextRelayStamp.json');
+    await cacheFile.copy(file.path);
+    return file.path;
   }
 
   Future<String> writeBundledManagedConfig(Profile profile) async {
@@ -833,17 +824,20 @@ class GlobalState {
       final fallback = await ManagedScript.script(
         config.managedProps,
         bundled: true,
+        nodeNames: config.nodes.regionNodeNames,
       );
       return await writeScriptedConfig(profile, fallback, managed: true);
     } catch (e) {
-      commonPrint.error('Bundled managed script execution failed: $e');
+      commonPrint.error('Bundled managed script failed: $e', module: 'Script');
       return '';
     }
   }
 
   Future<void> validateScript(Script script, {required bool managed}) async {
     Profile? profile = config.currentProfile;
-    if (profile == null || profile.bundle != null || !await profile.check()) {
+    if (profile == null ||
+        (profile.bundle != null && (managed || profile.isManaged)) ||
+        !await profile.check()) {
       profile = null;
       for (final item in config.profiles) {
         if (item.bundle == null && await item.check()) {
@@ -853,7 +847,7 @@ class GlobalState {
       }
     }
     if (profile == null) {
-      final stamp = DateTime.now().microsecondsSinceEpoch;
+      final stamp = _nextRelayStamp;
       final relayPath = await appPath.relayPath;
       final separator = Platform.pathSeparator;
       final input = File('$relayPath${separator}validate-in-$stamp.json');
@@ -924,7 +918,7 @@ class GlobalState {
     bool refresh = false,
     bool cache = true,
   }) async {
-    final stamp = DateTime.now().microsecondsSinceEpoch;
+    final stamp = _nextRelayStamp;
     final relayPath = await appPath.relayPath;
     final separator = Platform.pathSeparator;
     final file = File('$relayPath${separator}scripted-$stamp.json');
@@ -967,12 +961,14 @@ class GlobalState {
           outputPath: file.path,
           customOptions: script.customOptions,
         );
-        if (key != null) {
+        if (key != null || (managed && cache)) {
           if (await cacheKey.exists()) {
             await cacheKey.delete();
           }
           await file.copy(cacheFile.path);
-          await cacheKey.writeAsString(key, flush: true);
+          if (key != null) {
+            await cacheKey.writeAsString(key, flush: true);
+          }
         }
         return file.path;
       } finally {
@@ -983,6 +979,31 @@ class GlobalState {
         }
       }
     });
+  }
+
+  Future<String> writeExpandedConfig(
+    Profile profile, {
+    bool refresh = false,
+  }) async {
+    final relayPath = await appPath.relayPath;
+    final file = File(
+      '$relayPath${Platform.pathSeparator}profile-$_nextRelayStamp.json',
+    );
+    await _scriptEvaluateLock.synchronized(
+      () => _exportProfileConfig(
+        profile,
+        file.path,
+        managed: true,
+        refresh: refresh,
+      ),
+    );
+    return file.path;
+  }
+
+  int get _nextRelayStamp {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    _relayStamp = now > _relayStamp ? now : _relayStamp + 1;
+    return _relayStamp;
   }
 
   Future<void> _sweepRelay(String relayPath) async {
@@ -1063,14 +1084,11 @@ class GlobalState {
     required ClashConfig patchConfig,
     required Profile profile,
   }) async {
-    final fakeIpRangeV6 = patchConfig.dns.effectiveFakeIpRangeV6(
-      ipv6Enabled: patchConfig.ipv6,
-    );
-    final dns = patchConfig.dns.copyWith(fakeIpRangeV6: fakeIpRangeV6);
+    if (!isService) {
+      await uiManager.initializeUI();
+    }
     final tun = patchConfig.tun.getRealTun(
       config.networkProps.bypassPrivateRoute,
-      fakeIpRange: patchConfig.dns.fakeIpRange,
-      fakeIpRangeV6: fakeIpRangeV6,
       bypassPrivateRouteAddress:
           config.networkProps.realBypassPrivateRouteAddress,
     );
@@ -1080,13 +1098,15 @@ class GlobalState {
     final hasAuthentication = patchConfig.authentication.isNotEmpty;
     final general = <String, dynamic>{
       'external-controller': patchConfig.allowLan && hasSecret
-          ? externalController.value.replaceAll('127.0.0.1', '0.0.0.0')
-          : externalController.value,
+          ? patchConfig.externalControllerAddress.replaceAll(
+              '127.0.0.1',
+              '0.0.0.0',
+            )
+          : patchConfig.externalControllerAddress,
       if (externalController == ExternalControllerStatus.open && hasSecret)
         'secret': secret,
       'external-ui': await appPath.uiPath,
-      'external-ui-url':
-          'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip',
+      'external-ui-url': 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip',
       'external-ui-name': '',
       'tcp-concurrent': patchConfig.tcpConcurrent,
       if (!system.isAndroid && patchConfig.interfaceName.isNotEmpty)
@@ -1113,12 +1133,13 @@ class GlobalState {
         'device': tun.device,
         if (tun.dnsMode case final dnsMode?) 'dns-mode': dnsMode.name,
         'dns-hijack': tun.dnsHijack,
-        'stack': (AppIdentity.isLite ? TunStack.mips : tun.stack).name,
+        'stack': (AppIdentity.isStandard ? tun.stack : TunStack.mips).name,
         'route-address': tun.routeAddress,
         'route-exclude-address': tun.routeExcludeAddress,
         'auto-route': !system.isAndroid,
         'auto-detect-interface': !system.isAndroid,
         'auto-redirect': system.isLinux,
+        if (system.isLinux) 'gso': true,
         'strict-route': tun.strictRoute,
         'endpoint-independent-nat': tun.endpointIndependentNat,
         'disable-icmp-forwarding': tun.disableIcmpForwarding,
@@ -1126,7 +1147,9 @@ class GlobalState {
       },
       'geodata-loader': 'memconservative',
       'geodata-mode': false,
-      'global-ua': patchConfig.globalUa,
+      'global-ua': (patchConfig.globalUa?.isNotEmpty ?? false)
+          ? patchConfig.globalUa
+          : platformUa,
     };
 
     final scriptActive = profile.isManaged || _scriptActive(profile);
@@ -1146,13 +1169,6 @@ class GlobalState {
             'value': ['131.107.255.255', 'fd3e:4f5a:5b81::1'],
           },
       ],
-      'dns': {
-        ...dns.toJson(),
-        'nameserver-policy': {
-          for (final entry in dns.nameserverPolicy.entries)
-            entry.key: entry.value.splitByMultipleSeparators,
-        },
-      },
       'ntp': config.overrideNtp ? patchConfig.ntp.toJson() : null,
       'sniffer': config.overrideSniffer ? patchConfig.sniffer.toJson() : null,
       'experimental': config.overrideExperimental
@@ -1162,11 +1178,18 @@ class GlobalState {
           ? null
           : patchConfig.tunnels.map((item) => item.toClashJson()).toList(),
       'providers-path': await appPath.getProvidersDirPath(profile.id),
+      'nodes': config.nodes.patchOf(profile.id, managed: profile.isManaged),
       'node-exclude-filter': config.nodeExcludeFilter,
       'health-check-timeout': config.healthCheckTimeout,
       'override-rules': overrideData.enable
+          ? {'rules': overrideData.runningRule}
+          : null,
+      'shared-rules': profile.isManaged && config.managedProps.rules.isNotEmpty
           ? {
-              'rules': overrideData.runningRule,
+              'rules': [
+                for (final rule in config.managedProps.rules) rule.value,
+              ],
+              'fallback': managedDefaultGroup,
             }
           : null,
       'prepend-rules': [
@@ -1192,7 +1215,12 @@ class GlobalState {
   }
 
   Future<Map<String, dynamic>?> _readScriptedSnippet(Profile profile) async {
-    final path = await _writeScriptedConfig(profile);
+    final String path;
+    try {
+      path = await _writeScriptedConfig(profile);
+    } catch (_) {
+      return null;
+    }
     if (path.isEmpty) return null;
     final file = File(path);
     try {
@@ -1266,17 +1294,7 @@ class DashboardRefreshManager {
 
   Future<bool> _isActive() async {
     if (system.isDesktop) {
-      final isPinned = globalState.config.windowProps.isPinned;
-      if (isPinned) return true;
-      final visible = await window?.isVisible;
-      if (visible == false) {
-        return false;
-      }
-      final minimized = await window?.isMinimized ?? false;
-      if (minimized) {
-        return false;
-      }
-      return true;
+      return !globalState.backgroundMode.value;
     }
 
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
@@ -1365,12 +1383,19 @@ class DetectionState {
     return _instance!;
   }
 
+  static final _protectedIpInfo = IpInfo(
+    ip: '168.168.6.8',
+    countryCode: 'TW',
+    country: 'Taiwan(China)',
+    asn: 'AS 166188',
+  );
+
   bool get isIpMasked => _isIpMasked;
   IpInfo? get rawIpInfo => _rawIpInfo;
 
   IpInfo? _maskIpInfo(IpInfo? ipInfo) {
     if (ipInfo == null) return null;
-    return _isIpMasked ? ipInfo.copyWith(ip: '*** *** *** ***') : ipInfo;
+    return _isIpMasked ? _protectedIpInfo : ipInfo;
   }
 
   void toggleIpPrivacy() {

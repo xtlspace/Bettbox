@@ -34,7 +34,7 @@ class TunnelListWidget extends ConsumerWidget {
                 index: index,
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const AppIcon(Icons.delete_outline),
                 onPressed: () => _deleteTunnel(ref, tunnels, index),
               ),
             ),
@@ -168,35 +168,55 @@ class _TunnelDialogState extends State<_TunnelDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: _networkController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.tunnelNetwork,
-              hintText: appLocalizations.tunnelNetworkHint,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _networkController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.tunnelNetwork,
+                hintText: appLocalizations.tunnelNetworkHint,
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _addressController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.tunnelAddress,
-              hintText: appLocalizations.tunnelAddressHint,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _addressController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.tunnelAddress,
+                hintText: appLocalizations.tunnelAddressHint,
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _targetController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.tunnelTarget,
-              hintText: appLocalizations.tunnelTargetHint,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _targetController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.tunnelTarget,
+                hintText: appLocalizations.tunnelTargetHint,
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _proxyController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.tunnelProxy,
-              hintText: appLocalizations.tunnelProxyHint,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _proxyController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.tunnelProxy,
+                hintText: appLocalizations.tunnelProxyHint,
+              ),
             ),
           ),
         ],
@@ -226,7 +246,7 @@ class TunnelListView extends ConsumerWidget {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showTunnelDialog(context, ref, tunnels),
-        child: const Icon(Icons.add),
+        child: const AppIcon(Icons.add),
       ),
     );
   }

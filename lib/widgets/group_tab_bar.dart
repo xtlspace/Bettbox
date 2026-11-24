@@ -16,6 +16,8 @@ class GroupTabBar extends ConsumerStatefulWidget {
   final List<String> labels;
   final VoidCallback? onMore;
   final ValueListenable<bool>? moreOpen;
+  final bool expandable;
+  final ValueChanged<double>? onExtraHeight;
 
   const GroupTabBar({
     super.key,
@@ -23,6 +25,8 @@ class GroupTabBar extends ConsumerStatefulWidget {
     required this.labels,
     this.onMore,
     this.moreOpen,
+    this.expandable = false,
+    this.onExtraHeight,
   });
 
   @override
@@ -40,6 +44,10 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
   Animation<double>? _animation;
   bool _overflow = false;
   bool _feedback = true;
+  bool _expanded = false;
+  final _wrapKey = GlobalKey();
+  double _wrapHeight = GroupTabBar.height;
+  double? _extraHeight;
   double? _scrollTarget;
 
   @override
@@ -208,19 +216,20 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
       return child;
     }
     final leftFactor = (position.pixels / 20).clamp(0.0, 1.0);
-    final rightFactor =
-        ((position.maxScrollExtent - position.pixels) / 20).clamp(0.0, 1.0);
+    final rightFactor = ((position.maxScrollExtent - position.pixels) / 20)
+        .clamp(0.0, 1.0);
     if (leftFactor <= 0 && rightFactor <= 0) return child;
     return ShaderMask(
       shaderCallback: (bounds) {
         if (bounds.width <= 0) {
-          return const LinearGradient(
-            colors: [Colors.white, Colors.white],
-          ).createShader(bounds);
+          return const LinearGradient(colors: [Colors.white, Colors.white])
+              .createShader(bounds);
         }
         final leftStop = (18 * leftFactor / bounds.width).clamp(0.0, 0.15);
-        final rightStop =
-            (1.0 - (24 * rightFactor / bounds.width)).clamp(0.82, 1.0);
+        final rightStop = (1.0 - (24 * rightFactor / bounds.width)).clamp(
+          0.82,
+          1.0,
+        );
         return LinearGradient(
           colors: [
             Colors.white.withValues(alpha: 1 - leftFactor),
@@ -236,6 +245,32 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
     );
   }
 
+  void _onMore() {
+    if (!widget.expandable) {
+      widget.onMore?.call();
+      return;
+    }
+    setState(() => _expanded = !_expanded);
+    _reportExtraHeight();
+    if (_expanded) return;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _reveal(_selectedIndex.value, animate: false),
+    );
+  }
+
+  void _measure(_) {
+    if (!mounted) return;
+    _wrapHeight = _wrapKey.currentContext?.size?.height ?? _wrapHeight;
+    _reportExtraHeight();
+  }
+
+  void _reportExtraHeight() {
+    final height = _expanded ? 0.0 : _wrapHeight - GroupTabBar.height;
+    if (height == _extraHeight) return;
+    _extraHeight = height;
+    widget.onExtraHeight?.call(height);
+  }
+
   Widget _buildMoreButton({
     required Color backgroundColor,
     required Color borderColor,
@@ -246,21 +281,24 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
     return PressScale(
       child: Material(
         color: backgroundColor,
-        shape: CircleBorder(
-          side: BorderSide(color: borderColor),
-        ),
+        shape: CircleBorder(side: BorderSide(color: borderColor)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () {
             _haptic(_feedback);
-            widget.onMore?.call();
+            _onMore();
           },
           child: SizedBox.square(
             dimension: GroupTabBar.height,
             child: IconTheme.merge(
               data: IconThemeData(color: iconColor, size: 18),
-              child: isMobileView && moreOpen != null
+              child: widget.expandable
+                  ? CommonExpandIcon(
+                      expand: _expanded,
+                      duration: const Duration(milliseconds: 320),
+                    )
+                  : isMobileView && moreOpen != null
                   ? ValueListenableBuilder(
                       valueListenable: moreOpen,
                       builder: (_, open, _) => CommonExpandIcon(
@@ -268,7 +306,7 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
                         duration: const Duration(milliseconds: 320),
                       ),
                     )
-                  : Icon(
+                  : AppIcon(
                       isMobileView ? Icons.expand_more : Icons.chevron_right,
                     ),
             ),
@@ -316,9 +354,58 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
     );
 
     final count = widget.labels.length;
-    final showMore = _overflow && widget.onMore != null;
+    final showMore =
+        (_overflow || _expanded) &&
+        (widget.onMore != null || widget.expandable);
+    Widget chip(int index, {bool keyed = true}) => _GroupTabChip(
+      key: keyed ? _itemKeys[index] : null,
+      label: widget.labels[index],
+      index: index,
+      selectedIndex: _selectedIndex,
+      style: textStyle,
+      unselectedBg: unselectedBg,
+      selectedBg: selectedBg,
+      unselectedBorder: unselectedBorder,
+      selectedBorder: selectedBorder,
+      unselectedText: unselectedText,
+      selectedText: selectedText,
+      onTap: () => _select(index),
+    );
+    final more = [
+      if (showMore) ...[
+        const SizedBox(width: 8),
+        _buildMoreButton(
+          backgroundColor: unselectedBg,
+          borderColor: unselectedBorder,
+          iconColor: unselectedText,
+          isMobileView: isMobileView,
+        ),
+      ],
+    ];
 
-    return SizedBox(
+    Widget wrap(List<Widget> trailing) => Row(
+      key: _wrapKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Wrap(
+            spacing: 7,
+            runSpacing: 8,
+            children: [
+              for (var index = 0; index < count; index++)
+                chip(index, keyed: _expanded),
+            ],
+          ),
+        ),
+        ...trailing,
+      ],
+    );
+    final measure = widget.onExtraHeight != null;
+    if (measure) WidgetsBinding.instance.addPostFrameCallback(_measure);
+
+    if (_expanded) return _animated(wrap(more));
+
+    final bar = SizedBox(
       height: GroupTabBar.height,
       child: Row(
         children: [
@@ -349,20 +436,7 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
                         children: [
                           for (var index = 0; index < count; index++) ...[
                             if (index > 0) const SizedBox(width: 7),
-                            _GroupTabChip(
-                              key: _itemKeys[index],
-                              label: widget.labels[index],
-                              index: index,
-                              selectedIndex: _selectedIndex,
-                              style: textStyle,
-                              unselectedBg: unselectedBg,
-                              selectedBg: selectedBg,
-                              unselectedBorder: unselectedBorder,
-                              selectedBorder: selectedBorder,
-                              unselectedText: unselectedText,
-                              selectedText: selectedText,
-                              onTap: () => _select(index),
-                            ),
+                            chip(index),
                           ],
                         ],
                       ),
@@ -372,17 +446,30 @@ class _GroupTabBarState extends ConsumerState<GroupTabBar> {
               ),
             ),
           ),
-          if (showMore) ...[
-            const SizedBox(width: 8),
-            _buildMoreButton(
-              backgroundColor: unselectedBg,
-              borderColor: unselectedBorder,
-              iconColor: unselectedText,
-              isMobileView: isMobileView,
-            ),
-          ],
+          ...more,
         ],
       ),
+    );
+    if (!measure) return _animated(bar);
+    return _animated(
+      Stack(
+        children: [
+          Offstage(
+            child: wrap(const [SizedBox(width: 8 + GroupTabBar.height)]),
+          ),
+          bar,
+        ],
+      ),
+    );
+  }
+
+  Widget _animated(Widget child) {
+    if (!widget.expandable) return child;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 }
@@ -516,17 +603,16 @@ class _GroupTabChipState extends State<_GroupTabChip>
                 color: bgColor,
                 shape: RoundedSuperellipseBorder(
                   borderRadius: BorderRadius.circular(GroupTabBar.height / 2),
-                  side: BorderSide(
-                    color: borderColor,
-                    width: 1.0 + 0.15 * t,
-                  ),
+                  side: BorderSide(color: borderColor, width: 1.0 + 0.15 * t),
                 ),
               ),
-              alignment: Alignment.center,
-              child: EmojiText(
-                widget.label,
-                maxLines: 1,
-                style: widget.style?.copyWith(color: textColor),
+              child: Center(
+                widthFactor: 1,
+                child: EmojiText(
+                  widget.label,
+                  maxLines: 1,
+                  style: widget.style?.copyWith(color: textColor),
+                ),
               ),
             );
           },

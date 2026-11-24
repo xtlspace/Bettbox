@@ -30,12 +30,37 @@ class EditProfileView extends StatefulWidget {
   State<EditProfileView> createState() => EditProfileViewState();
 }
 
+class EditProfileMenu extends StatelessWidget {
+  final GlobalKey<EditProfileViewState> editKey;
+
+  const EditProfileMenu({super.key, required this.editKey});
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonPopupBox(
+      targetBuilder: (open) => IconButton(
+        onPressed: () => open(offset: const Offset(0, 20)),
+        tooltip: appLocalizations.more,
+        icon: const AppIcon(Icons.more_vert),
+      ),
+      popup: Builder(
+        builder: (_) => CommonPopupMenu(
+          items: editKey.currentState?._menuItems ?? const [],
+        ),
+      ),
+    );
+  }
+}
+
 class EditProfileViewState extends State<EditProfileView> {
   late TextEditingController labelController;
   late TextEditingController urlController;
   late TextEditingController autoUpdateDurationController;
   late bool autoUpdate;
   late bool managed = widget.profile.managed;
+  late bool skipCertVerify = widget.profile.skipCertVerify;
+  late bool directUpdate = widget.profile.directUpdate;
+  late String? userAgent = widget.profile.userAgent;
   late TextEditingController ageSecretKeyController;
   FocusNode? urlFocusNode;
   bool _obscureAgeSecretKey = true;
@@ -93,6 +118,9 @@ class EditProfileViewState extends State<EditProfileView> {
           : ageSecretKeyController.text.trim(),
       autoUpdate: autoUpdate,
       managed: managed,
+      skipCertVerify: skipCertVerify,
+      directUpdate: directUpdate,
+      userAgent: userAgent,
       autoUpdateDuration: Duration(
         minutes: int.parse(autoUpdateDurationController.text),
       ),
@@ -198,10 +226,12 @@ class EditProfileViewState extends State<EditProfileView> {
       return patchedMessage.isEmpty ? '' : originalMessage;
     }, silence: false);
     if (message?.isNotEmpty == true) {
-      globalState.showMessage(
-        title: appLocalizations.tip,
-        message: TextSpan(text: message),
-        cancelable: false,
+      unawaited(
+        globalState.showMessage(
+          title: appLocalizations.tip,
+          message: TextSpan(text: message),
+          cancelable: false,
+        ),
       );
       return;
     }
@@ -235,7 +265,7 @@ class EditProfileViewState extends State<EditProfileView> {
           message: TextSpan(text: appLocalizations.hasCacheChange),
         );
         if (res == true && context.mounted) {
-          _handleSaveEdit(context, content);
+          unawaited(_handleSaveEdit(context, content));
         } else {
           return true;
         }
@@ -289,7 +319,7 @@ class EditProfileViewState extends State<EditProfileView> {
       title: appLocalizations.tip,
     );
     if (res != true || !mounted) return;
-    context.showNotifier(appLocalizations.exportSuccess);
+    unawaited(context.showNotifier(appLocalizations.exportSuccess));
   }
 
   Future<void> _handleBack() async {
@@ -298,7 +328,7 @@ class EditProfileViewState extends State<EditProfileView> {
       message: TextSpan(text: appLocalizations.fileIsUpdate),
     );
     if (res == true) {
-      _handleConfirm();
+      unawaited(_handleConfirm());
     } else {
       if (mounted) {
         Navigator.of(context).pop();
@@ -310,80 +340,134 @@ class EditProfileViewState extends State<EditProfileView> {
     globalState.showCommonDialog(child: const _AgeKeyGeneratorDialog());
   }
 
+  Future<void> _pickUserAgent() async {
+    final result = await pickUserAgent(current: userAgent);
+    if (result == null) return;
+    userAgent = result.value;
+  }
+
+  List<PopupMenuItemData> get _menuItems {
+    final isUrl = widget.isNew || profile.type == ProfileType.url;
+    return [
+      if (isUrl) ...[
+        PopupMenuItemData(
+          icon: skipCertVerify
+              ? Icons.check_circle_rounded
+              : Icons.circle_outlined,
+          label: appLocalizations.skipCertVerify,
+          onPressed: () => skipCertVerify = !skipCertVerify,
+        ),
+        PopupMenuItemData(
+          icon: directUpdate
+              ? Icons.check_circle_rounded
+              : Icons.circle_outlined,
+          label: appLocalizations.directUpdate,
+          onPressed: () => directUpdate = !directUpdate,
+        ),
+      ],
+      PopupMenuItemData(
+        icon: Icons.security,
+        label: appLocalizations.ageKeyGenerateTitle,
+        onPressed: showAgeKeyGenerator,
+      ),
+      if (isUrl)
+        PopupMenuItemData(
+          icon: Icons.computer_outlined,
+          label: appLocalizations.useCustomUa,
+          onPressed: _pickUserAgent,
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = [
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TextFormField(
-          textInputAction: TextInputAction.next,
-          controller: labelController,
-          decoration: InputDecoration(labelText: appLocalizations.name),
-          validator: (String? value) {
-            if (!widget.isNew && (value == null || value.isEmpty)) {
-              return appLocalizations.profileNameNullValidationDesc;
-            }
-            return null;
-          },
-        ),
-      ),
-      if (widget.profile.type == ProfileType.url || widget.isNew) ...[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextFormField(
-            focusNode: urlFocusNode,
+        child: TvTextField(
+          builder: (tv) => TextFormField(
+            focusNode: tv.focusNode,
+            readOnly: tv.readOnly,
+            showCursor: tv.showCursor,
             textInputAction: TextInputAction.next,
-            keyboardType: TextInputType.url,
-            controller: urlController,
-            maxLines: 5,
-            minLines: 1,
-            decoration: InputDecoration(labelText: appLocalizations.url),
-            onEditingComplete: widget.isNew
-                ? () => FocusManager.instance.primaryFocus?.unfocus()
-                : null,
+            controller: labelController,
+            decoration: InputDecoration(labelText: appLocalizations.name),
             validator: (String? value) {
-              if (value == null || value.isEmpty) {
-                return appLocalizations.profileUrlNullValidationDesc;
-              }
-              if (!value.isUrl) {
-                return appLocalizations.profileUrlInvalidValidationDesc;
+              if (!widget.isNew && (value == null || value.isEmpty)) {
+                return appLocalizations.profileNameNullValidationDesc;
               }
               return null;
             },
           ),
         ),
+      ),
+      if (widget.profile.type == ProfileType.url || widget.isNew) ...[
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextFormField(
-            textInputAction: TextInputAction.next,
-            controller: ageSecretKeyController,
-            obscureText: _obscureAgeSecretKey,
-            maxLines: 1,
-            minLines: 1,
-            decoration: InputDecoration(
-              labelText: appLocalizations.ageSecretKeyOptional,
-              hintText: 'AGE-SECRET-KEY-...',
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureAgeSecretKey
-                      ? Icons.visibility
-                      : Icons.visibility_off,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureAgeSecretKey = !_obscureAgeSecretKey;
-                  });
-                },
-              ),
-            ),
-            validator: (String? value) {
-              if (value != null && value.isNotEmpty) {
-                if (!value.startsWith('AGE-SECRET-KEY-')) {
-                  return appLocalizations.ageSecretKeyInvalidValidationDesc;
+          child: TvTextField(
+            focusNode: urlFocusNode,
+            builder: (tv) => TextFormField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              textInputAction: TextInputAction.next,
+              keyboardType: TextInputType.url,
+              controller: urlController,
+              maxLines: 5,
+              minLines: 1,
+              decoration: InputDecoration(labelText: appLocalizations.url),
+              onEditingComplete: widget.isNew
+                  ? () => FocusManager.instance.primaryFocus?.unfocus()
+                  : null,
+              validator: (String? value) {
+                if (value == null || value.isEmpty) {
+                  return appLocalizations.profileUrlNullValidationDesc;
                 }
-              }
-              return null;
-            },
+                if (!value.isUrl) {
+                  return appLocalizations.profileUrlInvalidValidationDesc;
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TvTextField(
+            builder: (tv) => TextFormField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              textInputAction: TextInputAction.next,
+              controller: ageSecretKeyController,
+              obscureText: _obscureAgeSecretKey,
+              maxLines: 1,
+              minLines: 1,
+              decoration: InputDecoration(
+                labelText: appLocalizations.ageSecretKeyOptional,
+                hintText: 'AGE-SECRET-KEY-...',
+                suffixIcon: IconButton(
+                  icon: AppIcon(
+                    _obscureAgeSecretKey
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureAgeSecretKey = !_obscureAgeSecretKey;
+                    });
+                  },
+                ),
+              ),
+              validator: (String? value) {
+                if (value != null && value.isNotEmpty) {
+                  if (!value.startsWith('AGE-SECRET-KEY-')) {
+                    return appLocalizations.ageSecretKeyInvalidValidationDesc;
+                  }
+                }
+                return null;
+              },
+            ),
           ),
         ),
         Padding(
@@ -403,25 +487,30 @@ class EditProfileViewState extends State<EditProfileView> {
         if (autoUpdate)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextFormField(
-              textInputAction: TextInputAction.next,
-              controller: autoUpdateDurationController,
-              decoration: InputDecoration(
-                labelText: appLocalizations.autoUpdateInterval,
+            child: TvTextField(
+              builder: (tv) => TextFormField(
+                focusNode: tv.focusNode,
+                readOnly: tv.readOnly,
+                showCursor: tv.showCursor,
+                textInputAction: TextInputAction.next,
+                controller: autoUpdateDurationController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.autoUpdateInterval,
+                ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return appLocalizations
+                        .profileAutoUpdateIntervalNullValidationDesc;
+                  }
+                  try {
+                    int.parse(value);
+                  } catch (_) {
+                    return appLocalizations
+                        .profileAutoUpdateIntervalInvalidValidationDesc;
+                  }
+                  return null;
+                },
               ),
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return appLocalizations
-                      .profileAutoUpdateIntervalNullValidationDesc;
-                }
-                try {
-                  int.parse(value);
-                } catch (_) {
-                  return appLocalizations
-                      .profileAutoUpdateIntervalInvalidValidationDesc;
-                }
-                return null;
-              },
             ),
           ),
       ],
@@ -448,7 +537,7 @@ class EditProfileViewState extends State<EditProfileView> {
                   style: IconButton.styleFrom(
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  icon: const Icon(Icons.settings_outlined),
+                  icon: const AppIcon(Icons.settings_outlined),
                 ),
               ],
             ),
@@ -485,17 +574,17 @@ class EditProfileViewState extends State<EditProfileView> {
                                 spacing: 12,
                                 children: [
                                   CommonChip(
-                                    avatar: const Icon(Icons.edit),
+                                    avatar: const AppIcon(Icons.edit),
                                     label: appLocalizations.edit,
                                     onPressed: _editProfileFile,
                                   ),
                                   CommonChip(
-                                    avatar: const Icon(Icons.upload),
+                                    avatar: const AppIcon(Icons.upload),
                                     label: appLocalizations.upload,
                                     onPressed: _uploadProfileFile,
                                   ),
                                   CommonChip(
-                                    avatar: const Icon(Icons.download),
+                                    avatar: const AppIcon(Icons.download),
                                     label: appLocalizations.exportFile,
                                     onPressed: _exportProfileFile,
                                   ),
@@ -527,7 +616,7 @@ class EditProfileViewState extends State<EditProfileView> {
             heroTag: null,
             onPressed: _handleConfirm,
             label: Text(appLocalizations.save),
-            icon: const Icon(Icons.save),
+            icon: const AppIcon(Icons.save),
           ),
         ),
         child: Form(
@@ -666,7 +755,7 @@ class _AgeKeyGeneratorDialogState extends State<_AgeKeyGeneratorDialog> {
     if (text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
-      context.showNotifier(appLocalizations.copySuccess);
+      unawaited(context.showNotifier(appLocalizations.copySuccess));
     }
   }
 
@@ -689,41 +778,53 @@ class _AgeKeyGeneratorDialogState extends State<_AgeKeyGeneratorDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-          TextField(
-            controller: _privateKeyController,
-            decoration: InputDecoration(
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              labelText: appLocalizations.agePrivateKeyLabel,
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.copy),
-                onPressed: () => _copyToClipboard(_privateKeyController.text),
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _privateKeyController,
+              decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                labelText: appLocalizations.agePrivateKeyLabel,
+                suffixIcon: IconButton(
+                  icon: const AppIcon(Icons.copy),
+                  onPressed: () => _copyToClipboard(_privateKeyController.text),
+                ),
               ),
+              onChanged: (_) {
+                if (_helperText != null) {
+                  setState(() {
+                    _helperText = null;
+                  });
+                }
+              },
             ),
-            onChanged: (_) {
-              if (_helperText != null) {
-                setState(() {
-                  _helperText = null;
-                });
-              }
-            },
           ),
           const SizedBox(height: 24),
-          TextField(
-            controller: _publicKeyController,
+          TvTextField(
             readOnly: true,
-            decoration: InputDecoration(
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              labelText: appLocalizations.agePublicKeyLabel,
-              helperText: _helperText,
-              helperMaxLines: 2,
-              helperStyle: _helperText == appLocalizations.agePrivateKeyRequired
-                  ? TextStyle(color: context.colorScheme.error)
-                  : (_helperText == appLocalizations.ageKeyPairGeneratedSuccess
-                        ? TextStyle(color: context.colorScheme.primary)
-                        : null),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.copy),
-                onPressed: () => _copyToClipboard(_publicKeyController.text),
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _publicKeyController,
+              decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                labelText: appLocalizations.agePublicKeyLabel,
+                helperText: _helperText,
+                helperMaxLines: 2,
+                helperStyle:
+                    _helperText == appLocalizations.agePrivateKeyRequired
+                    ? TextStyle(color: context.colorScheme.error)
+                    : (_helperText ==
+                              appLocalizations.ageKeyPairGeneratedSuccess
+                          ? TextStyle(color: context.colorScheme.primary)
+                          : null),
+                suffixIcon: IconButton(
+                  icon: const AppIcon(Icons.copy),
+                  onPressed: () => _copyToClipboard(_publicKeyController.text),
+                ),
               ),
             ),
           ),

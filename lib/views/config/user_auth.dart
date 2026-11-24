@@ -127,7 +127,7 @@ class _UserAuthDialogState extends ConsumerState<UserAuthDialog> {
                 child: Center(
                   child: OutlinedButton.icon(
                     onPressed: _addEntry,
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const AppIcon(Icons.add, size: 18),
                     label: Text(appLocalizations.addUser),
                   ),
                 ),
@@ -149,73 +149,83 @@ class _UserAuthDialogState extends ConsumerState<UserAuthDialog> {
                       const SizedBox.shrink(),
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.delete_outline, size: 20),
+                      icon: const AppIcon(Icons.delete_outline, size: 20),
                       onPressed: () => _removeEntry(i),
                       tooltip: appLocalizations.delete,
                     ),
                   ],
                 ),
-                TextFormField(
-                  controller: _entries[i].usernameController,
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.username,
-                    prefixIcon: const Icon(Icons.person_outline),
-                    isDense: true,
+                TvTextField(
+                  builder: (tv) => TextFormField(
+                    focusNode: tv.focusNode,
+                    readOnly: tv.readOnly,
+                    showCursor: tv.showCursor,
+                    controller: _entries[i].usernameController,
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.username,
+                      prefixIcon: const AppIcon(Icons.person_outline),
+                      isDense: true,
+                    ),
+                    validator: (value) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isEmpty) {
+                        return appLocalizations.emptyTip(
+                          appLocalizations.username,
+                        );
+                      }
+                      if (trimmed.contains(':')) {
+                        return appLocalizations.usernameCannotContainColon;
+                      }
+                      final hasDuplicate = _entries.asMap().entries.any(
+                        (e) =>
+                            e.key != i &&
+                            e.value.usernameController.text.trim() == trimmed &&
+                            trimmed.isNotEmpty,
+                      );
+                      if (hasDuplicate) {
+                        return appLocalizations.existsTip(
+                          appLocalizations.username,
+                        );
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    final trimmed = value?.trim() ?? '';
-                    if (trimmed.isEmpty) {
-                      return appLocalizations.emptyTip(
-                        appLocalizations.username,
-                      );
-                    }
-                    if (trimmed.contains(':')) {
-                      return appLocalizations.usernameCannotContainColon;
-                    }
-                    final hasDuplicate = _entries.asMap().entries.any(
-                      (e) =>
-                          e.key != i &&
-                          e.value.usernameController.text.trim() == trimmed &&
-                          trimmed.isNotEmpty,
-                    );
-                    if (hasDuplicate) {
-                      return appLocalizations.existsTip(
-                        appLocalizations.username,
-                      );
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _entries[i].passwordController,
-                  obscureText: _entries[i].obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.password,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    isDense: true,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _entries[i].obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                TvTextField(
+                  builder: (tv) => TextFormField(
+                    focusNode: tv.focusNode,
+                    readOnly: tv.readOnly,
+                    showCursor: tv.showCursor,
+                    controller: _entries[i].passwordController,
+                    obscureText: _entries[i].obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: appLocalizations.password,
+                      prefixIcon: const AppIcon(Icons.lock_outline),
+                      isDense: true,
+                      suffixIcon: IconButton(
+                        icon: AppIcon(
+                          _entries[i].obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _entries[i].obscurePassword =
+                                !_entries[i].obscurePassword;
+                          });
+                        },
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _entries[i].obscurePassword =
-                              !_entries[i].obscurePassword;
-                        });
-                      },
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return appLocalizations.emptyTip(
+                          appLocalizations.password,
+                        );
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return appLocalizations.emptyTip(
-                        appLocalizations.password,
-                      );
-                    }
-                    return null;
-                  },
                 ),
               ],
             ],

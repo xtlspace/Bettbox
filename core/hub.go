@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"runtime/metrics"
 	"slices"
 	"sort"
 	"strconv"
@@ -28,6 +29,7 @@ import (
 	"github.com/metacubex/mihomo/common/utils"
 	"github.com/metacubex/mihomo/common/yaml"
 	"github.com/metacubex/mihomo/component/age"
+	"github.com/metacubex/mihomo/component/geodata"
 	"github.com/metacubex/mihomo/component/iface"
 	"github.com/metacubex/mihomo/component/mmdb"
 	"github.com/metacubex/mihomo/component/resolver"
@@ -493,11 +495,92 @@ func closeConnections() {
 	})
 }
 
+func resolvesThrough(name, target string) bool {
+	seen := map[string]bool{}
+	for name != "" && !seen[name] {
+		if name == target {
+			return true
+		}
+		seen[name] = true
+		proxy, ok := toolbox.FindProxy(name)
+		if !ok {
+			return false
+		}
+		if _, group, ok := proxyGroupOf(proxy); ok {
+			name = group.Now()
+			continue
+		}
+		name = proxy.ProxyInfo().DialerProxy
+	}
+	return false
+}
+
+func dialerSupportsUDP(name string) bool {
+	seen := map[string]bool{}
+	for name != "" && !seen[name] {
+		seen[name] = true
+		proxy, ok := toolbox.FindProxy(name)
+		if !ok {
+			return true
+		}
+		if _, group, ok := proxyGroupOf(proxy); ok {
+			name = group.Now()
+			continue
+		}
+		if !proxy.SupportUDP() {
+			return false
+		}
+		name = proxy.ProxyInfo().DialerProxy
+	}
+	return true
+}
+
+func handleCheckDialerUDP(name string) bool {
+	runLock.Lock()
+	defer runLock.Unlock()
+	return dialerSupportsUDP(name)
+}
+
+func dialerDependents(groupName string) []string {
+	seen := map[string]bool{}
+	names := make([]string, 0)
+	visit := func(proxy constant.Proxy) {
+		name := proxy.Name()
+		if seen[name] {
+			return
+		}
+		seen[name] = true
+		if _, _, ok := proxyGroupOf(proxy); ok {
+			return
+		}
+		if dialer := proxy.ProxyInfo().DialerProxy; dialer != "" && resolvesThrough(dialer, groupName) {
+			names = append(names, name)
+		}
+	}
+	for _, proxy := range tunnel.Proxies() {
+		visit(proxy)
+	}
+	for _, provider := range tunnel.Providers() {
+		for _, proxy := range provider.Proxies() {
+			visit(proxy)
+		}
+	}
+	slices.Sort(names)
+	return names
+}
+
+func handleGetDialerDependents(groupName string) []string {
+	runLock.Lock()
+	defer runLock.Unlock()
+	return dialerDependents(groupName)
+}
+
 func handleCloseGroupConnections(groupName string) bool {
 	runLock.Lock()
 	defer runLock.Unlock()
+	targets := append(dialerDependents(groupName), groupName)
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
-		if slices.Contains(c.Info().Chain, groupName) {
+		if slices.ContainsFunc(c.Info().Chain, func(name string) bool { return slices.Contains(targets, name) }) {
 			_ = c.Close()
 		}
 		return true
@@ -588,6 +671,7 @@ func handleUpdateGeoData(geoType string, geoName string, fn func(value string)) 
 				fn(err.Error())
 				return
 			}
+			geodata.ClearGeoSiteCache()
 		}
 		fn("")
 	}()
@@ -690,7 +774,7 @@ func marshalInlineProviderContent(rawConfig *config.RawConfig, providerName stri
 	return yaml.Marshal(map[string]any{"proxies": payload})
 }
 
-const maxLogHistory = 512
+const maxLogHistory = 1024
 
 type logEntry struct {
 	log.Event
@@ -776,13 +860,19 @@ func handleGetCountryCode(ip string, fn func(value string)) {
 
 func handleGetMemory(fn func(value string)) {
 	go func() {
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-		var retainedIdle uint64
-		if m.HeapIdle > m.HeapReleased {
-			retainedIdle = m.HeapIdle - m.HeapReleased
+		samples := []metrics.Sample{
+			{Name: "/memory/classes/heap/objects:bytes"},
+			{Name: "/memory/classes/heap/unused:bytes"},
+			{Name: "/memory/classes/heap/free:bytes"},
+			{Name: "/memory/classes/heap/stacks:bytes"},
 		}
-		mem := m.HeapInuse + retainedIdle + m.StackInuse
+		metrics.Read(samples)
+		var mem uint64
+		for _, sample := range samples {
+			if sample.Value.Kind() == metrics.KindUint64 {
+				mem += sample.Value.Uint64()
+			}
+		}
 		fn(strconv.FormatUint(mem, 10))
 	}()
 }

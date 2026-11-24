@@ -224,7 +224,7 @@ class _NatTestPageState extends ConsumerState<NatTestPage>
           IconButton(
             tooltip: appLocalizations.natCopyResult,
             onPressed: () => _copy(result),
-            icon: const Icon(Icons.copy_rounded),
+            icon: const AppIcon(Icons.copy_rounded),
           ),
       ],
       body: ToolPageBody(
@@ -311,7 +311,7 @@ class _ServerCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
       child: Row(
         children: [
-          Icon(
+          AppIcon(
             Icons.dns_rounded,
             size: 14,
             color: colorScheme.onSurfaceVariant,
@@ -332,7 +332,7 @@ class _ServerCard extends StatelessWidget {
               style: context.textTheme.bodyMedium,
             ),
           ),
-          Icon(
+          AppIcon(
             Icons.chevron_right_rounded,
             size: 20,
             color: enabled
@@ -393,7 +393,7 @@ class _ResultCard extends StatelessWidget {
                           color: color,
                         ),
                       )
-                    : Icon(icon, color: color, size: 24),
+                    : AppIcon(icon, color: color, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -509,7 +509,7 @@ class _PhaseSteps extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       index < current
                           ? Icons.check_circle_rounded
                           : index == current
@@ -684,9 +684,11 @@ class _ServerDialogState extends State<_ServerDialog> {
               onTap: () => Navigator.of(context).pop(server),
             ),
           const SizedBox(height: 8),
-          ToolTvField(
-            controller: _controller,
-            child: TextField(
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
               controller: _controller,
               autocorrect: false,
               keyboardType: TextInputType.url,
@@ -701,7 +703,7 @@ class _ServerDialogState extends State<_ServerDialog> {
                 errorText: _invalid ? appLocalizations.natServerInvalid : null,
                 suffixIcon: IconButton(
                   onPressed: _submitCustom,
-                  icon: const Icon(Icons.check_rounded),
+                  icon: const AppIcon(Icons.check_rounded),
                 ),
               ),
             ),

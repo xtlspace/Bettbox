@@ -67,9 +67,11 @@ void main() {
                   Expanded(
                     child: _tagged(
                       'field',
-                      ToolTvField(
-                        controller: controller,
-                        child: TextField(
+                      TvTextField(
+                        builder: (tv) => TextField(
+                          focusNode: tv.focusNode,
+                          readOnly: tv.readOnly,
+                          showCursor: tv.showCursor,
                           controller: controller,
                           maxLines: maxLines,
                         ),
@@ -120,6 +122,7 @@ void main() {
       maxLines: null,
     );
     await _press(tester, LogicalKeyboardKey.arrowDown, 1);
+    expect(await _press(tester, LogicalKeyboardKey.select, 1), ['field']);
     controller.selection = const TextSelection.collapsed(offset: 0);
     await tester.pump();
     expect(await _press(tester, LogicalKeyboardKey.arrowDown, 3), [
@@ -140,6 +143,7 @@ void main() {
   testWidgets('TV 上用遥控器可以走完整个工具页', (tester) async {
     globalState.isAndroidTV = true;
     final search = TextEditingController();
+    addTearDown(search.dispose);
     var count = 10;
     await tester.pumpWidget(
       MaterialApp(

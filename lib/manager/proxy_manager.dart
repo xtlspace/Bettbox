@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:bett_box/common/print.dart';
 import 'package:bett_box/common/proxy.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/providers/state.dart';
@@ -19,9 +22,19 @@ class _ProxyManagerState extends ConsumerState<ProxyManager> {
     final systemProxy = proxyState.systemProxy;
     final port = proxyState.port;
     if (isStart && systemProxy) {
-      proxy?.startProxy(port, proxyState.bypassDomain);
+      unawaited(
+        proxy?.startProxy(port, proxyState.bypassDomain).then(
+          (ok) {
+            if (ok == false) {
+              commonPrint.warn('Set system proxy failed', module: 'System');
+            }
+          },
+          onError: (Object e) =>
+              commonPrint.warn('Set system proxy failed: $e', module: 'System'),
+        ),
+      );
     } else {
-      proxy?.stopProxy();
+      unawaited(proxy?.stopProxy());
     }
   }
 

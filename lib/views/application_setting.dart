@@ -242,28 +242,38 @@ class _StartSwitchDialogState extends State<_StartSwitchDialog> {
             style: context.textTheme.titleSmall,
           ),
           const SizedBox(height: 14),
-          TextField(
-            controller: _onController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.startSwitchOnLabel,
-              hintText: appLocalizations.enabled,
-              hintStyle: hintStyle,
-              errorText: onErrorText,
-              floatingLabelBehavior: FloatingLabelBehavior.always,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _onController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.startSwitchOnLabel,
+                hintText: appLocalizations.enabled,
+                hintStyle: hintStyle,
+                errorText: onErrorText,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
+              onChanged: (_) => setState(() {}),
             ),
-            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _offController,
-            decoration: InputDecoration(
-              labelText: appLocalizations.startSwitchOffLabel,
-              hintText: appLocalizations.disabled,
-              hintStyle: hintStyle,
-              errorText: offErrorText,
-              floatingLabelBehavior: FloatingLabelBehavior.always,
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _offController,
+              decoration: InputDecoration(
+                labelText: appLocalizations.startSwitchOffLabel,
+                hintText: appLocalizations.disabled,
+                hintStyle: hintStyle,
+                errorText: offErrorText,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
+              onChanged: (_) => setState(() {}),
             ),
-            onChanged: (_) => setState(() {}),
           ),
         ],
       ),
@@ -318,9 +328,26 @@ class ShowStartSwitchItem extends ConsumerWidget {
       delegate: SwitchDelegate(
         value: showStartSwitch,
         onChanged: (value) {
-          ref
-              .read(appSettingProvider.notifier)
-              .updateState((state) => state.copyWith(showStartSwitch: value));
+          ref.read(appSettingProvider.notifier).updateState((state) {
+            final widgets = system.isAndroid
+                ? state.mobileDashboardWidgets
+                : state.desktopDashboardWidgets;
+            if (value || widgets.contains(DashboardWidget.startButton)) {
+              return state.copyWith(showStartSwitch: value);
+            }
+            final next = [...widgets, DashboardWidget.startButton];
+            return system.isAndroid
+                ? state.copyWith(
+                    showStartSwitch: false,
+                    mobileDashboardWidgets: next,
+                    dashboardWidgets: next,
+                  )
+                : state.copyWith(
+                    showStartSwitch: false,
+                    desktopDashboardWidgets: next,
+                    dashboardWidgets: next,
+                  );
+          });
         },
       ),
     );
@@ -577,11 +604,39 @@ class AutoCheckUpdateItem extends ConsumerWidget {
   }
 }
 
-class ApplicationSettingView extends StatelessWidget {
+class AutoDownloadUpdateItem extends ConsumerWidget {
+  const AutoDownloadUpdateItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final autoDownloadUpdate = ref.watch(
+      appSettingProvider.select((state) => state.autoDownloadUpdate),
+    );
+    return ListItem.switchItem(
+      title: Text(appLocalizations.autoDownloadUpdate),
+      subtitle: Text(appLocalizations.autoDownloadUpdateDesc),
+      delegate: SwitchDelegate(
+        value: autoDownloadUpdate,
+        onChanged: (bool value) {
+          ref
+              .read(appSettingProvider.notifier)
+              .updateState(
+                (state) => state.copyWith(autoDownloadUpdate: value),
+              );
+        },
+      ),
+    );
+  }
+}
+
+class ApplicationSettingView extends ConsumerWidget {
   const ApplicationSettingView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final autoCheckUpdate = ref.watch(
+      appSettingProvider.select((state) => state.autoCheckUpdate),
+    );
     List<Widget> items = [
       AutoLaunchItem(),
       if (system.isDesktop) ...[SilentLaunchItem()],
@@ -596,6 +651,8 @@ class ApplicationSettingView extends StatelessWidget {
       if (system.isMacOS) const KeepDockIconItem(),
       UsageItem(),
       AutoCheckUpdateItem(),
+      if (autoCheckUpdate && appUpdater.isSupported)
+        const AutoDownloadUpdateItem(),
     ];
     return generateListView(generateSection(items: items));
   }

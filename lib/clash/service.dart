@@ -48,14 +48,14 @@ class ClashService extends ClashHandlerInterface {
 
     if (_transportType == TransportType.unixSocket) {
       _socketPath = _newSocketPath();
-      commonPrint.log('Using Unix Domain Socket: $_socketPath');
+      commonPrint.debug('Using unix socket $_socketPath', module: 'IPC');
     } else {
       _tcpPort = PlatformChecker.getRandomPort();
-      commonPrint.log('Using TCP Socket on port: $_tcpPort');
+      commonPrint.debug('Using TCP port $_tcpPort', module: 'IPC');
     }
 
-    _initServer();
-    reStart();
+    unawaited(_initServer());
+    unawaited(reStart());
   }
 
   String _newSocketPath() {
@@ -72,65 +72,70 @@ class ClashService extends ClashHandlerInterface {
       _socketPath = _newSocketPath();
       await _deleteSocketFile();
     }
-    _initServer();
+    unawaited(_initServer());
   }
 
   Future<void> _initServer() async {
-    runZonedGuarded(
-      () async {
-        late final ServerSocket server;
+    unawaited(
+      runZonedGuarded(
+        () async {
+          late final ServerSocket server;
 
-        if (_transportType == TransportType.unixSocket) {
-          final address = InternetAddress(
-            _socketPath!,
-            type: InternetAddressType.unix,
-          );
-          await _deleteSocketFile();
-          server = await ServerSocket.bind(address, 0, shared: true);
-        } else {
-          server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-          _tcpPort = server.port;
-          commonPrint.log('TCP Server bound to port: $_tcpPort');
-        }
-
-        serverCompleter.complete(server);
-        await for (final socket in server) {
-          if (_socket != null && !isStarting) {
-            socket.destroy();
-            continue;
+          if (_transportType == TransportType.unixSocket) {
+            final address = InternetAddress(
+              _socketPath!,
+              type: InternetAddressType.unix,
+            );
+            await _deleteSocketFile();
+            server = await ServerSocket.bind(address, 0, shared: true);
+          } else {
+            server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+            _tcpPort = server.port;
+            commonPrint.debug('TCP bound to port $_tcpPort', module: 'IPC');
           }
-          await _destroySocket();
-          _socket = socket;
-          _coreLost = false;
-          socketCompleter.complete(socket);
 
-          socket
-              .transform(FrameDecoderTransformer())
-              .listen(
-                (data) {
-                  handleResultMessage(data);
-                },
-                onError: (error) {
-                  if (_isDestroying || globalState.isExiting) return;
-                  commonPrint.error('Frame decode error: $error');
-                },
-                onDone: () {
-                  commonPrint.log('Socket connection closed');
-                  abortRequests(socket);
-                  _handleSocketClosed(socket);
-                },
-              );
-        }
-      },
-      (error, stack) {
-        if (_isDestroying || globalState.isExiting) return;
-        commonPrint.error(error.toString());
-        if (error is SocketException &&
-            !_isDestroying &&
-            !globalState.isExiting) {
-          globalState.showNotifier(error.toString());
-        }
-      },
+          serverCompleter.complete(server);
+          await for (final socket in server) {
+            if (_socket != null && !isStarting) {
+              socket.destroy();
+              continue;
+            }
+            await _destroySocket();
+            _socket = socket;
+            _coreLost = false;
+            socketCompleter.complete(socket);
+
+            socket
+                .transform(FrameDecoderTransformer())
+                .listen(
+                  (data) {
+                    handleResultMessage(data);
+                  },
+                  onError: (error) {
+                    if (_isDestroying || globalState.isExiting) return;
+                    commonPrint.error(
+                      'Decode frame failed: $error',
+                      module: 'IPC',
+                    );
+                  },
+                  onDone: () {
+                    commonPrint.debug('Core socket closed', module: 'IPC');
+                    abortRequests(socket);
+                    _handleSocketClosed(socket);
+                  },
+                );
+          }
+        },
+        (error, stack) {
+          if (_isDestroying || globalState.isExiting) return;
+          commonPrint.error('Core socket error: $error', module: 'IPC');
+          if (error is SocketException &&
+              !_isDestroying &&
+              !globalState.isExiting) {
+            globalState.showNotifier(error.toString());
+          }
+        },
+      ),
     );
   }
 
@@ -219,16 +224,17 @@ class ClashService extends ClashHandlerInterface {
                     true,
                   )
                   .catchError((e) {
-                    commonPrint.warn('Failed to set core process priority: $e');
+                    commonPrint.warn(
+                      'Set core priority failed: $e',
+                      module: 'Helper',
+                    );
                     return false;
                   }),
             );
           }
           return;
         }
-        commonPrint.warn(
-          'Helper start core failed, falling back to normal mode',
-        );
+        commonPrint.log('Starting core directly', module: 'Helper');
       }
     }
 
@@ -244,7 +250,7 @@ class ClashService extends ClashHandlerInterface {
 
     var connected = await _startCoreDirectly(arg, environment);
     if (!connected) {
-      commonPrint.warn('core did not connect, retrying with a fresh transport');
+      commonPrint.warn('Core not connected, retrying');
       process?.kill();
       process = null;
       await _rebindTransport();
@@ -259,7 +265,10 @@ class ClashService extends ClashHandlerInterface {
         helperClient
             .setProcessPriority('${AppIdentity.coreExecutableName}.exe', true)
             .catchError((e) {
-              commonPrint.warn('Failed to set core process priority: $e');
+              commonPrint.warn(
+                'Set core priority failed: $e',
+                module: 'Helper',
+              );
               return false;
             }),
       );
@@ -286,10 +295,12 @@ class ClashService extends ClashHandlerInterface {
       arg,
     ], environment: environment);
     process?.stdout.listen((_) {});
-    process?.stderr.listen((e) {
-      final error = utf8.decode(e);
-      if (error.isNotEmpty) commonPrint.error(error);
-    });
+    process?.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          if (line.isNotEmpty) commonPrint.error(line);
+        });
     final ready = await _waitForCoreReady(process);
     final pid = process?.pid;
     if (ready && system.isLinux && pid != null) {
@@ -305,9 +316,7 @@ class ClashService extends ClashHandlerInterface {
         final result = await Future.any<bool>([
           socketCompleter.future.then((_) => true),
           targetProcess.exitCode.then((code) {
-            commonPrint.error(
-              'Core process exited prematurely with code: $code',
-            );
+            commonPrint.error('Core exited early, code $code');
             return false;
           }),
         ]).timeout(timeout);
@@ -317,7 +326,7 @@ class ClashService extends ClashHandlerInterface {
       await socketCompleter.future.timeout(timeout);
       return true;
     } on TimeoutException {
-      commonPrint.error('Core ready timeout after ${timeout.inSeconds}s');
+      commonPrint.error('Core not ready after ${timeout.inSeconds}s');
       return false;
     }
   }
@@ -348,17 +357,13 @@ class ClashService extends ClashHandlerInterface {
       return socket;
     } on SocketException catch (e) {
       if (_isDestroying || globalState.isExiting || isStarting) {
-        commonPrint.debug(
-          'Ignored message send on closed socket during transition: $e',
-        );
+        commonPrint.debug('Send skipped, socket closed: $e', module: 'IPC');
         throw const CoreDisconnectedException();
       }
       rethrow;
     } on StateError catch (e) {
       if (_isDestroying || globalState.isExiting || isStarting) {
-        commonPrint.debug(
-          'Ignored message send on closed socket during transition: $e',
-        );
+        commonPrint.debug('Send skipped, socket closed: $e', module: 'IPC');
         throw const CoreDisconnectedException();
       }
       rethrow;
@@ -411,7 +416,6 @@ class ClashService extends ClashHandlerInterface {
       return;
     }
     if (!_canAutoRestart) return;
-    commonPrint.warn('Restarting core after unexpected disconnect');
     await globalState.appController.restartCore().catchError((_) {});
   }
 

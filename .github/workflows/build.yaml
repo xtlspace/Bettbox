@@ -114,7 +114,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Setup Android NDK
@@ -167,7 +167,7 @@ jobs:
           channel: ${{ contains(matrix.os, 'arm') && 'master' || 'stable' }}
           cache: true
           cache-key: flutter-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('**/pubspec.lock') }}
-          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.47.7' }}
+          flutter-version: ${{ contains(matrix.os, 'arm') && '' || '3.50.1' }}
 
       - name: Clear Pub Cache Credentials
         shell: bash
@@ -196,6 +196,8 @@ jobs:
           FILE="${MOD_CACHE}/github.com/metacubex/sing-tun@${SING_TUN_VERSION}/tun_windows.go"
           echo "Patching ${FILE}"
           chmod +w "${FILE}"
+          perl -pi -e 's/inetIf\.ForwardingEnabled = true/inetIf.ForwardingEnabled = false/g' "${FILE}"
+
       - name: Build Bettbox (Non-Windows)
         if: matrix.platform != 'windows'
         shell: bash
@@ -514,6 +516,11 @@ jobs:
           merge-multiple: true
           skip-decompress: true
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          find . -maxdepth 1 -type f -name 'Bettbox-*' -printf '%f\n' | sort | xargs -d '\n' sha256sum > sha256sums.txt
+
       - name: Generate release.md
         run: |
           printf '%s\n' "- Fixes and improvements" "- Recommended version update" > release.md
@@ -528,6 +535,18 @@ jobs:
             sed -e "s|BASE_VERSION|$base_version|g" -e "s|VERSION|$version|g" ./.github/release_template.md >> release.md
           fi
 
+      - name: Detect existing release
+        id: release
+        if: ${{ env.SHOULD_RELEASE == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Release
         if: ${{ env.SHOULD_RELEASE == 'true' }}
         uses: softprops/action-gh-release@v3.0.0
@@ -535,3 +554,19 @@ jobs:
           files: ./dist/*
           body_path: './release.md'
           prerelease: ${{ env.IS_PRERELEASE == 'true' }}
+
+      - name: Dispatch AUR update
+        if: ${{ env.SHOULD_RELEASE == 'true' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.AUR_UPDATER_TOKEN }}
+          REPO: ${{ vars.AUR_UPDATER_REPO || 'VillagerTom/bettbox-aur-updater' }}
+          FORCE: ${{ steps.release.outputs.exists }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::AUR_UPDATER_TOKEN is not set, skipping AUR update"
+            exit 0
+          fi
+          gh api -X POST "repos/$REPO/dispatches" \
+            -f event_type=bettbox-release \
+            -F "client_payload[force]=$FORCE"

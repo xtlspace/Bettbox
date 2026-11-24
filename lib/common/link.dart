@@ -9,7 +9,7 @@ typedef InstallConfigCallBack = void Function(String url);
 class LinkManager {
   static LinkManager? _instance;
   late AppLinks _appLinks;
-  StreamSubscription? subscription;
+  StreamSubscription<Uri>? subscription;
 
   LinkManager._internal() {
     _appLinks = AppLinks();
@@ -18,10 +18,9 @@ class LinkManager {
   Future<void> initAppLinksListen(
     Function(String url) installConfigCallBack,
   ) async {
-    commonPrint.log('initAppLinksListen');
     destroy();
     subscription = _appLinks.uriLinkStream.listen((uri) {
-      commonPrint.log('onAppLink: $uri');
+      commonPrint.log('Received app link ${uri.host}');
       if (uri.host == 'install-config') {
         final parameters = uri.queryParameters;
         final url = parameters['url'];

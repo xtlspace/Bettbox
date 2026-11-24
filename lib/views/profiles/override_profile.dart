@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
+import 'package:bett_box/pages/toolbox/common.dart' show ToolNote;
 import 'package:bett_box/providers/providers.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/views/access.dart';
 import 'package:bett_box/widgets/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -38,14 +40,20 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
         );
         if (!mounted) return;
         final snippet = ClashConfigSnippet.fromJson(rawConfig);
-        final overrideData = ref.read(
-          getProfileOverrideDataProvider(widget.profileId),
+        final (managed, sharedRules) = _readShared(ref);
+        final overrideData = _withShared(
+          ref.read(getProfileOverrideDataProvider(widget.profileId)),
+          sharedRules,
         );
         ref
             .read(profileOverrideStateProvider.notifier)
             .updateState(
-              (state) =>
-                  state.copyWith(snippet: snippet, overrideData: overrideData),
+              (state) => state.copyWith(
+                snippet: snippet,
+                overrideData: overrideData,
+                managed: managed,
+                sharedRules: {for (final rule in sharedRules) rule.id},
+              ),
             );
       });
     });
@@ -57,12 +65,58 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
     super.dispose();
   }
 
+  (bool, List<Rule>) _readShared(WidgetRef ref) {
+    final managed =
+        ref.read(profilesProvider).getProfile(widget.profileId)?.isManaged ??
+        false;
+    return (
+      managed,
+      managed ? ref.read(managedSettingProvider).rules : const <Rule>[],
+    );
+  }
+
+  OverrideData? _withShared(OverrideData? overrideData, List<Rule> shared) {
+    if (overrideData == null || shared.isEmpty) return overrideData;
+    return overrideData.copyWith(
+      rule: overrideData.rule.updateRules((rules) => [...rules, ...shared]),
+    );
+  }
+
   void _handleSave(WidgetRef ref, OverrideData overrideData) {
+    final (managed, sharedIds) = ref.read(
+      profileOverrideStateProvider.select(
+        (state) => (state.managed, state.sharedRules),
+      ),
+    );
+    final own = <Rule>[];
+    final shared = <Rule>[];
+    for (final rule in overrideData.rule.rules) {
+      (managed && sharedIds.contains(rule.id) ? shared : own).add(rule);
+    }
     ref
         .read(profilesProvider.notifier)
         .updateProfile(
           widget.profileId,
-          (state) => state.copyWith(overrideData: overrideData),
+          (state) => state.copyWith(
+            overrideData: overrideData.copyWith(
+              rule: overrideData.rule.updateRules((_) => own),
+            ),
+          ),
+        );
+    if (managed) {
+      ref
+          .read(managedSettingProvider.notifier)
+          .updateState((state) => state.copyWith(rules: shared));
+    }
+    ref
+        .read(profileOverrideStateProvider.notifier)
+        .updateState(
+          (state) => state.copyWith(
+            overrideData: overrideData.copyWith(
+              rule: overrideData.rule.updateRules((_) => [...own, ...shared]),
+            ),
+            sharedRules: {for (final rule in shared) rule.id},
+          ),
         );
     globalState.appController.setupClashConfigDebounce();
   }
@@ -93,7 +147,12 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
     });
     ref
         .read(profileOverrideStateProvider.notifier)
-        .updateState((state) => state.copyWith(selectedRules: {}));
+        .updateState(
+          (state) => state.copyWith(
+            selectedRules: {},
+            sharedRules: state.sharedRules.difference(selectedRules),
+          ),
+        );
   }
 
   Widget _buildContent() {
@@ -119,8 +178,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
               controller: _controller,
               child: CustomScrollView(
                 controller: _controller,
-                // ignore: deprecated_member_use
-                cacheExtent: 500,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(500),
                 slivers: [
                   SliverToBoxAdapter(child: SizedBox(height: 8 + rise)),
                   SliverToBoxAdapter(child: SizedBox(height: 8)),
@@ -170,15 +228,34 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
               ),
             );
             final isSelectMode = selectCount != 0;
-            final overrideData = ref.watch(
-              getProfileOverrideDataProvider(widget.profileId),
+            final managed = ref.watch(
+              profilesProvider.select(
+                (state) =>
+                    state.getProfile(widget.profileId)?.isManaged ?? false,
+              ),
+            );
+            final sharedRules = managed
+                ? ref.watch(
+                    managedSettingProvider.select((state) => state.rules),
+                  )
+                : const <Rule>[];
+            final overrideData = _withShared(
+              ref.watch(getProfileOverrideDataProvider(widget.profileId)),
+              sharedRules,
             );
             final newOverrideData = ref.watch(
               profileOverrideStateProvider.select(
                 (state) => state.overrideData,
               ),
             );
-            final equals = overrideData == newOverrideData;
+            final newSharedRules = ref.watch(
+              profileOverrideStateProvider.select((state) => state.sharedRules),
+            );
+            final equals =
+                overrideData == newOverrideData &&
+                setEquals({
+                  for (final rule in sharedRules) rule.id,
+                }, newSharedRules);
             final hasUnsavedChanges =
                 !isSelectMode && !equals && newOverrideData != null;
 
@@ -214,7 +291,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                         _handleSave(ref, newOverrideData);
                       },
                       tooltip: appLocalizations.save,
-                      icon: Icon(Icons.save),
+                      icon: AppIcon(Icons.save),
                     ),
                   if (selectCount > 0)
                     IconButton(
@@ -222,7 +299,7 @@ class _OverrideProfileViewState extends State<OverrideProfileView> {
                         _handleDelete(ref);
                       },
                       tooltip: appLocalizations.delete,
-                      icon: Icon(Icons.delete),
+                      icon: AppIcon(Icons.delete),
                     ),
                 ],
                 editState: AppBarEditState(
@@ -399,6 +476,7 @@ class RuleRow extends StatefulWidget {
     required this.rule,
     required this.index,
     required this.isSelected,
+    required this.isShared,
     required this.isSelectMode,
     required this.onEdit,
     required this.onTab,
@@ -407,6 +485,7 @@ class RuleRow extends StatefulWidget {
   final Rule rule;
   final int index;
   final bool isSelected;
+  final bool isShared;
   final bool isSelectMode;
   final VoidCallback onEdit;
   final VoidCallback onTab;
@@ -560,7 +639,7 @@ class _RuleRowState extends State<RuleRow> {
                                   ),
                                 ),
                                 if (parts.target.isNotEmpty) ...[
-                                  Icon(
+                                  AppIcon(
                                     Icons.arrow_right_alt,
                                     size: 16,
                                     color: context.colorScheme.outline,
@@ -579,6 +658,15 @@ class _RuleRowState extends State<RuleRow> {
                                     ),
                                   ),
                                 ],
+                                if (widget.isShared)
+                                  Tooltip(
+                                    message: appLocalizations.applyToAllManaged,
+                                    child: AppIcon(
+                                      Icons.public,
+                                      size: 16,
+                                      color: context.colorScheme.primary,
+                                    ),
+                                  ),
                                 for (final flag in parts.flags)
                                   Text(
                                     flag,
@@ -616,7 +704,7 @@ class _RuleRowState extends State<RuleRow> {
                                   child: SizedBox(
                                     width: 24,
                                     height: 24,
-                                    child: Icon(
+                                    child: AppIcon(
                                       Icons.drag_indicator,
                                       size: 20,
                                       color: context.colorScheme.outline,
@@ -667,10 +755,14 @@ class RuleContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final (rules, selectedRules) = ref.watch(
+    final (rules, selectedRules, sharedRules) = ref.watch(
       profileOverrideStateProvider.select((state) {
         final overrideRule = state.overrideData?.rule;
-        return (overrideRule?.rules ?? [], state.selectedRules);
+        return (
+          overrideRule?.rules ?? [],
+          state.selectedRules,
+          state.sharedRules,
+        );
       }),
     );
     final isSelectMode = selectedRules.isNotEmpty;
@@ -691,6 +783,7 @@ class RuleContent extends ConsumerWidget {
           rule: rule,
           index: index,
           isSelected: selectedRules.contains(rule.id),
+          isShared: sharedRules.contains(rule.id),
           isSelectMode: isSelectMode,
           onEdit: () {
             globalState.appController.handleAddOrUpdate(ref, rule);
@@ -743,27 +836,35 @@ class RuleContent extends ConsumerWidget {
 class AddRuleDialog extends StatefulWidget {
   final ClashConfigSnippet snippet;
   final Rule? rule;
+  final bool? shared;
+  final Metadata? metadata;
 
-  const AddRuleDialog({super.key, required this.snippet, this.rule});
+  const AddRuleDialog({
+    super.key,
+    required this.snippet,
+    this.rule,
+    this.shared,
+    this.metadata,
+  });
 
   @override
   State<AddRuleDialog> createState() => _AddRuleDialogState();
 }
 
-class _AddRuleDialogState extends State<AddRuleDialog> {
+class _AddRuleDialogState extends State<AddRuleDialog>
+    with TickerProviderStateMixin {
   late RuleAction _ruleAction;
-  late final List<RuleAction> _ruleActions = [
-    if (system.isAndroid) RuleAction.PROCESS_NAME,
-    ...RuleAction.values.where(
-      (item) => !system.isAndroid || item != RuleAction.PROCESS_NAME,
-    ),
-  ];
+  List<RuleAction> _actions = [];
+  TabController? _tabController;
+  String _seed = '';
+  double _extraHeight = 0;
   final _ruleTargetController = TextEditingController();
   final _contentController = TextEditingController();
   final _ruleProviderController = TextEditingController();
   final _subRuleController = TextEditingController();
   bool _noResolve = false;
   bool _src = false;
+  late bool _shared = widget.shared ?? false;
   List<String> _targetItems = [];
   List<String> _ruleProviderItems = [];
   List<String> _subRuleItems = [];
@@ -771,8 +872,8 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
 
   @override
   void initState() {
-    _initState();
     super.initState();
+    _initState();
   }
 
   void _initState() {
@@ -789,16 +890,26 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
     final currentRule = widget.rule;
     if (currentRule != null) {
       final parsedRule = ParsedRule.parseString(currentRule.value);
-      _ruleAction = parsedRule.ruleAction;
+      _ruleAction = parsedRule.ruleAction == RuleAction.IP_CIDR6
+          ? RuleAction.IP_CIDR
+          : parsedRule.ruleAction;
       _contentController.text = parsedRule.content ?? '';
       _ruleTargetController.text = parsedRule.ruleTarget ?? '';
       _ruleProviderController.text = parsedRule.ruleProvider ?? '';
       _subRuleController.text = parsedRule.subRule ?? '';
       _noResolve = parsedRule.noResolve;
       _src = parsedRule.src;
+      _syncTabs();
       return;
     }
-    _ruleAction = _ruleActions.first;
+    final metadata = widget.metadata;
+    _ruleAction = switch (metadata) {
+      null when system.isAndroid => RuleAction.PROCESS_NAME,
+      Metadata(host: '') => RuleAction.IP_CIDR,
+      _ => RuleAction.DOMAIN_SUFFIX,
+    };
+    _applySeed();
+    _syncTabs();
     if (_targetItems.isNotEmpty) {
       _ruleTargetController.text = _targetItems.first;
     }
@@ -820,11 +931,90 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
 
   @override
   void dispose() {
+    _tabController?.dispose();
     _ruleTargetController.dispose();
     _contentController.dispose();
     _ruleProviderController.dispose();
     _subRuleController.dispose();
     super.dispose();
+  }
+
+  void _syncTabs() {
+    _actions = [
+      for (final action in _ruleAction.category.actions)
+        if (action.isSupported || action == _ruleAction) action,
+    ];
+    _tabController?.dispose();
+    _tabController = TabController(
+      length: _actions.length,
+      initialIndex: _actions.indexOf(_ruleAction),
+      vsync: this,
+    )..addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    final index = _tabController?.index;
+    if (index == null || _actions[index] == _ruleAction) return;
+    setState(() {
+      _ruleAction = _actions[index];
+      _applySeed();
+    });
+  }
+
+  void _onCategoryChanged(RuleCategory category) {
+    if (category == _ruleAction.category) return;
+    setState(() {
+      _ruleAction = category.actions.firstWhere((item) => item.isSupported);
+      _applySeed();
+      _syncTabs();
+    });
+  }
+
+  void _applySeed() {
+    final seed = _seedOf(_ruleAction);
+    if (_contentController.text == _seed) {
+      _contentController.text = seed;
+    }
+    _seed = seed;
+  }
+
+  String _seedOf(RuleAction action) {
+    final metadata = widget.metadata;
+    if (metadata == null) return '';
+    String cidr(String ip) =>
+        ip.isEmpty ? '' : '$ip/${ip.contains(':') ? 128 : 32}';
+    return switch (action) {
+      RuleAction.DOMAIN ||
+      RuleAction.DOMAIN_SUFFIX ||
+      RuleAction.DOMAIN_KEYWORD ||
+      RuleAction.DOMAIN_WILDCARD ||
+      RuleAction.DOMAIN_REGEX => metadata.host,
+      RuleAction.IP_CIDR ||
+      RuleAction.IP_SUFFIX => cidr(metadata.destinationIP),
+      RuleAction.SRC_IP_CIDR ||
+      RuleAction.SRC_IP_SUFFIX => cidr(metadata.sourceIP),
+      RuleAction.IP_ASN => metadata.destinationIPASN.split(' ').first,
+      RuleAction.SRC_IP_ASN => metadata.sourceIPASN.split(' ').first,
+      RuleAction.GEOIP =>
+        metadata.destinationGeoIP.firstOrNull?.toUpperCase() ?? '',
+      RuleAction.SRC_GEOIP =>
+        metadata.sourceGeoIP.firstOrNull?.toUpperCase() ?? '',
+      RuleAction.PROCESS_NAME ||
+      RuleAction.PROCESS_NAME_WILDCARD ||
+      RuleAction.PROCESS_NAME_REGEX => metadata.process,
+      RuleAction.PROCESS_PATH ||
+      RuleAction.PROCESS_PATH_WILDCARD ||
+      RuleAction.PROCESS_PATH_REGEX => metadata.processPath,
+      RuleAction.UID => metadata.uid == 0 ? '' : '${metadata.uid}',
+      RuleAction.DST_PORT => metadata.destinationPort,
+      RuleAction.SRC_PORT => metadata.sourcePort,
+      RuleAction.NETWORK => metadata.network,
+      RuleAction.IN_PORT => metadata.inboundPort,
+      RuleAction.IN_TYPE => metadata.type,
+      RuleAction.IN_NAME => metadata.inboundName,
+      RuleAction.IN_USER => metadata.inboundUser,
+      _ => '',
+    };
   }
 
   Future<void> _handleSubmit() async {
@@ -847,7 +1037,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
         : Rule.value(parsedRule.value);
     await context.dismissKeyboard();
     if (!mounted) return;
-    Navigator.of(context).pop(rule);
+    Navigator.of(context).pop((rule: rule, shared: _shared));
   }
 
   Future<void> _pick({
@@ -879,23 +1069,6 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
     });
   }
 
-  Future<void> _pickRuleAction() async {
-    await context.dismissKeyboard();
-    if (!mounted) return;
-    final selected = await globalState.showAdaptiveSheet<RuleAction>(
-      child: OptionsDialog<RuleAction>(
-        title: appLocalizations.ruleName,
-        options: _ruleActions,
-        textBuilder: (item) => item.value,
-        value: _ruleAction,
-      ),
-    );
-    if (selected == null || !mounted) return;
-    setState(() {
-      _ruleAction = selected;
-    });
-  }
-
   Widget _buildPicker({
     required String label,
     required List<String> options,
@@ -921,6 +1094,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
   Widget _buildFlag(String label, bool value, ValueChanged<bool> onChanged) {
     return CommonCard(
       radius: 12,
+      elevated: false,
       isSelected: value,
       onPressed: () => onChanged(!value),
       child: Padding(
@@ -932,6 +1106,7 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tabController = _tabController;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -950,77 +1125,137 @@ class _AddRuleDialogState extends State<AddRuleDialog> {
             child: Text(appLocalizations.confirm),
           ),
         ],
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 16,
-            children: [
-              _PickerField(
-                label: appLocalizations.ruleName,
-                value: _ruleAction.value,
-                onTap: _pickRuleAction,
-              ),
-              if (_ruleAction == RuleAction.RULE_SET)
-                _buildPicker(
-                  label: appLocalizations.ruleProviders,
-                  options: _ruleProviderItems,
-                  controller: _ruleProviderController,
-                )
-              else if (_ruleAction != RuleAction.MATCH)
-                TextFormField(
-                  controller: _contentController,
-                  maxLines: 1,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.content,
-                    suffixIcon:
-                        system.isAndroid &&
-                            _ruleAction == RuleAction.PROCESS_NAME
-                        ? IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: _pickPackage,
-                          )
-                        : null,
-                  ),
-                  validator: (_) {
-                    if (_contentController.text.isEmpty) {
-                      return appLocalizations.emptyTip(appLocalizations.content);
-                    }
-                    return null;
-                  },
-                ),
-              if (_ruleAction == RuleAction.SUB_RULE)
-                _buildPicker(
-                  label: appLocalizations.subRule,
-                  options: _subRuleItems,
-                  controller: _subRuleController,
-                )
-              else
-                _buildPicker(
-                  label: appLocalizations.ruleTarget,
-                  options: _targetItems,
-                  controller: _ruleTargetController,
-                ),
-              if (_ruleAction.hasParams)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildFlag(
-                      appLocalizations.sourceIp,
-                      _src,
-                      (value) => setState(() => _src = value),
-                    ),
-                    _buildFlag(
-                      appLocalizations.noResolve,
-                      _noResolve,
-                      (value) => setState(() => _noResolve = value),
-                    ),
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.only(
+            bottom: isInBottomSheet(context) ? _extraHeight : 0,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 16,
+              children: [
+                SegmentButtonGroup<RuleCategory>(
+                  options: [
+                    for (final category in RuleCategory.values)
+                      SegmentOption(value: category, label: category.label),
                   ],
+                  selected: _ruleAction.category,
+                  onSelected: _onCategoryChanged,
                 ),
-            ],
+                if (tabController != null)
+                  GroupTabBar(
+                    controller: tabController,
+                    labels: [for (final action in _actions) action.label],
+                    expandable: true,
+                    onExtraHeight: (value) =>
+                        setState(() => _extraHeight = value),
+                  ),
+                ToolNote(
+                  icon: Icons.info_outline_rounded,
+                  text: '${_ruleAction.value} · ${_ruleAction.desc}',
+                ),
+                if (_ruleAction == RuleAction.RULE_SET)
+                  _buildPicker(
+                    label: appLocalizations.ruleProviders,
+                    options: _ruleProviderItems,
+                    controller: _ruleProviderController,
+                  )
+                else if (_ruleAction != RuleAction.MATCH)
+                  TvTextField(
+                    builder: (tv) => TextFormField(
+                      focusNode: tv.focusNode,
+                      readOnly: tv.readOnly,
+                      showCursor: tv.showCursor,
+                      controller: _contentController,
+                      maxLines: 1,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.content,
+                        suffixIcon:
+                            system.isAndroid &&
+                                _ruleAction == RuleAction.PROCESS_NAME
+                            ? IconButton(
+                                icon: const AppIcon(Icons.add),
+                                onPressed: _pickPackage,
+                              )
+                            : null,
+                      ),
+                      validator: (_) {
+                        if (_contentController.text.isEmpty) {
+                          return appLocalizations.emptyTip(
+                            appLocalizations.content,
+                          );
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                if (_ruleAction == RuleAction.SUB_RULE)
+                  _buildPicker(
+                    label: appLocalizations.subRule,
+                    options: _subRuleItems,
+                    controller: _subRuleController,
+                  )
+                else
+                  _buildPicker(
+                    label: appLocalizations.ruleTarget,
+                    options: _targetItems,
+                    controller: _ruleTargetController,
+                  ),
+                if (_ruleAction.hasParams)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildFlag(
+                        appLocalizations.sourceIp,
+                        _src,
+                        (value) => setState(() => _src = value),
+                      ),
+                      _buildFlag(
+                        appLocalizations.noResolve,
+                        _noResolve,
+                        (value) => setState(() => _noResolve = value),
+                      ),
+                    ],
+                  ),
+                if (widget.shared != null)
+                  Material(
+                    type: MaterialType.transparency,
+                    child: ListItem.switchItem(
+                      padding: EdgeInsets.zero,
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(appLocalizations.applyToAllManaged),
+                          ),
+                          Tooltip(
+                            message: appLocalizations.applyToAllManagedDesc,
+                            triggerMode: TooltipTriggerMode.tap,
+                            showDuration: const Duration(seconds: 5),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: AppIcon(
+                                Icons.info_outline_rounded,
+                                size: 15,
+                                color: context.colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      delegate: SwitchDelegate(
+                        value: _shared,
+                        onChanged: (value) => setState(() => _shared = value),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1051,7 +1286,7 @@ class _PickerField extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           errorText: errorText,
-          suffixIcon: const Icon(Icons.arrow_drop_down),
+          suffixIcon: const AppIcon(Icons.arrow_drop_down),
         ),
         child: Text(
           value,

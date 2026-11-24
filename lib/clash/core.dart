@@ -21,7 +21,7 @@ List<Group> buildGroups(String proxiesRaw) {
   final names = (decoded['names'] as List? ?? const []).cast<String>();
   final types = (decoded['types'] as List? ?? const []).cast<String>();
   final rawGroups = (decoded['groups'] as List? ?? const [])
-      .whereType<Map>()
+      .whereType<Map<dynamic, dynamic>>()
       .toList();
   final nows = <String, String>{
     for (final group in rawGroups)
@@ -121,7 +121,7 @@ class ClashCore {
       await versionFile.writeAsString(version, flush: true);
     } catch (e) {
       if (!exists) rethrow;
-      commonPrint.warn('Failed to refresh $bundleMRSFileName: $e');
+      commonPrint.warn('Refresh $bundleMRSFileName failed: $e');
     } finally {
       if (await tempFile.exists()) {
         try {
@@ -190,6 +190,42 @@ class ClashCore {
     return res.data?.toString() ?? '';
   }
 
+  Future<({String yaml, String uri})> getProxyConfig(
+    SetupParams setupParams,
+    String name,
+  ) async {
+    final res = await clashInterface.getProxyConfig(setupParams, name);
+    if (res.isError) {
+      throw res.message;
+    }
+    final data = json.decode(res.data as String) as Map<String, Object?>;
+    return (
+      yaml: data['yaml'] as String? ?? '',
+      uri: data['uri'] as String? ?? '',
+    );
+  }
+
+  Future<bool> updateExpandedProvider(
+    Profile profile,
+    String name, {
+    String? content,
+  }) async {
+    final res = await clashInterface.updateExpandedProvider(
+      json.encode({
+        'path': await appPath.getProfilePath(profile.id),
+        'age-secret-key': profile.ageSecretKey ?? '',
+        'providers-path': await appPath.getProvidersDirPath(profile.id),
+        'name': name,
+        'content': ?content,
+      }),
+    );
+    if (res.isError) {
+      throw res.message;
+    }
+    final data = res.data;
+    return data is Map && data['changed'] == true;
+  }
+
   Future<void> exportConfig(
     String id,
     String output, {
@@ -215,6 +251,7 @@ class ClashCore {
     required String output,
     required List<({String prefix, String path})> members,
     SetupParams? setup,
+    bool nodesOnly = false,
   }) async {
     final res = await clashInterface.mergeProfiles(
       json.encode({
@@ -224,12 +261,41 @@ class ClashCore {
             {'prefix': member.prefix, 'path': member.path},
         ],
         'setup': ?setup,
+        'nodes-only': nodesOnly,
       }),
     );
     if (res.isError) {
       throw res.message;
     }
-    return BundleReport.fromJson(json.decode(res.data as String));
+    return BundleReport.fromJson(
+      json.decode(res.data as String) as Map<String, Object?>,
+    );
+  }
+
+  Future<Map<String, List<String>>> downloadProfile({
+    required String url,
+    required String output,
+    required Map<String, String> headers,
+    required bool direct,
+    required bool skipCertVerify,
+  }) async {
+    final res = await clashInterface.downloadProfile(
+      json.encode({
+        'url': url,
+        'output': output,
+        'headers': headers,
+        'direct': direct,
+        'skip-cert-verify': skipCertVerify,
+      }),
+    );
+    if (res.isError) {
+      throw res.message;
+    }
+    final decoded = json.decode(res.data as String) as Map<String, Object?>;
+    return {
+      for (final MapEntry(:key, :value) in decoded.entries)
+        key: (value as List).cast<String>(),
+    };
   }
 
   FutureOr<String> decryptAgeConfig(String data, String ageSecretKey) {
@@ -270,10 +336,12 @@ class ClashCore {
     try {
       return await Isolate.run<List<TrackerInfo>>(() {
         final connectionsRaw = json.decode(res) as List? ?? [];
-        return connectionsRaw.map((e) => TrackerInfo.fromJson(e)).toList();
+        return connectionsRaw
+            .map((e) => TrackerInfo.fromJson(e as Map<String, Object?>))
+            .toList();
       });
     } catch (e) {
-      commonPrint.warn('Failed to parse connections: $e');
+      commonPrint.warn('Parse connections failed: $e');
       return [];
     }
   }
@@ -326,6 +394,12 @@ class ClashCore {
     await clashInterface.closeGroupConnections(groupName);
   }
 
+  Future<bool> checkDialerUdp(String name) async =>
+      await clashInterface.checkDialerUdp(name);
+
+  Future<List<String>> getDialerDependents(String groupName) async =>
+      await clashInterface.getDialerDependents(groupName);
+
   void resetConnections() {
     _forget(clashInterface.resetConnections(), 'resetConnections');
   }
@@ -340,12 +414,15 @@ class ClashCore {
       return await Isolate.run<List<ExternalProvider>>(() {
         final externalProviders =
             (json.decode(externalProvidersRawString) as List<dynamic>)
-                .map((item) => ExternalProvider.fromJson(item))
+                .map(
+                  (item) =>
+                      ExternalProvider.fromJson(item as Map<String, Object?>),
+                )
                 .toList();
         return externalProviders;
       });
     } catch (e) {
-      commonPrint.warn('Failed to parse external providers: $e');
+      commonPrint.warn('Parse providers failed: $e');
       return [];
     }
   }
@@ -360,9 +437,11 @@ class ClashCore {
       return null;
     }
     try {
-      return ExternalProvider.fromJson(json.decode(externalProvidersRawString));
+      return ExternalProvider.fromJson(
+        json.decode(externalProvidersRawString) as Map<String, Object?>,
+      );
     } catch (e) {
-      commonPrint.warn('Failed to parse external provider: $e');
+      commonPrint.warn('Parse provider failed: $e');
       return null;
     }
   }
@@ -403,9 +482,9 @@ class ClashCore {
       throw Exception('Empty delay response');
     }
     try {
-      return Delay.fromJson(json.decode(data));
+      return Delay.fromJson(json.decode(data) as Map<String, Object?>);
     } catch (e) {
-      commonPrint.warn('Failed to parse delay: $e');
+      commonPrint.warn('Parse delay failed: $e');
       rethrow;
     }
   }
@@ -471,9 +550,11 @@ class ClashCore {
       return Traffic();
     }
     try {
-      return Traffic.fromMap(json.decode(trafficString));
+      return Traffic.fromMap(
+        json.decode(trafficString) as Map<String, dynamic>,
+      );
     } catch (e) {
-      commonPrint.warn('Failed to parse traffic: $e');
+      commonPrint.warn('Parse traffic failed: $e');
       return Traffic();
     }
   }
@@ -496,7 +577,7 @@ class ClashCore {
           total: Traffic.fromMap(decoded['total'] as Map<String, dynamic>),
         );
       } catch (e) {
-        commonPrint.warn('Failed to parse traffic snapshot: $e');
+        commonPrint.warn('Parse traffic snapshot failed: $e');
       }
     }
     return (now: Traffic(), total: Traffic());
@@ -688,6 +769,20 @@ class ClashCore {
     return decoded is Map ? Map<String, Object?>.from(decoded) : {};
   }
 
+  Future<Map<String, Object?>> parseNodes(String text) =>
+      _toolboxJson(ActionMethod.parseNodes, data: text);
+
+  Future<Map<String, Object?>> testNode(
+    Map<String, dynamic> proxy, {
+    String? dialer,
+  }) => _toolboxJson(
+    ActionMethod.testNode,
+    data: json.encode({'proxy': proxy, 'dialer': ?dialer}),
+  );
+
+  Future<Map<String, Object?>> registerWarp() =>
+      _toolboxJson(ActionMethod.registerWarp);
+
   Future<RouteTraceResult> routeTrace({
     required String target,
     required String network,
@@ -844,10 +939,10 @@ class ClashCore {
     try {
       return await Isolate.run<List<Log>>(() {
         final logsRaw = json.decode(res) as List? ?? [];
-        return logsRaw.map((e) => Log.core(e)).toList();
+        return logsRaw.map((e) => Log.core(e as Map<String, Object?>)).toList();
       });
     } catch (e) {
-      commonPrint.warn('Failed to parse logs: $e');
+      commonPrint.warn('Parse logs failed: $e');
       return [];
     }
   }
@@ -864,10 +959,12 @@ class ClashCore {
     try {
       return await Isolate.run<List<TrackerInfo>>(() {
         final requestsRaw = json.decode(res) as List? ?? [];
-        return requestsRaw.map((e) => TrackerInfo.fromJson(e)).toList();
+        return requestsRaw
+            .map((e) => TrackerInfo.fromJson(e as Map<String, Object?>))
+            .toList();
       });
     } catch (e) {
-      commonPrint.warn('Failed to parse requests: $e');
+      commonPrint.warn('Parse requests failed: $e');
       return [];
     }
   }

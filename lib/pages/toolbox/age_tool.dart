@@ -173,15 +173,20 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
       title: appLocalizations.ageTool,
       body: ToolPageBody(
         children: [
-          ToolSegmented<_AgeTab>(
-            values: _AgeTab.values,
-            value: _tab,
-            labelOf: (tab) => switch (tab) {
-              _AgeTab.keys => appLocalizations.ageTabKeys,
-              _AgeTab.encrypt => appLocalizations.ageTabEncrypt,
-              _AgeTab.decrypt => appLocalizations.ageTabDecrypt,
-            },
-            onChanged: (tab) => setState(() {
+          SegmentButtonGroup<_AgeTab>(
+            options: [
+              for (final tab in _AgeTab.values)
+                SegmentOption(
+                  value: tab,
+                  label: switch (tab) {
+                    _AgeTab.keys => appLocalizations.ageTabKeys,
+                    _AgeTab.encrypt => appLocalizations.ageTabEncrypt,
+                    _AgeTab.decrypt => appLocalizations.ageTabDecrypt,
+                  },
+                ),
+            ],
+            selected: _tab,
+            onSelected: (tab) => setState(() {
               _tab = tab;
               _error = '';
             }),
@@ -213,7 +218,7 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
   Widget _copyButton(String Function() text) => IconButton(
     tooltip: appLocalizations.copy,
     onPressed: () => _copy(text()),
-    icon: const Icon(Icons.copy_rounded, size: 18),
+    icon: const AppIcon(Icons.copy_rounded, size: 18),
   );
 
   List<Widget> _buildKeys() => [
@@ -243,9 +248,11 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
             ),
           ],
           const SizedBox(height: 16),
-          ToolTvField(
-            controller: _secretController,
-            child: TextField(
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
               controller: _secretController,
               obscureText: !_showSecret,
               autocorrect: false,
@@ -257,7 +264,7 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
                     IconButton(
                       onPressed: () =>
                           setState(() => _showSecret = !_showSecret),
-                      icon: Icon(
+                      icon: AppIcon(
                         _showSecret
                             ? Icons.visibility_off_rounded
                             : Icons.visibility_rounded,
@@ -271,11 +278,13 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
             ),
           ),
           const SizedBox(height: 12),
-          ToolTvField(
-            controller: _publicController,
-            child: TextField(
+          TvTextField(
+            readOnly: true,
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
               controller: _publicController,
-              readOnly: true,
               minLines: 1,
               maxLines: 4,
               style: _keyType == _AgeKeyType.hybrid
@@ -296,12 +305,12 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
             children: [
               FilledButton.icon(
                 onPressed: _generate,
-                icon: const Icon(Icons.key_rounded, size: 18),
+                icon: const AppIcon(Icons.key_rounded, size: 18),
                 label: Text(appLocalizations.ageGenerateKeyPair),
               ),
               OutlinedButton.icon(
                 onPressed: _derive,
-                icon: const Icon(Icons.sync_alt_rounded, size: 18),
+                icon: const AppIcon(Icons.sync_alt_rounded, size: 18),
                 label: Text(appLocalizations.generateFromPrivateKey),
               ),
               if (_publicController.text.isNotEmpty)
@@ -311,7 +320,7 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
                     _decryptKey.text = _secretController.text;
                     setState(() => _tab = _AgeTab.encrypt);
                   },
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  icon: const AppIcon(Icons.arrow_forward_rounded, size: 18),
                   label: Text(appLocalizations.ageUseForEncrypt),
                 ),
             ],
@@ -325,9 +334,11 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
     TextEditingController controller,
     String label, {
     int minLines = 5,
-  }) => ToolTvField(
-    controller: controller,
-    child: TextField(
+  }) => TvTextField(
+    builder: (tv) => TextField(
+      focusNode: tv.focusNode,
+      readOnly: tv.readOnly,
+      showCursor: tv.showCursor,
       controller: controller,
       minLines: minLines,
       maxLines: 10,
@@ -345,12 +356,12 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
                 final data = await Clipboard.getData(Clipboard.kTextPlain);
                 if (data?.text case final text?) controller.text = text;
               },
-              icon: const Icon(Icons.content_paste_rounded, size: 18),
+              icon: const AppIcon(Icons.content_paste_rounded, size: 18),
             ),
             IconButton(
               tooltip: appLocalizations.file,
               onPressed: () => _pickFile(controller),
-              icon: const Icon(Icons.folder_open_rounded, size: 18),
+              icon: const AppIcon(Icons.folder_open_rounded, size: 18),
             ),
           ],
         ),
@@ -376,7 +387,7 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
             IconButton(
               tooltip: appLocalizations.save,
               onPressed: () => _save(text, fileName),
-              icon: const Icon(Icons.save_alt_rounded, size: 18),
+              icon: const AppIcon(Icons.save_alt_rounded, size: 18),
             ),
           ],
         ),
@@ -415,9 +426,11 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
         children: [
           _input(_encryptInput, appLocalizations.agePlainText),
           const SizedBox(height: 12),
-          ToolTvField(
-            controller: _recipients,
-            child: TextField(
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
               controller: _recipients,
               minLines: 1,
               maxLines: 4,
@@ -446,9 +459,11 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
         children: [
           _input(_decryptInput, appLocalizations.ageCipherText),
           const SizedBox(height: 12),
-          ToolTvField(
-            controller: _decryptKey,
-            child: TextField(
+          TvTextField(
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
               controller: _decryptKey,
               obscureText: true,
               autocorrect: false,
@@ -462,7 +477,7 @@ class _AgeToolPageState extends ConsumerState<AgeToolPage> {
               alignment: AlignmentDirectional.centerStart,
               child: TextButton.icon(
                 onPressed: () => setState(() => _decryptKey.text = profileKey),
-                icon: const Icon(Icons.key_rounded, size: 16),
+                icon: const AppIcon(Icons.key_rounded, size: 16),
                 label: Text(appLocalizations.ageUseProfileKey),
               ),
             ),

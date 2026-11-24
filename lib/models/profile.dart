@@ -55,9 +55,8 @@ extension SubscriptionInfoExtension on SubscriptionInfo {
 
   String? get expireDesc {
     if (expire > 0) {
-      final expireDate = DateTime.fromMillisecondsSinceEpoch(
-        expire * 1000,
-      ).show;
+      final expireDate = DateTime.fromMillisecondsSinceEpoch(expire * 1000)
+          .show;
       final isExpired = expire * 1000 < DateTime.now().millisecondsSinceEpoch;
       return isExpired
           ? '${appLocalizations.expired} · $expireDate'
@@ -89,6 +88,9 @@ abstract class Profile with _$Profile {
     @Default(false) bool managed,
     @Default(false) bool managedStyleApplied,
     String? ageSecretKey,
+    @Default(false) bool skipCertVerify,
+    @Default(false) bool directUpdate,
+    String? userAgent,
     @JsonKey(name: 'group-switches')
     @Default({})
     Map<String, bool> groupSwitches,
@@ -234,7 +236,7 @@ extension ProfileExtension on Profile {
 
   bool get realAutoUpdate => url.isEmpty == true ? false : autoUpdate;
 
-  bool get isManaged => bundle != null || managed;
+  bool get isManaged => bundle != null ? scriptId == null : managed;
 
   bool get runsManagedScript => bundle == null && managed;
 
@@ -340,7 +342,13 @@ extension ProfileExtension on Profile {
     );
     try {
       await File(downloadPath).parent.create(recursive: true);
-      final source = await request.fetchProfileSource(url, downloadPath);
+      final source = await request.fetchProfileSource(
+        url,
+        downloadPath,
+        direct: directUpdate,
+        skipCertVerify: skipCertVerify,
+        userAgent: userAgent,
+      );
       final headers = source.headers;
       final disposition = headers?['content-disposition']?.firstOrNull;
       final userinfo = headers?['subscription-userinfo']?.firstOrNull;

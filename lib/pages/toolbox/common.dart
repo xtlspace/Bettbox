@@ -4,7 +4,6 @@ import 'package:bett_box/common/common.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/state.dart';
 import 'package:bett_box/widgets/widgets.dart';
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 String toolEffectiveProxy(List<Group> groups, String proxy) {
@@ -71,55 +70,6 @@ WidgetStateBorderSide toolChipSide(
           )
         : idle,
   );
-}
-
-class ToolTvField extends StatelessWidget {
-  final TextEditingController controller;
-  final Widget child;
-
-  const ToolTvField({super.key, required this.controller, required this.child});
-
-  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
-    if (!globalState.isAndroidTV || event is KeyUpEvent) {
-      return KeyEventResult.ignored;
-    }
-    final value = controller.value;
-    final text = value.text;
-    final selection = value.selection;
-    final offset = selection.isValid
-        ? selection.extentOffset.clamp(0, text.length)
-        : text.length;
-    final collapsed = !selection.isValid || selection.isCollapsed;
-    final direction = switch (event.logicalKey) {
-      LogicalKeyboardKey.arrowUp
-          when !text.substring(0, offset).contains('\n') =>
-        TraversalDirection.up,
-      LogicalKeyboardKey.arrowDown
-          when !text.substring(offset).contains('\n') =>
-        TraversalDirection.down,
-      LogicalKeyboardKey.arrowLeft when collapsed && offset == 0 =>
-        TraversalDirection.left,
-      LogicalKeyboardKey.arrowRight when collapsed && offset >= text.length =>
-        TraversalDirection.right,
-      _ => null,
-    };
-    if (direction == null) return KeyEventResult.ignored;
-    final focused = FocusManager.instance.primaryFocus;
-    if (focused == null || !focused.focusInDirection(direction)) {
-      return KeyEventResult.ignored;
-    }
-    return KeyEventResult.handled;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: _onKeyEvent,
-      child: child,
-    );
-  }
 }
 
 class ToolOutboundRow {
@@ -190,7 +140,7 @@ class ToolOutboundCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              row.icon,
+                              context.resolveIcon(row.icon),
                               size: 14,
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -221,7 +171,7 @@ class ToolOutboundCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsetsDirectional.only(start: 6),
               child: Icon(
-                Icons.unfold_more_rounded,
+                context.resolveIcon(Icons.unfold_more_rounded),
                 size: 20,
                 color: enabled
                     ? colorScheme.onSurfaceVariant
@@ -257,12 +207,17 @@ class ToolSearchField extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 4, 6, 4),
       child: Row(
         children: [
-          Icon(Icons.search_rounded, color: colorScheme.onSurfaceVariant),
+          Icon(
+            context.resolveIcon(Icons.search_rounded),
+            color: colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: ToolTvField(
-              controller: controller,
-              child: TextField(
+            child: TvTextField(
+              builder: (tv) => TextField(
+                focusNode: tv.focusNode,
+                readOnly: tv.readOnly,
+                showCursor: tv.showCursor,
                 controller: controller,
                 autocorrect: false,
                 enableSuggestions: false,
@@ -286,7 +241,10 @@ class ToolSearchField extends StatelessWidget {
                 ? const SizedBox.shrink()
                 : IconButton(
                     onPressed: controller.clear,
-                    icon: const Icon(Icons.close_rounded, size: 18),
+                    icon: Icon(
+                      context.resolveIcon(Icons.close_rounded),
+                      size: 18,
+                    ),
                   ),
           ),
           ?trailing,
@@ -301,7 +259,7 @@ class ToolSearchField extends StatelessWidget {
                 )
               : IconButton.filledTonal(
                   onPressed: () => onSubmitted(controller.text.trim()),
-                  icon: const Icon(Icons.arrow_forward_rounded),
+                  icon: Icon(context.resolveIcon(Icons.arrow_forward_rounded)),
                 ),
         ],
       ),
@@ -346,7 +304,7 @@ class ToolInfoTile extends StatelessWidget {
                   color: accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 18, color: accent),
+                child: Icon(context.resolveIcon(icon), size: 18, color: accent),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -361,7 +319,7 @@ class ToolInfoTile extends StatelessWidget {
               ),
               if (onTap != null)
                 Icon(
-                  Icons.chevron_right_rounded,
+                  context.resolveIcon(Icons.chevron_right_rounded),
                   size: 18,
                   color: colorScheme.outline,
                 ),
@@ -433,7 +391,7 @@ class ToolNote extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 15, color: color),
+          child: Icon(context.resolveIcon(icon), size: 15, color: color),
         ),
         const SizedBox(width: 6),
         Expanded(
@@ -592,7 +550,7 @@ class ToolOutboundValue extends StatelessWidget {
                 if (onTap != null) ...[
                   const SizedBox(width: 6),
                   Icon(
-                    Icons.info_outline_rounded,
+                    context.resolveIcon(Icons.info_outline_rounded),
                     size: 15,
                     color: colorScheme.primary,
                   ),
@@ -698,8 +656,8 @@ class ToolSegmented<T> extends StatelessWidget {
                               onTap: active ? () => onChanged(item) : null,
                               child: Center(
                                 child: icon != null
-                                    ? Icon(
-                                        icon,
+                                    ? AppIcon(
+                                        context.resolveIcon(icon),
                                         size: 16,
                                         color: color,
                                         semanticLabel: labelOf(item),
@@ -873,7 +831,7 @@ class ToolHistoryBar extends StatelessWidget {
                               visualDensity: VisualDensity.compact,
                               side: toolChipSide(context),
                               avatar: Icon(
-                                Icons.history_rounded,
+                                context.resolveIcon(Icons.history_rounded),
                                 size: 15,
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -893,7 +851,7 @@ class ToolHistoryBar extends StatelessWidget {
                       tooltip: appLocalizations.toolHistoryClear,
                       onPressed: onClear,
                       icon: Icon(
-                        Icons.delete_sweep_outlined,
+                        context.resolveIcon(Icons.delete_sweep_outlined),
                         size: 20,
                         color: colorScheme.onSurfaceVariant,
                       ),

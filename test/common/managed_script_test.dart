@@ -68,7 +68,7 @@ void main() {
   });
 
   test('route catalog entries point to the bundled rule sets', () async {
-    final index = await ManagedScript.catalog(const ManagedProps());
+    final index = await ManagedScript.catalog();
     final catalog = index.catalog;
     final icons = catalog.icons.toSet();
     expect(catalog.sets, isNotEmpty);
@@ -96,7 +96,7 @@ void main() {
   });
 
   test('icon set picks map back to catalog names', () async {
-    final index = await ManagedScript.catalog(const ManagedProps());
+    final index = await ManagedScript.catalog();
     final iconSet = routeIconSet(index.catalog);
     expect(iconSet.icons.length, index.catalog.icons.length);
     for (final icon in iconSet.icons.take(50)) {
@@ -118,6 +118,35 @@ void main() {
     expect(index.iconOf(route('')), null);
     expect(index.iconOf(route('https://a.com/b.svg')), 'https://a.com/b.svg');
   });
+
+  test(
+    'sensitive remote icons and services remain matchable without local assets',
+    () async {
+      await loadBundledRouteIcons();
+      final index = await ManagedScript.catalog();
+      expect(
+        index.catalog.icons,
+        containsAll(const ['EHentai.svg', 'MissAV.svg', 'Pornhub.svg']),
+      );
+      expect(
+        index.catalog.services.any((service) => service.name == 'MissAV'),
+        isTrue,
+      );
+      for (final (name, setKey, expected) in const [
+        ('MissAV', 'geosite:missav', 'MissAV.svg'),
+        ('E-Hentai', 'geosite:ehentai', 'EHentai.svg'),
+        ('Pornhub', 'geosite:pornhub', 'Pornhub.svg'),
+      ]) {
+        expect(index.autoIcon(name, const []), expected);
+        expect(index.autoIcon('Custom', [setKey]), expected);
+        expect(index.sets[setKey]?.icon, expected);
+        final url = routeIconUrl(expected);
+        expect(url, isNotNull);
+        expect(routeIconAsset(url), isNull);
+        expect(sensitiveRoutePattern.hasMatch(name), isTrue);
+      }
+    },
+  );
 
   test('custom groups sit before AdBlock and follow the saved order', () {
     const presets = ['FCM', 'YouTube', 'Google', 'AdBlock'];
@@ -291,17 +320,13 @@ void main() {
   test(
     'regions default to the preset ones and are injected when chosen',
     () async {
-      final catalog = (await ManagedScript.catalog(
-        const ManagedProps(),
-      )).catalog;
+      final catalog = (await ManagedScript.catalog()).catalog;
       expect(managedRegions(catalog, null), ['香港', '日本', '美国', '新加坡', '台湾']);
       expect(managedRegions(catalog, const ['日本', '韩国', 'Gone']), ['日本', '韩国']);
       expect(
-        managedRegions(
-          catalog,
-          null,
-          const [CustomRegion(name: '德国', regex: '德国|DE')],
-        ),
+        managedRegions(catalog, null, const [
+          CustomRegion(name: '德国', regex: '德国|DE'),
+        ]),
         ['香港', '日本', '美国', '新加坡', '台湾', '德国'],
       );
       expect(
@@ -364,6 +389,79 @@ void main() {
     );
   });
 
+  test('rate groups follow options, icons and saved group order', () async {
+    await loadBundledRouteIcons();
+    expect(managedRateGroups(const {}), isEmpty);
+    expect(managedRateGroups(const {managedRateGroupOption: false}), isEmpty);
+    expect(managedRateGroups(const {managedRateGroupOption: true}), const [
+      managedLowRateGroup,
+      managedHighRateGroup,
+    ]);
+    expect(
+      managedRateGroups(const {
+        managedRateGroupOption: true,
+        managedFilterLowRateOption: true,
+      }),
+      const [managedHighRateGroup],
+    );
+    expect(
+      managedRateGroups(const {
+        managedRateGroupOption: true,
+        managedFilterHighRateOption: true,
+      }),
+      const [managedLowRateGroup],
+    );
+    for (final icon in managedRateGroupIcons.values) {
+      expect(routeIconAsset(routeIconUrl(icon)), isNotNull);
+    }
+    expect(
+      orderManagedGroups(
+        presets: const ['AI', 'AdBlock'],
+        customs: const [],
+        saved: const [managedHighRateGroup, '香港', 'AI', 'AdBlock'],
+        regions: [
+          '香港',
+          '日本',
+          ...managedRateGroups(const {managedRateGroupOption: true}),
+        ],
+      ),
+      const [
+        managedHighRateGroup,
+        '香港',
+        '日本',
+        managedLowRateGroup,
+        'AI',
+        'AdBlock',
+      ],
+    );
+    expect(
+      orderManagedGroups(
+        presets: const ['AI', 'AdBlock'],
+        customs: const [],
+        saved: const [
+          managedHighRateGroup,
+          '香港',
+          'AI',
+          managedLowRateGroup,
+          'AdBlock',
+        ],
+        regions: [
+          '香港',
+          '日本',
+          ...managedRateGroups(const {managedRateGroupOption: true}),
+        ],
+      ),
+      const [
+        managedHighRateGroup,
+        '香港',
+        '日本',
+        'AI',
+        managedLowRateGroup,
+        'AdBlock',
+      ],
+    );
+  });
+
   test('remote links go through the jsDelivr mirror', () {
     expect(
       mirrorUrl('https://raw.githubusercontent.com/a/b/main/icons/x.svg'),
@@ -418,14 +516,9 @@ void main() {
     );
   });
 
-  test('version comparison compares numerically when numbers', () {
-    expect(ManagedScript.compareVersions('99', '100'), lessThan(0));
-    expect(ManagedScript.compareVersions('100', '99'), greaterThan(0));
-    expect(ManagedScript.compareVersions('20241012', '2026111105'), lessThan(0));
-    expect(ManagedScript.compareVersions('2026111105', '2026111105'), 0);
-    expect(ManagedScript.compareVersions('beta', 'alpha'), greaterThan(0));
-
-    const olderProps = ManagedProps(syncedVersion: '99');
-    expect(ManagedScript.syncedVersion(olderProps), isNull);
+  test('legacy upstream version is ignored', () {
+    const legacyProps = ManagedProps(syncedVersion: '2026111105');
+    expect(ManagedScript.isCustom(legacyProps), isFalse);
+    expect(ManagedScript.syncedVersion(legacyProps), isNull);
   });
 }

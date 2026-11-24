@@ -40,7 +40,7 @@ class InfoHeader extends StatelessWidget {
               children: [
                 if (info.iconData != null) ...[
                   Icon(
-                    info.iconData,
+                    context.resolveIcon(info.iconData!),
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
@@ -326,7 +326,7 @@ class SelectIcon extends StatelessWidget {
       shape: const CircleBorder(),
       child: Container(
         padding: const EdgeInsets.all(4),
-        child: const Icon(Icons.check, size: 16),
+        child: const AppIcon(Icons.check, size: 16),
       ),
     );
   }

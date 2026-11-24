@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
 import 'package:bett_box/state.dart';
@@ -49,7 +50,7 @@ class Tray {
     _loadingTimer?.cancel();
   }
 
-  Future _updateSystemTray({
+  Future<void> _updateSystemTray({
     required Brightness? brightness,
     required bool isStart,
     bool force = false,
@@ -468,21 +469,21 @@ class Tray {
         try {
           await WakelockPlus.disable();
         } catch (e) {
-          commonPrint.warn('WakeLock disable OS error: $e');
+          commonPrint.warn('Disable wake lock failed: $e');
         }
         globalState.appController.stopWakelockAutoRecovery();
       } else {
         try {
           await WakelockPlus.enable();
         } catch (e) {
-          commonPrint.warn('WakeLock enable OS error: $e');
+          commonPrint.warn('Enable wake lock failed: $e');
         }
         globalState.appController.startWakelockAutoRecovery();
       }
       globalState.updateWakelockState(!currentEnabled);
       await globalState.appController.updateTray();
     } catch (e) {
-      commonPrint.warn('WakeLock toggle error: $e');
+      commonPrint.warn('Toggle wake lock failed: $e');
     }
   }
 
@@ -555,7 +556,7 @@ class Tray {
               },
       );
     } catch (e) {
-      commonPrint.warn('Delay test error: $e');
+      commonPrint.warn('Delay test failed: $e');
     } finally {
       if (system.isMacOS) {
         _stopLoadingAnimation();

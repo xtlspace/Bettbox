@@ -40,9 +40,7 @@ Future<void> main(List<String> args) async {
   if (system.isMacOS || appPath.isPortable) {
     final acquire = await singleInstanceLock.acquire();
     if (!acquire) {
-      commonPrint.warn(
-        'SingleInstanceLock: another instance detected or lock failed, exiting',
-      );
+      commonPrint.warn('Another instance is running, exiting');
       if (!appPath.isPortable) {
         await _sendControlCommand('show');
         await Future.delayed(const Duration(milliseconds: 100));
@@ -60,12 +58,6 @@ Future<void> main(List<String> args) async {
     loadBundledRouteIcons(),
   ]);
 
-  try {
-    await uiManager.initializeUI();
-  } catch (e) {
-    commonPrint.error('Failed to initialize UI: $e');
-  }
-
   await _runApp();
 }
 
@@ -73,11 +65,11 @@ Future<void> _sendControlCommand(String command) async {
   for (int i = 0; i < 5; i++) {
     try {
       await ExternalControl.sendCommand(command);
-      commonPrint.log('Sent $command command to running instance');
+      commonPrint.log('Sent $command to running instance');
       return;
     } catch (e) {
       if (i == 4) {
-        commonPrint.warn('Failed to send $command command: $e');
+        commonPrint.warn('Send $command to running instance failed: $e');
         return;
       }
       await Future.delayed(const Duration(milliseconds: 200));
@@ -86,8 +78,6 @@ Future<void> _sendControlCommand(String command) async {
 }
 
 Future<void> _runApp() async {
-  await ensureRustLib();
-
   if (system.isAndroid) {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
@@ -119,13 +109,13 @@ Future<void> _service(List<String> flags) async {
         final configFile = File(await appPath.appConfigPath);
         if (!await configFile.exists()) return;
         final latestConfig = Config.compatibleFromJson(
-          json.decode(await configFile.readAsString()),
+          json.decode(await configFile.readAsString()) as Map<String, Object?>,
         );
         globalState.config = globalState.config.copyWith(
           vpnProps: latestConfig.vpnProps,
         );
       } catch (e) {
-        commonPrint.warn('Refresh vpn props failed: $e');
+        commonPrint.warn('Refresh VPN props failed: $e', module: 'Service');
       }
     }
 
@@ -180,57 +170,61 @@ Future<void> _service(List<String> flags) async {
           }
         });
       } catch (e) {
-        commonPrint.warn('Smart auto stop check failed: $e');
+        commonPrint.warn('Check failed: $e', module: 'AutoStop');
       }
     }
 
     Future<void> startCore() async {
       await ClashCore.initGeo();
-      app.tip(appLocalizations.startVpn);
+      unawaited(app.tip(appLocalizations.startVpn));
       final homeDirPath = await appPath.homeDirPath;
       final version = await system.version;
       final clashConfig = globalState.config.patchClashConfig.copyWith.tun(
         enable: false,
       );
 
-      Future(() async {
-        try {
-          final profileId = globalState.config.currentProfileId;
-          if (profileId == null) {
-            return;
-          }
-          final params = await globalState.getSetupParams(
-            pathConfig: clashConfig,
-          );
-          final res = await clashLibHandler.quickStart(
-            InitParams(homeDir: homeDirPath, version: version),
-            params,
-            globalState.getCoreState(),
-          );
-          final message = res.message;
-          debugPrint(message);
-          if (message.isNotEmpty) {
-            commonPrint.error('QuickStart failed with error: $message');
+      unawaited(
+        Future(() async {
+          try {
+            final profileId = globalState.config.currentProfileId;
+            if (profileId == null) {
+              return;
+            }
+            final params = await globalState.getSetupParams(
+              pathConfig: clashConfig,
+            );
+            final res = await clashLibHandler.quickStart(
+              InitParams(homeDir: homeDirPath, version: version),
+              params,
+              globalState.getCoreState(),
+            );
+            final message = res.message;
+            if (message.isNotEmpty) {
+              commonPrint.error(
+                'Quick start failed: $message',
+                module: 'Service',
+              );
+              await vpn?.stop();
+              return;
+            }
+            await vpn?.start(clashLibHandler.getAndroidVpnOptions());
+            Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
+
+            if (globalState.config.vpnProps.networkSpeedNotification) {
+              final profile = globalState.config.profiles
+                  .where((e) => e.id == profileId)
+                  .firstOrNull;
+              final profileName = profile?.label ?? 'Bettbox';
+              await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
+            }
+
+            unawaited(clashLibHandler.startListener());
+          } catch (e) {
+            commonPrint.error('Background start failed: $e', module: 'Service');
             await vpn?.stop();
-            return;
           }
-          await vpn?.start(clashLibHandler.getAndroidVpnOptions());
-          Future.delayed(const Duration(seconds: 2), checkSmartAutoStop);
-
-          if (globalState.config.vpnProps.networkSpeedNotification) {
-            final profile = globalState.config.profiles
-                .where((e) => e.id == profileId)
-                .firstOrNull;
-            final profileName = profile?.label ?? 'Bettbox';
-            await vpn?.updateNotificationSpeed(profileName, '↑0B/s ↓0B/s');
-          }
-
-          clashLibHandler.startListener();
-        } catch (e) {
-          commonPrint.error('Fatal error during service background start: $e');
-          await vpn?.stop();
-        }
-      });
+        }),
+      );
     }
 
     tile?.addListener(
@@ -238,13 +232,11 @@ Future<void> _service(List<String> flags) async {
         onStart: startCore,
         onStop: () async {
           await app.tip(appLocalizations.stopVpn);
-          clashLibHandler.stopListener();
+          unawaited(clashLibHandler.stopListener());
           await vpn?.stop();
         },
         onReconnectIpc: () {
-          commonPrint.log(
-            'Service: reconnectIpc requested, re-establishing IPC',
-          );
+          commonPrint.log('Reconnecting IPC', module: 'Service');
           _handleMainIpc(clashLibHandler);
         },
       ),
@@ -265,14 +257,15 @@ Future<void> _service(List<String> flags) async {
     }
 
     if (bootStart && !globalState.config.appSetting.autoRun) {
-      commonPrint.log(
-        'Silent boot detected, but autoRun is disabled. Staying idle.',
-      );
+      commonPrint.log('Boot start skipped, auto run is off', module: 'Service');
       _handleMainIpc(clashLibHandler);
       return;
     }
 
-    commonPrint.log('Executing ${bootStart ? "boot" : "quick"} start sequence');
+    commonPrint.log(
+      '${bootStart ? 'Boot' : 'Quick'} start triggered',
+      module: 'Service',
+    );
     await startCore();
   }
 }
@@ -280,9 +273,7 @@ Future<void> _service(List<String> flags) async {
 void _handleMainIpc(ClashLibHandler clashLibHandler) {
   final sendPort = IsolateNameServer.lookupPortByName(mainIsolate);
   if (sendPort == null) {
-    commonPrint.warn(
-      'Service: mainIsolate sendPort not found, IPC unavailable',
-    );
+    commonPrint.warn('Main isolate port not found', module: 'Service');
     return;
   }
 
@@ -291,7 +282,7 @@ void _handleMainIpc(ClashLibHandler clashLibHandler) {
 
   _serviceReceiverPort = ReceivePort();
   _serviceReceiverPort!.listen((message) async {
-    final res = await clashLibHandler.invokeAction(message);
+    final res = await clashLibHandler.invokeAction(message as String);
     _safeSend(sendPort, res);
   });
   _safeSend(sendPort, _serviceReceiverPort!.sendPort);
@@ -311,7 +302,7 @@ void _safeSend(SendPort sendPort, dynamic message) {
   try {
     sendPort.send(message);
   } catch (e) {
-    commonPrint.warn('Service: IPC send failed: $e');
+    commonPrint.warn('IPC send failed: $e', module: 'Service');
     final retryPort = IsolateNameServer.lookupPortByName(mainIsolate);
     if (retryPort != null) {
       try {
@@ -328,12 +319,10 @@ class _TileListenerWithService with TileListener {
   final Function() _onReconnectIpc;
 
   const _TileListenerWithService({
-    required Function() onStart,
-    required Function() onStop,
-    required Function() onReconnectIpc,
-  }) : _onStart = onStart,
-       _onStop = onStop,
-       _onReconnectIpc = onReconnectIpc;
+    required this._onStart,
+    required this._onStop,
+    required this._onReconnectIpc,
+  });
 
   @override
   void onStart() => _onStart();
@@ -351,10 +340,9 @@ class _VpnListenerWithService with VpnListener {
   final Function(bool defaultChanged) _onNetworkChanged;
 
   const _VpnListenerWithService({
-    required Function(String dns) onDnsChanged,
-    required Function(bool defaultChanged) onNetworkChanged,
-  }) : _onDnsChanged = onDnsChanged,
-       _onNetworkChanged = onNetworkChanged;
+    required this._onDnsChanged,
+    required this._onNetworkChanged,
+  });
 
   @override
   void onDnsChanged(String dns) {

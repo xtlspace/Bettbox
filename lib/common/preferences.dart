@@ -43,11 +43,10 @@ class Preferences {
     if (clashConfigString == null) return null;
     try {
       final clashConfigMap = json.decode(clashConfigString);
-      return ClashConfig.fromJson(clashConfigMap);
+      return ClashConfig.fromJson(clashConfigMap as Map<String, Object?>);
     } catch (e, stackTrace) {
-      commonPrint.error(
-        'Failed to parse clash config from preferences: $e\n$stackTrace',
-      );
+      commonPrint.error('Parse clash config failed: $e');
+      commonPrint.debug('$stackTrace');
       return null;
     }
   }
@@ -56,6 +55,9 @@ class Preferences {
   Config? _lastConfig;
   String? _lastSaved;
   Future<bool>? _saving;
+  String? _pendingBackupPath;
+  String? _pendingBackupContent;
+  Future<void>? _backingUp;
 
   Future<String?> _readText(String path) async {
     try {
@@ -71,9 +73,12 @@ class Preferences {
   Config? _parseConfig(String? content, String source) {
     if (content == null) return null;
     try {
-      return Config.compatibleFromJson(json.decode(content));
+      return Config.compatibleFromJson(
+        json.decode(content) as Map<String, Object?>,
+      );
     } catch (e, stackTrace) {
-      commonPrint.error('Failed to parse config from $source: $e\n$stackTrace');
+      commonPrint.error('Parse config from $source failed: $e');
+      commonPrint.debug('$stackTrace');
       return null;
     }
   }
@@ -99,7 +104,34 @@ class Preferences {
     await preferences.setBool(key, value);
   }
 
-  Future<Config?> getConfig() async {
+  Future<void> _backupConfig(String backupPath, String content) async {
+    try {
+      if (await _readText(backupPath) == content) return;
+      await _writeAtomic(backupPath, content);
+    } catch (e) {
+      commonPrint.warn('Back up config failed: $e');
+    }
+  }
+
+  Future<void> flushStartupBackup() {
+    final path = _pendingBackupPath;
+    final content = _pendingBackupContent;
+    if (path == null || content == null) return _backingUp ?? Future.value();
+    _pendingBackupPath = null;
+    _pendingBackupContent = null;
+    final previous = _backingUp;
+    late final Future<void> current;
+    current =
+        () async {
+          await previous;
+          await _backupConfig(path, content);
+        }().whenComplete(() {
+          if (identical(_backingUp, current)) _backingUp = null;
+        });
+    return _backingUp = current;
+  }
+
+  Future<Config?> getConfig({bool deferBackup = false}) async {
     final preferences = await sharedPreferencesCompleter.future;
     final path = await appPath.appConfigPath;
 
@@ -109,10 +141,11 @@ class Preferences {
     _lastConfig = null;
     _lastSaved = fileConfig != null ? content : null;
     if (fileConfig != null && content != null) {
-      try {
-        await _writeAtomic('$path.bak', content);
-      } catch (e) {
-        commonPrint.warn('Failed to back up config: $e');
+      if (deferBackup) {
+        _pendingBackupPath = '$path.bak';
+        _pendingBackupContent = content;
+      } else {
+        await _backupConfig('$path.bak', content);
       }
     } else {
       selected = _parseConfig(await _readText('$path.bak'), 'backup');
@@ -198,7 +231,8 @@ class Preferences {
       _lastSaved = jsonStr;
       _lastConfig = config;
     } catch (e, stackTrace) {
-      commonPrint.error('Failed to save config to file: $e\n$stackTrace');
+      commonPrint.error('Save config failed: $e');
+      commonPrint.debug('$stackTrace');
       return false;
     }
 
@@ -206,7 +240,7 @@ class Preferences {
       try {
         await preferences?.remove(configKey);
       } catch (e) {
-        commonPrint.warn('Failed to remove legacy config mirror: $e');
+        commonPrint.warn('Remove legacy config failed: $e');
       }
     }
     return true;
@@ -214,10 +248,13 @@ class Preferences {
 
   Future<void> clearClashConfig() async {
     final preferences = await sharedPreferencesCompleter.future;
-    preferences?.remove(clashConfigKey);
+    unawaited(preferences?.remove(clashConfigKey));
   }
 
   Future<void> clearPreferences() async {
+    _pendingBackupPath = null;
+    _pendingBackupContent = null;
+    await _backingUp;
     final sharedPreferencesIns = await sharedPreferencesCompleter.future;
     await sharedPreferencesIns?.clear();
     final path = await appPath.appConfigPath;
@@ -243,14 +280,23 @@ class _FilePreferencesStore extends SharedPreferencesStorePlatform {
 
   final Future<String> _path;
   Map<String, Object>? _cache;
+  Future<Map<String, Object>>? _reading;
+  String? _pendingJson;
+  Future<bool>? _writing;
 
-  Future<Map<String, Object>> _read() async {
+  Future<Map<String, Object>> _read() {
     final cached = _cache;
-    if (cached != null) return cached;
+    if (cached != null) return Future.value(cached);
+    return _reading ??= _load().whenComplete(() {
+      _reading = null;
+    });
+  }
+
+  Future<Map<String, Object>> _load() async {
     final file = File(await _path);
     var data = <String, Object>{};
-    if (file.existsSync()) {
-      final content = file.readAsStringSync();
+    if (await file.exists()) {
+      final content = await file.readAsString();
       if (content.isNotEmpty) {
         final decoded = json.decode(content);
         if (decoded is Map) {
@@ -261,16 +307,45 @@ class _FilePreferencesStore extends SharedPreferencesStorePlatform {
     return _cache ??= data;
   }
 
-  Future<bool> _write(Map<String, Object> data) async {
+  Future<bool> _write(Map<String, Object> data) {
+    _pendingJson = json.encode(data);
+    return _writing ??= _drainWrite();
+  }
+
+  Future<bool> _drainWrite() async {
+    var saved = true;
     try {
-      final file = File(await _path);
-      if (!file.existsSync()) {
-        file.createSync(recursive: true);
+      final filePath = await _path;
+      for (
+        var content = _pendingJson;
+        content != null;
+        content = _pendingJson
+      ) {
+        _pendingJson = null;
+        saved = await _writeText(filePath, content);
       }
-      file.writeAsStringSync(json.encode(data), flush: true);
+    } finally {
+      _writing = null;
+    }
+    return saved;
+  }
+
+  Future<bool> _writeText(String filePath, String content) async {
+    try {
+      final temp = File(
+        '$filePath.${DateTime.now().microsecondsSinceEpoch}.tmp',
+      );
+      await temp.parent.create(recursive: true);
+      await temp.writeAsString(content, flush: true);
+      try {
+        await temp.rename(filePath);
+      } catch (_) {
+        await temp.copy(filePath);
+        await temp.delete();
+      }
       return true;
     } catch (e) {
-      commonPrint.warn('Failed to write preferences: $e');
+      commonPrint.warn('Write preferences failed: $e');
       return false;
     }
   }

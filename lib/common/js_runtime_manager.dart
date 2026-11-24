@@ -62,7 +62,16 @@ class JavaScriptRuntimeManager {
 
   static void _printScriptLogs(List<rust.ScriptLog> logs) {
     for (final log in logs) {
-      commonPrint.log('[Script] ${log.level}: ${log.text}');
+      switch (log.level) {
+        case 'error':
+          commonPrint.error(log.text, module: 'Script');
+        case 'warn':
+          commonPrint.warn(log.text, module: 'Script');
+        case 'debug':
+          commonPrint.debug(log.text, module: 'Script');
+        default:
+          commonPrint.log(log.text, module: 'Script');
+      }
     }
   }
 
@@ -81,10 +90,10 @@ class JavaScriptRuntimeManager {
         result.addAll(_deepCastMap(decoded));
       }
     } on rust.ScriptError catch (e) {
-      commonPrint.warn('extractScriptOptions error: ${e.message}');
+      commonPrint.warn('Read options failed: ${e.message}', module: 'Script');
       return <String, dynamic>{};
     } catch (e) {
-      commonPrint.warn('extractScriptOptions error: $e');
+      commonPrint.warn('Read options failed: $e', module: 'Script');
       return <String, dynamic>{};
     }
     _ScriptOptionsCache.put(_cacheKey(script), result);
@@ -115,7 +124,7 @@ class JavaScriptRuntimeManager {
     return _ScriptOptionsCache.get(_cacheKey(script));
   }
 
-  static Map<String, dynamic> _deepCastMap(Map dynamicMap) {
+  static Map<String, dynamic> _deepCastMap(Map<dynamic, dynamic> dynamicMap) {
     return dynamicMap.map<String, dynamic>((key, value) {
       return MapEntry(key.toString(), _deepCastValue(value));
     });

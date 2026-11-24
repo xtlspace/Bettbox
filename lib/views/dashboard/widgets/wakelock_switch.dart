@@ -21,7 +21,7 @@ class WakelockSwitch extends StatelessWidget {
       }
       globalState.updateWakelockState(!enabled);
     } catch (e) {
-      commonPrint.log('WakeLock toggle error: $e');
+      commonPrint.warn('Toggle wake lock failed: $e');
     }
   }
 
@@ -64,9 +64,9 @@ class WakelockSwitch extends StatelessWidget {
                     appLocalizations.switchLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.adjustSize(-2).toLight,
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.adjustSize(-2)
+                        .toLight,
                   ),
                 ),
               ),

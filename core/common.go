@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net/netip"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -118,6 +119,7 @@ func updateListeners() {
 	listeners := currentConfig.Listeners
 	general := currentConfig.General
 	listener.PatchInboundListeners(listeners, tunnel.Tunnel, true)
+	listener.PatchTunnel(currentConfig.Tunnels, tunnel.Tunnel)
 	listener.SetAllowLan(general.AllowLan)
 	inbound.SetSkipAuthPrefixes(general.SkipAuthPrefixes)
 	inbound.SetAllowedIPs(general.LanAllowedIPs)
@@ -132,6 +134,9 @@ func updateListeners() {
 	listener.ReCreateVmess(general.VmessConfig, tunnel.Tunnel)
 	listener.ReCreateTuic(general.TuicServer, tunnel.Tunnel)
 	if !features.Android {
+		if general.Tun.Enable {
+			syncTunInet6(currentConfig, currentTunInet6)
+		}
 		listener.ReCreateTun(general.Tun, tunnel.Tunnel)
 	}
 }
@@ -270,6 +275,7 @@ func updateConfig(params *UpdateParams) {
 		general.Tun.DNSHijack = *params.Tun.DNSHijack
 		general.Tun.Stack = *params.Tun.Stack
 		general.Tun.DisableICMPForwarding = *params.Tun.DisableICMPForwarding
+		routeFakeIP(currentConfig)
 	}
 
 	updateListeners()
@@ -383,12 +389,13 @@ func residentRawConfig(raw *config.RawConfig) *config.RawConfig {
 }
 
 type preparedSetup struct {
-	key    string
-	rawCfg *config.RawConfig
-	cfg    *config.Config
-	global string
-	expire time.Time
-	reused bool
+	key      string
+	rawCfg   *config.RawConfig
+	cfg      *config.Config
+	global   string
+	tunInet6 []netip.Prefix
+	expire   time.Time
+	reused   bool
 }
 
 var (
@@ -489,12 +496,13 @@ func prepareSetup(params *SetupParams) (*preparedSetup, error) {
 		return nil, err
 	}
 
+	tunInet6 := prepareRawTunIPv6(rawCfg)
 	cfg, err := config.ParseRawConfig(rawCfg)
 	if err != nil {
 		return nil, err
 	}
-	ensureTunInet6(cfg)
-	return &preparedSetup{key: key, rawCfg: rawCfg, cfg: cfg, global: global}, nil
+	routeFakeIP(cfg)
+	return &preparedSetup{key: key, rawCfg: rawCfg, cfg: cfg, global: global, tunInet6: tunInet6}, nil
 }
 
 func setupConfig(params *SetupParams) (global string, err error) {
@@ -520,8 +528,10 @@ func setupConfig(params *SetupParams) (global string, err error) {
 	oldProxies, oldProviders := tunnel.Proxies(), tunnel.Providers()
 	currentConfig = prepared.cfg
 	currentRawConfig = residentRawConfig(prepared.rawCfg)
+	currentTunInet6 = prepared.tunInet6
 	hub.ApplyConfig(currentConfig)
 	closeIdleOutbounds(oldProxies, oldProviders)
+	closeStaleWireGuards(oldProxies, oldProviders)
 	resetGroupShapes()
 	resetDelayState()
 	selectedMap := params.SelectedMap

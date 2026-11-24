@@ -118,7 +118,7 @@ class Request {
     return current;
   }
 
-  Uint8List _bytesFromResponse(Response response) {
+  Uint8List _bytesFromResponse(Response<dynamic> response) {
     final data = response.data;
     if (data is Uint8List) return data;
     return Uint8List.fromList((data as List).cast<int>());
@@ -151,7 +151,7 @@ class Request {
     });
   }
 
-  Future<Response> _getFileResponseForUrl(
+  Future<Response<dynamic>> _getFileResponseForUrl(
     String url,
     ResponseType responseType,
   ) async {
@@ -179,7 +179,7 @@ class Request {
     return '/${segments.join('/')}';
   }
 
-  Response _buildResponseFromBytes({
+  Response<dynamic> _buildResponseFromBytes({
     required String url,
     required Uint8List bytes,
     required ResponseType responseType,
@@ -254,8 +254,11 @@ class Request {
 
   Future<({String path, Headers? headers, bool remote})> fetchProfileSource(
     String url,
-    String downloadPath,
-  ) async {
+    String downloadPath, {
+    bool direct = false,
+    bool skipCertVerify = false,
+    String? userAgent,
+  }) async {
     if (url.isFileUrl) {
       final local = await _localFileForUrl(url);
       await local.file.copy(downloadPath);
@@ -266,18 +269,25 @@ class Request {
       );
     }
     final (requestUrl, headers) = _authorizedRequest(url);
-    final response = await _withPlainEncodingRetry(
-      headers,
-      (requestHeaders) => _clashDio.download(
-        requestUrl,
-        downloadPath,
-        options: Options(headers: requestHeaders),
-      ),
+    final responseHeaders = await clashCore.downloadProfile(
+      url: requestUrl,
+      output: downloadPath,
+      headers: {
+        for (final MapEntry(:key, :value) in headers.entries)
+          key: value.toString(),
+        HttpHeaders.userAgentHeader: userAgent ?? globalState.ua,
+      },
+      direct: direct || globalState.appState.runTime == null,
+      skipCertVerify: skipCertVerify,
     );
-    return (path: downloadPath, headers: response.headers, remote: true);
+    return (
+      path: downloadPath,
+      headers: Headers.fromMap(responseHeaders),
+      remote: true,
+    );
   }
 
-  Future<Response> _getResponseForUrl(
+  Future<Response<dynamic>> _getResponseForUrl(
     String url,
     ResponseType responseType,
   ) async {
@@ -326,7 +336,7 @@ class Request {
     }
   }
 
-  Future<Response> getTextResponseForUrl(String url) async {
+  Future<Response<dynamic>> getTextResponseForUrl(String url) async {
     return _getResponseForUrl(url, ResponseType.plain);
   }
 
@@ -369,22 +379,21 @@ class Request {
         final remoteVersion = location.split('/').last.trim();
         if (remoteVersion.isNotEmpty) {
           final version = globalState.packageInfo.version;
+          final compared = utils.compareVersions(
+            remoteVersion.replaceAll('v', ''),
+            version,
+          );
           final hasUpdate =
-              utils.compareVersions(
-                remoteVersion.replaceAll('v', ''),
-                version,
-              ) >
-              0;
+              compared > 0 || (compared == 0 && globalState.isPreRelease);
           if (!hasUpdate) return null;
           return {
             'tag_name': remoteVersion,
             'html_url': 'https://github.com/$repository/releases/latest',
-            'body': 'New version available. Please visit GitHub to download.',
           };
         }
       }
     } catch (e) {
-      commonPrint.warn('Check update failed: ${e.formatErrorLog}');
+      commonPrint.warn('Check failed: ${e.formatErrorLog}', module: 'Update');
     }
     return null;
   }
@@ -452,7 +461,7 @@ class Request {
     }
 
     cleanupTimer = Timer(effectiveTimeout, cleanup);
-    cancelToken?.whenCancel.then((_) => cleanup());
+    unawaited(cancelToken?.whenCancel.then((_) => cleanup()));
 
     void checkAllFinished() {
       completedCount++;
@@ -469,65 +478,70 @@ class Request {
     for (int i = 0; i < sources.length; i++) {
       final url = sources[i];
       final isPrimary = i == 0;
-      dio
-          .get<Uint8List>(
-            url,
-            cancelToken: cancelToken,
-            options: Options(responseType: ResponseType.bytes),
-          )
-          .then((res) {
-            if (res.statusCode == HttpStatus.ok && res.data != null) {
-              try {
-                final text = utf8
-                    .decode(
-                      _decompressIfNeeded(_bytesFromResponse(res), res.headers),
-                      allowMalformed: true,
-                    )
-                    .trim();
-                IpInfo? ipInfo;
-                if (text.startsWith('{')) {
-                  final jsonMap = json.decode(text);
-                  if (jsonMap is Map<String, dynamic>) {
-                    if (url.contains('ip-api.com') &&
-                        jsonMap['status'] != 'success') {
-                      ipInfo = null;
-                    } else {
-                      ipInfo = IpInfo.fromJson(jsonMap);
-                    }
-                  }
-                } else {
-                  ipInfo = IpInfo.fromCloudflareTrace(text);
-                }
-
-                if (ipInfo != null) {
-                  if (isPrimary) {
-                    primaryInfo = ipInfo;
-                    onUpdate?.call(ipInfo);
-                    if (!firstCompleter.isCompleted) {
-                      firstCompleter.complete(Result.success(ipInfo));
+      unawaited(
+        dio
+            .get<Uint8List>(
+              url,
+              cancelToken: cancelToken,
+              options: Options(responseType: ResponseType.bytes),
+            )
+            .then((res) {
+              if (res.statusCode == HttpStatus.ok && res.data != null) {
+                try {
+                  final text = utf8
+                      .decode(
+                        _decompressIfNeeded(
+                          _bytesFromResponse(res),
+                          res.headers,
+                        ),
+                        allowMalformed: true,
+                      )
+                      .trim();
+                  IpInfo? ipInfo;
+                  if (text.startsWith('{')) {
+                    final jsonMap = json.decode(text);
+                    if (jsonMap is Map<String, dynamic>) {
+                      if (url.contains('ip-api.com') &&
+                          jsonMap['status'] != 'success') {
+                        ipInfo = null;
+                      } else {
+                        ipInfo = IpInfo.fromJson(jsonMap);
+                      }
                     }
                   } else {
-                    fallbackInfo = ipInfo;
-                    if (sources.length == 1) {
+                    ipInfo = IpInfo.fromCloudflareTrace(text);
+                  }
+
+                  if (ipInfo != null) {
+                    if (isPrimary) {
+                      primaryInfo = ipInfo;
                       onUpdate?.call(ipInfo);
                       if (!firstCompleter.isCompleted) {
                         firstCompleter.complete(Result.success(ipInfo));
                       }
+                    } else {
+                      fallbackInfo = ipInfo;
+                      if (sources.length == 1) {
+                        onUpdate?.call(ipInfo);
+                        if (!firstCompleter.isCompleted) {
+                          firstCompleter.complete(Result.success(ipInfo));
+                        }
+                      }
                     }
                   }
-                }
-              } catch (_) {}
-            }
-            checkAllFinished();
-          })
-          .catchError((e) {
-            if (e is DioException && e.type == DioExceptionType.cancel) {
-              if (!firstCompleter.isCompleted) {
-                firstCompleter.complete(Result.error('cancelled'));
+                } catch (_) {}
               }
-            }
-            checkAllFinished();
-          });
+              checkAllFinished();
+            })
+            .catchError((e) {
+              if (e is DioException && e.type == DioExceptionType.cancel) {
+                if (!firstCompleter.isCompleted) {
+                  firstCompleter.complete(Result.error('cancelled'));
+                }
+              }
+              checkAllFinished();
+            }),
+      );
     }
 
     return await firstCompleter.future.timeout(

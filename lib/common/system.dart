@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:ffi/ffi.dart';
@@ -36,6 +38,87 @@ class System {
   bool get isAndroid => Platform.isAndroid;
 
   bool get isLinux => Platform.isLinux;
+
+  String get platformName => Platform.operatingSystem;
+
+  String get arch {
+    final abi = Abi.current();
+    if (isAndroid) {
+      if (abi == Abi.androidArm64) return 'arm64-v8a';
+      if (abi == Abi.androidArm) return 'armeabi-v7a';
+      if (abi == Abi.androidX64) return 'x86_64';
+      if (abi == Abi.androidIA32) return 'x86';
+      return 'unknown';
+    }
+    if (abi == Abi.windowsX64 || abi == Abi.macosX64 || abi == Abi.linuxX64) {
+      return 'amd64';
+    }
+    if (abi == Abi.windowsArm64 ||
+        abi == Abi.macosArm64 ||
+        abi == Abi.linuxArm64) {
+      return 'arm64';
+    }
+    if (abi == Abi.windowsIA32 || abi == Abi.linuxIA32) return 'x86';
+    if (abi == Abi.linuxRiscv64) return 'riscv64';
+    return 'unknown';
+  }
+
+  String get platformArch => '$platformName-$arch';
+
+  Future<bool> revealFile(String path) async {
+    if (path.isEmpty) return false;
+    final target = isMacOS ? _macBundleOf(path) : path;
+    final directory = dirname(target);
+    try {
+      if (await FileSystemEntity.type(target) ==
+          FileSystemEntityType.notFound) {
+        if (!await Directory(directory).exists()) return false;
+        return await _openDirectory(directory);
+      }
+      if (isMacOS) {
+        return (await Process.run('open', ['-R', target])).exitCode == 0;
+      }
+      if (isWindows) {
+        await Process.run('explorer.exe', ['/select,$target']);
+        return true;
+      }
+      final uri = Uri.file(target).toString().replaceAll("'", '%27');
+      final result = await Process.run('gdbus', [
+        'call',
+        '--session',
+        '--dest',
+        'org.freedesktop.FileManager1',
+        '--object-path',
+        '/org/freedesktop/FileManager1',
+        '--method',
+        'org.freedesktop.FileManager1.ShowItems',
+        "['$uri']",
+        '',
+      ]);
+      if (result.exitCode == 0) return true;
+    } catch (_) {}
+    return _openDirectory(directory);
+  }
+
+  String _macBundleOf(String path) {
+    final index = path.indexOf('.app/');
+    return index == -1 ? path : path.substring(0, index + 4);
+  }
+
+  Future<bool> _openDirectory(String directory) async {
+    try {
+      if (isWindows) {
+        await Process.run('explorer.exe', [directory]);
+        return true;
+      }
+      final result = await Process.run(isMacOS ? 'open' : 'xdg-open', [
+        directory,
+      ]);
+      return result.exitCode == 0;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<int> get version async {
     final deviceInfo = await DeviceInfoPlugin().deviceInfo;
@@ -159,11 +242,12 @@ class System {
           appPath.corePath,
         ]);
         if (removeResult.exitCode == 0) {
-          commonPrint.log('Cleared quarantine attribute from BettboxCore');
+          commonPrint.log('Core quarantine cleared', module: 'System');
         } else {
           quarantineCleared = false;
           commonPrint.warn(
-            'Failed to clear quarantine attribute: ${removeResult.stderr}',
+            'Clear core quarantine failed: ${removeResult.stderr.toString().trim()}',
+            module: 'System',
           );
         }
       }
@@ -220,7 +304,10 @@ class System {
 
     if (!needCapabilities) {
       if (result?.exitCode != 0) {
-        commonPrint.log('Privileged repair failed: ${result?.stderr.trim()}');
+        commonPrint.warn(
+          'Privileged repair failed: ${result?.stderr.trim()}',
+          module: 'System',
+        );
       }
       return AuthorizeCode.none;
     }
@@ -232,7 +319,10 @@ class System {
       _ => null,
     };
     if (fallback != null) {
-      commonPrint.log('Falling back to setuid: ${result?.stderr.trim()}');
+      commonPrint.warn(
+        'Setcap failed, using setuid: ${result?.stderr.trim()}',
+        module: 'System',
+      );
       globalState.showNotifier(fallback);
       return AuthorizeCode.success;
     }
@@ -309,7 +399,7 @@ class System {
         stdout.contains(_polkitRuleEtcMarker) ||
         stdout.contains(_polkitRuleFailedMarker);
     if (!settled) return;
-    commonPrint.log('Polkit rule outcome: ${stdout.trim()}');
+    commonPrint.log('Polkit rule ${stdout.trim()}', module: 'System');
     final prefs = await preferences.sharedPreferencesCompleter.future;
     await prefs?.setBool(_polkitRuleSettledKey, true);
   }
@@ -356,18 +446,18 @@ class System {
             .where((line) => line.startsWith('$name:'))
             .map((line) => line.substring(name.length + 1).trim())
             .firstOrNull;
-        final effectiveUid = field(
-          'Uid',
-        )?.split(RegExp(r'\s+')).elementAtOrNull(1);
+        final effectiveUid = field('Uid')
+            ?.split(RegExp(r'\s+'))
+            .elementAtOrNull(1);
         final capEff = int.tryParse(field('CapEff') ?? '', radix: 16) ?? 0;
         const capNetAdmin = 1 << 12;
         if (effectiveUid == '0' || capEff & capNetAdmin != 0) return;
         await Future.delayed(const Duration(milliseconds: 100));
       }
-      commonPrint.log('Core process lacks CAP_NET_ADMIN');
+      commonPrint.warn('Core lacks CAP_NET_ADMIN', module: 'System');
       globalState.showNotifier(appLocalizations.coreCapabilityNotEffective);
     } catch (e) {
-      commonPrint.log('Core privilege check skipped: $e');
+      commonPrint.debug('Core privilege check skipped: $e', module: 'System');
     }
   }
 
@@ -425,10 +515,10 @@ class System {
         );
       }
     } catch (e) {
-      commonPrint.warn('pkexec failed: $e');
+      commonPrint.warn('pkexec failed: $e', module: 'System');
     }
 
-    window?.show();
+    unawaited(window?.show());
     final password = await globalState.showCommonDialog<String>(
       child: InputDialog(
         obscureText: true,
@@ -449,7 +539,7 @@ class System {
         script,
       ]);
     } catch (e) {
-      commonPrint.warn('sudo failed: $e');
+      commonPrint.warn('sudo failed: $e', module: 'System');
       return null;
     }
     final stdout = process.stdout.transform(utf8.decoder).join();
@@ -498,8 +588,7 @@ class System {
       return;
     }
     if (isAndroid) {
-      await globalState.appController.savePreferences();
-      await Restart.restartApp(forceKill: true);
+      await globalState.appController.restartAndroidApp();
       return;
     }
     await Restart.restartApp();
@@ -513,7 +602,7 @@ class System {
         windows?.setCurrentProcessPriority(enable);
         return;
       } catch (e) {
-        commonPrint.warn('Failed to set current process priority: $e');
+        commonPrint.warn('Set process priority failed: $e', module: 'System');
       }
     }
 
@@ -547,6 +636,43 @@ class System {
         >('malloc_zone_pressure_relief')(nullptr, 0);
       }
     } catch (_) {}
+  }
+
+  Future<void> releaseCodePages() async {
+    if (!isAndroid && !isLinux) return;
+    try {
+      await Isolate.run(_releaseCodePages);
+    } catch (_) {}
+  }
+
+  static void _releaseCodePages() {
+    final libc = Platform.isAndroid
+        ? DynamicLibrary.open('libc.so')
+        : DynamicLibrary.process();
+    final madvise = libc
+        .lookupFunction<
+          Int32 Function(Pointer<Void> addr, UintPtr length, Int32 advice),
+          int Function(Pointer<Void> addr, int length, int advice)
+        >('madvise');
+    for (final line in File('/proc/self/maps').readAsLinesSync()) {
+      final fields = line.split(' ');
+      if (fields.length < 2 || fields[1] != 'r-xp') continue;
+      final pathStart = line.indexOf('/');
+      if (pathStart < 0) continue;
+      final path = line.substring(pathStart);
+      if (path.startsWith('/dev/') ||
+          path.startsWith('/memfd:') ||
+          path.endsWith(' (deleted)')) {
+        continue;
+      }
+      final range = fields[0].split('-');
+      final start = int.parse(range.first, radix: 16);
+      madvise(
+        Pointer.fromAddress(start),
+        int.parse(range.last, radix: 16) - start,
+        Platform.isAndroid ? 4 : 21,
+      );
+    }
   }
 }
 
@@ -602,8 +728,9 @@ class Windows {
       throw Exception('SetPriorityClass failed');
     }
 
-    commonPrint.log(
-      'Set current process priority to ${enable ? "above normal" : "normal"}',
+    commonPrint.debug(
+      'Process priority ${enable ? 'above normal' : 'normal'}',
+      module: 'System',
     );
 
     if (enable) {
@@ -617,9 +744,9 @@ class Windows {
           sizeOf<Uint32>(),
         );
         if (memoryResult == 0) {
-          commonPrint.warn('Set current process memory priority failed');
+          commonPrint.warn('Set memory priority failed', module: 'System');
         } else {
-          commonPrint.log('Set current process memory priority to normal');
+          commonPrint.debug('Memory priority normal', module: 'System');
         }
       } finally {
         calloc.free(memoryPriorityInfo);
@@ -727,7 +854,9 @@ class Windows {
     calloc.free(argumentsPtr);
     calloc.free(operationPtr);
 
-    commonPrint.log('windows runas: [command masked] resultCode:$result');
+    if (result <= 32) {
+      commonPrint.warn('Run as admin failed, code $result', module: 'System');
+    }
 
     return result > 32;
   }
@@ -832,7 +961,7 @@ class Windows {
         final check = await Process.run('sc', ['query', appHelperService]);
         final output = check.stdout.toString();
         if (output.contains('STOPPED')) {
-          commonPrint.warn('Helper service stopped/failed, skipping wait');
+          commonPrint.warn('Helper service stopped', module: 'Helper');
           break;
         }
       }
@@ -903,9 +1032,8 @@ class Windows {
 </Task>''';
     final taskPath = join(await appPath.tempPath, 'task.xml');
     await File(taskPath).create(recursive: true);
-    await File(
-      taskPath,
-    ).writeAsBytes(taskXml.encodeUtf16LeWithBom, flush: true);
+    await File(taskPath)
+        .writeAsBytes(taskXml.encodeUtf16LeWithBom, flush: true);
     final commandLine = [
       '/Create',
       '/TN',
@@ -962,9 +1090,8 @@ class MacOS {
           (line) => RegExp(r'^\(\d+\).*').hasMatch(line),
           orElse: () => '',
         );
-    final match = RegExp(
-      r'^\(\d+\)\s+(.+)$',
-    ).firstMatch(serviceNameLine.trim());
+    final match = RegExp(r'^\(\d+\)\s+(.+)$')
+        .firstMatch(serviceNameLine.trim());
     return match?.group(1)?.trim();
   }
 
@@ -981,7 +1108,8 @@ class MacOS {
     ]);
     if (result.exitCode != 0) {
       commonPrint.warn(
-        'Failed to get macOS system DNS: ${result.stderr.toString().trim()}',
+        'Read system DNS failed: ${result.stderr.toString().trim()}',
+        module: 'System',
       );
       return null;
     }
@@ -1022,15 +1150,15 @@ class MacOS {
       ]);
       if (result.exitCode != 0) {
         commonPrint.warn(
-          'Failed to restore macOS system DNS: '
-          '${result.stderr.toString().trim()}',
+          'Restore system DNS failed: ${result.stderr.toString().trim()}',
+          module: 'System',
         );
         return false;
       }
       await backupFile.delete();
       return true;
     } catch (e) {
-      commonPrint.warn('Failed to read macOS system DNS backup: $e');
+      commonPrint.warn('Read system DNS backup failed: $e', module: 'System');
       return false;
     }
   }
@@ -1063,7 +1191,10 @@ class Linux {
     try {
       return await Process.run(executable, arguments);
     } on ProcessException catch (e) {
-      commonPrint.warn('Failed to run $executable: ${e.message}');
+      commonPrint.warn(
+        'Run $executable failed: ${e.message}',
+        module: 'System',
+      );
       return null;
     }
   }
@@ -1071,9 +1202,9 @@ class Linux {
   Future<String?> get _defaultDevice async {
     final result = await _run('ip', ['route', 'show', 'default']);
     if (result == null || result.exitCode != 0) return null;
-    return RegExp(
-      r'\bdev\s+(\S+)',
-    ).firstMatch(result.stdout.toString())?.group(1);
+    return RegExp(r'\bdev\s+(\S+)')
+        .firstMatch(result.stdout.toString())
+        ?.group(1);
   }
 
   Future<bool> get _usesResolvedStub async {
@@ -1084,7 +1215,7 @@ class Linux {
         multiLine: true,
       ).hasMatch(content);
     } catch (e) {
-      commonPrint.warn('Failed to read /etc/resolv.conf: $e');
+      commonPrint.warn('Read resolv.conf failed: $e', module: 'System');
       return false;
     }
   }
@@ -1103,7 +1234,7 @@ class Linux {
       );
       await temporaryFile.rename(backupFile.path);
     } catch (e) {
-      commonPrint.warn('Failed to persist the Linux system DNS device: $e');
+      commonPrint.warn('Save DNS device failed: $e', module: 'System');
       return;
     }
     final result = await _run('nmcli', [
@@ -1115,7 +1246,8 @@ class Linux {
     ]);
     if (result == null || result.exitCode != 0) {
       commonPrint.warn(
-        'Failed to set Linux system DNS: ${result?.stderr.toString().trim()}',
+        'Set system DNS failed: ${result?.stderr.toString().trim()}',
+        module: 'System',
       );
       await _deleteBackup();
     }
@@ -1131,13 +1263,13 @@ class Linux {
         final result = await _run('nmcli', ['device', 'reapply', device]);
         if (result != null && result.exitCode != 0) {
           commonPrint.warn(
-            'Failed to restore Linux system DNS: '
-            '${result.stderr.toString().trim()}',
+            'Restore system DNS failed: ${result.stderr.toString().trim()}',
+            module: 'System',
           );
         }
       }
     } catch (e) {
-      commonPrint.warn('Failed to read Linux system DNS backup: $e');
+      commonPrint.warn('Read system DNS backup failed: $e', module: 'System');
     }
     await _deleteBackup();
   }

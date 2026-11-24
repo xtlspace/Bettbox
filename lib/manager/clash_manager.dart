@@ -25,6 +25,8 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     with AppMessageListener {
   final List<TrackerInfo> _pendingRequests = [];
   static const _flushDuration = Duration(milliseconds: 300);
+  static const _errorInterval = Duration(seconds: 10);
+  final Map<String, DateTime> _errorNotified = {};
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +55,7 @@ class _ClashContainerState extends ConsumerState<ClashManager>
         unawaited(
           globalState.appController
               .handleChangeProfile(hardRestart: fullRestart)
-              .catchError((Object error, StackTrace stackTrace) {
-                commonPrint.error('Profile change failed: $error');
-              }),
+              .catchError((Object _) {}),
         );
       }
     });
@@ -132,11 +132,21 @@ class _ClashContainerState extends ConsumerState<ClashManager>
     globalState.appController.updateGroupsDebounce();
   }
 
+  void _notifyError(String text) {
+    final now = DateTime.now();
+    _errorNotified.removeWhere(
+      (_, time) => now.difference(time) >= _errorInterval,
+    );
+    if (_errorNotified.containsKey(text)) return;
+    _errorNotified[text] = now;
+    globalState.showNotifier(text);
+  }
+
   @override
   void onLog(Log log) {
     globalState.appController.addLog(log);
     if (log.logLevel == LogLevel.error) {
-      globalState.showNotifier(log.payload);
+      _notifyError(log.payload);
     }
     super.onLog(log);
   }

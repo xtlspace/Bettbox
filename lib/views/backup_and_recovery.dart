@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bett_box/common/archive.dart';
@@ -12,6 +13,7 @@ import 'package:bett_box/widgets/fade_box.dart';
 import 'package:bett_box/widgets/input.dart';
 import 'package:bett_box/widgets/list.dart';
 import 'package:bett_box/widgets/text.dart';
+import 'package:bett_box/widgets/tv_text_field.dart';
 import 'package:bett_box/widgets/delay_animation_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,11 +77,15 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
   }
 
   Future<void> _backupOnWebDAV(DAVClient client, DAV dav) async {
+    final scope = await globalState.showCommonDialog<BackupScope>(
+      child: const BackupScopeDialog(),
+    );
+    if (scope == null || !mounted) return;
     final encrypted = ref
         .read(appSettingProvider.select((state) => state.backupPassword))
         .isNotEmpty;
     final res = await globalState.appController.safeRun<bool>(
-      () => globalState.appController.backupToWebDAV(client, dav),
+      () => globalState.appController.backupToWebDAV(client, dav, scope: scope),
       needLoading: true,
       title: appLocalizations.backup,
     );
@@ -91,7 +97,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     BuildContext context,
     DAVClient client,
     String targetFileName,
-    RecoveryOption recoveryOption,
+    BackupScope recoveryOption,
   ) async {
     final res = await globalState.appController.safeRun(
       () async {
@@ -128,16 +134,20 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     );
     if (selectedFile == null || !context.mounted) return;
 
-    final recoveryOption = await globalState.showCommonDialog<RecoveryOption>(
-      child: const RecoveryOptionsDialog(),
+    final recoveryOption = await globalState.showCommonDialog<BackupScope>(
+      child: const BackupScopeDialog(recovery: true),
     );
     if (recoveryOption == null || !context.mounted) return;
 
     final fileName = selectedFile.name ?? client.fileName;
-    _recoveryOnWebDAV(context, client, fileName, recoveryOption);
+    unawaited(_recoveryOnWebDAV(context, client, fileName, recoveryOption));
   }
 
   Future<void> _backupOnLocal(BuildContext context) async {
+    final scope = await globalState.showCommonDialog<BackupScope>(
+      child: const BackupScopeDialog(),
+    );
+    if (scope == null || !context.mounted) return;
     final password = await globalState.showCommonDialog<String>(
       child: InputDialog(
         title: appLocalizations.backupPassword,
@@ -153,6 +163,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     final res = await globalState.appController.safeRun<bool>(() async {
       final backupData = await globalState.appController.backupData(
         password: password,
+        scope: scope,
       );
       final value = await picker.saveFile(
         utils.getBackupFileName(),
@@ -165,7 +176,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     _showBackupSuccess(password.isNotEmpty);
   }
 
-  Future<void> _recoveryOnLocal(RecoveryOption recoveryOption) async {
+  Future<void> _recoveryOnLocal(BackupScope recoveryOption) async {
     final file = await picker.pickerFile();
     final path = file?.path;
     final res = await globalState.appController.safeRun(
@@ -191,11 +202,11 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
   }
 
   Future<void> _handleRecoveryOnLocal(BuildContext context) async {
-    final recoveryOption = await globalState.showCommonDialog<RecoveryOption>(
-      child: const RecoveryOptionsDialog(),
+    final recoveryOption = await globalState.showCommonDialog<BackupScope>(
+      child: const BackupScopeDialog(recovery: true),
     );
     if (recoveryOption == null || !context.mounted) return;
-    _recoveryOnLocal(recoveryOption);
+    unawaited(_recoveryOnLocal(recoveryOption));
   }
 
   String? _validateBackupPassword(String? value) {
@@ -244,7 +255,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
     final recoveryStrategy = ref.read(
       appSettingProvider.select((state) => state.recoveryStrategy),
     );
-    final res = await globalState.showAdaptiveSheet(
+    final res = await globalState.showAdaptiveSheet<RecoveryStrategy>(
       child: OptionsDialog<RecoveryStrategy>(
         title: appLocalizations.recoveryStrategy,
         options: RecoveryStrategy.values,
@@ -270,7 +281,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
         items: [
           if (dav == null)
             ListItem(
-              leading: const Icon(Icons.account_box),
+              leading: const AppIcon(Icons.account_box),
               title: Text(appLocalizations.noInfo),
               subtitle: Text(appLocalizations.pleaseBindWebDAV),
               trailing: FilledButton.tonal(
@@ -282,7 +293,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
             )
           else ...[
             ListItem(
-              leading: const Icon(Icons.account_box),
+              leading: const AppIcon(Icons.account_box),
               title: TooltipText(
                 text: Text(
                   dav.user,
@@ -407,7 +418,7 @@ class _BackupAndRecoveryState extends ConsumerState<BackupAndRecovery> {
                 onTap: _handleUpdateBackupPassword,
                 title: Text(appLocalizations.backupPassword),
                 subtitle: Text(appLocalizations.backupPasswordDesc),
-                trailing: Icon(hasPassword ? Icons.lock : Icons.lock_open),
+                trailing: AppIcon(hasPassword ? Icons.lock : Icons.lock_open),
               );
             },
           ),
@@ -502,37 +513,39 @@ class _BackupVersionsDialogState extends State<BackupVersionsDialog> {
   }
 }
 
-class RecoveryOptionsDialog extends StatefulWidget {
-  const RecoveryOptionsDialog({super.key});
+class BackupScopeDialog extends StatelessWidget {
+  final bool recovery;
 
-  @override
-  State<RecoveryOptionsDialog> createState() => _RecoveryOptionsDialogState();
-}
-
-class _RecoveryOptionsDialogState extends State<RecoveryOptionsDialog> {
-  void _handleOnTab(RecoveryOption? value) {
-    if (value == null) return;
-    Navigator.of(context).pop(value);
-  }
+  const BackupScopeDialog({super.key, this.recovery = false});
 
   @override
   Widget build(BuildContext context) {
     return CommonDialog(
-      title: appLocalizations.recovery,
+      title: recovery ? appLocalizations.recovery : appLocalizations.backup,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       child: Wrap(
         children: [
           ListItem(
             onTap: () {
-              _handleOnTab(RecoveryOption.onlyProfiles);
+              Navigator.of(context).pop(BackupScope.onlyProfiles);
             },
-            title: Text(appLocalizations.recoveryProfiles),
+            title: Text(
+              recovery
+                  ? appLocalizations.recoveryProfiles
+                  : appLocalizations.backupProfiles,
+            ),
+            subtitle: Text(appLocalizations.backupScopeProfilesDesc),
           ),
           ListItem(
             onTap: () {
-              _handleOnTab(RecoveryOption.all);
+              Navigator.of(context).pop(BackupScope.all);
             },
-            title: Text(appLocalizations.recoveryAll),
+            title: Text(
+              recovery
+                  ? appLocalizations.recoveryAll
+                  : appLocalizations.backupAll,
+            ),
+            subtitle: Text(appLocalizations.backupScopeAllDesc),
           ),
         ],
       ),
@@ -603,64 +616,79 @@ class _WebDAVFormDialogState extends ConsumerState<WebDAVFormDialog> {
         child: Wrap(
           runSpacing: 16,
           children: [
-            TextFormField(
-              controller: uriController,
-              maxLines: 5,
-              minLines: 1,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.link),
-                border: const OutlineInputBorder(),
-                labelText: appLocalizations.address,
-                helperText: appLocalizations.addressHelp,
+            TvTextField(
+              builder: (tv) => TextFormField(
+                focusNode: tv.focusNode,
+                readOnly: tv.readOnly,
+                showCursor: tv.showCursor,
+                controller: uriController,
+                maxLines: 5,
+                minLines: 1,
+                decoration: InputDecoration(
+                  prefixIcon: const AppIcon(Icons.link),
+                  border: const OutlineInputBorder(),
+                  labelText: appLocalizations.address,
+                  helperText: appLocalizations.addressHelp,
+                ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty || !value.isHttpUrl) {
+                    return appLocalizations.addressTip;
+                  }
+                  return null;
+                },
               ),
-              validator: (String? value) {
-                if (value == null || value.isEmpty || !value.isHttpUrl) {
-                  return appLocalizations.addressTip;
-                }
-                return null;
-              },
             ),
-            TextFormField(
-              controller: userController,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.account_circle),
-                border: const OutlineInputBorder(),
-                labelText: appLocalizations.account,
+            TvTextField(
+              builder: (tv) => TextFormField(
+                focusNode: tv.focusNode,
+                readOnly: tv.readOnly,
+                showCursor: tv.showCursor,
+                controller: userController,
+                decoration: InputDecoration(
+                  prefixIcon: const AppIcon(Icons.account_circle),
+                  border: const OutlineInputBorder(),
+                  labelText: appLocalizations.account,
+                ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return appLocalizations.emptyTip(appLocalizations.account);
+                  }
+                  return null;
+                },
               ),
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return appLocalizations.emptyTip(appLocalizations.account);
-                }
-                return null;
-              },
             ),
             ValueListenableBuilder(
               valueListenable: _obscureController,
               builder: (_, obscure, _) {
-                return TextFormField(
-                  controller: passwordController,
-                  obscureText: obscure,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.password),
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        obscure ? Icons.visibility : Icons.visibility_off,
+                return TvTextField(
+                  builder: (tv) => TextFormField(
+                    focusNode: tv.focusNode,
+                    readOnly: tv.readOnly,
+                    showCursor: tv.showCursor,
+                    controller: passwordController,
+                    obscureText: obscure,
+                    decoration: InputDecoration(
+                      prefixIcon: const AppIcon(Icons.password),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: AppIcon(
+                          obscure ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          _obscureController.value = !obscure;
+                        },
                       ),
-                      onPressed: () {
-                        _obscureController.value = !obscure;
-                      },
+                      labelText: appLocalizations.password,
                     ),
-                    labelText: appLocalizations.password,
+                    validator: (String? value) {
+                      if (value == null || value.isEmpty) {
+                        return appLocalizations.emptyTip(
+                          appLocalizations.password,
+                        );
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (String? value) {
-                    if (value == null || value.isEmpty) {
-                      return appLocalizations.emptyTip(
-                        appLocalizations.password,
-                      );
-                    }
-                    return null;
-                  },
                 );
               },
             ),

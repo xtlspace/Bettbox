@@ -148,12 +148,17 @@ abstract class Log with _$Log {
     return log.copyWith(payload: payload, module: module);
   }
 
-  factory Log.app(String payload, {LogLevel level = LogLevel.info}) {
+  factory Log.app(
+    String payload, {
+    LogLevel level = LogLevel.info,
+    String? module,
+  }) {
     return Log(
       logLevel: level,
       payload: payload.trimRight(),
       time: DateTime.now(),
       source: LogSource.app,
+      module: module,
     );
   }
 
@@ -343,7 +348,7 @@ class Traffic {
   num get speed => up.value + down.value;
 
   factory Traffic.fromMap(Map<String, dynamic> map) {
-    return Traffic(up: map['up'], down: map['down']);
+    return Traffic(up: map['up'] as int?, down: map['down'] as int?);
   }
 
   String toSpeedText() {
@@ -443,7 +448,11 @@ extension GroupExt on Group {
     if (type.isComputedSelected) {
       return realNow.isNotEmpty ? realNow : proxyName;
     }
-    return proxyName.isNotEmpty ? proxyName : realNow;
+    if (proxyName.isEmpty ||
+        (all.isNotEmpty && !all.any((proxy) => proxy.name == proxyName))) {
+      return realNow;
+    }
+    return proxyName;
   }
 }
 
@@ -1223,7 +1232,7 @@ abstract class Result<T> with _$Result<T> {
       Result(data: null, type: ResultType.error, message: message);
 }
 
-extension ResultExt on Result {
+extension ResultExt on Result<dynamic> {
   bool get isError => type == ResultType.error;
 
   bool get isSuccess => type == ResultType.success;

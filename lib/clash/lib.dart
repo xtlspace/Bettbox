@@ -65,7 +65,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
       );
       if (connected && sendPort != null) return;
       if (attempt <= 3) {
-        commonPrint.warn('ClashLib: IPC attempt $attempt failed, retrying...');
+        commonPrint.warn('Connect attempt $attempt failed', module: 'IPC');
       }
       if (_canSendCompleter.isCompleted) {
         _canSendCompleter = Completer();
@@ -85,7 +85,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   }
 
   @override
-  destroy() async {
+  Future<bool> destroy() async {
     await service?.destroy();
     return true;
   }
@@ -98,7 +98,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   @override
   Future<bool> shutdown() async {
     await super.shutdown();
-    destroy();
+    unawaited(destroy());
     return true;
   }
 
@@ -109,13 +109,13 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
       onTimeout: () => false,
     );
     if (!canSend || sendPort == null) {
-      commonPrint.error('ClashLib: IPC not ready after 5s');
+      commonPrint.error('Not ready after 5s', module: 'IPC');
       throw TimeoutException('Android IPC SendPort unavailable');
     }
     try {
       sendPort?.send(message);
     } catch (e) {
-      commonPrint.warn('ClashLib: sendMessage failed: $e, reconnecting IPC');
+      commonPrint.warn('Send failed, reconnecting: $e', module: 'IPC');
       sendPort = null;
       _canSendCompleter = Completer();
       await service?.reconnectIpc();
@@ -136,7 +136,7 @@ class ClashLib extends ClashHandlerInterface with AndroidClashInterface {
   Future<AndroidVpnOptions?> getAndroidVpnOptions() async {
     final res = await invoke<String>(method: ActionMethod.getAndroidVpnOptions);
     if (res.isEmpty) return null;
-    return AndroidVpnOptions.fromJson(json.decode(res));
+    return AndroidVpnOptions.fromJson(json.decode(res) as Map<String, Object?>);
   }
 
   @override
@@ -180,7 +180,7 @@ class ClashLibHandler {
     final receiver = ReceivePort();
     receiver.listen((message) {
       if (!completer.isCompleted) {
-        completer.complete(message);
+        completer.complete(message as String);
         receiver.close();
       }
     });
@@ -216,9 +216,8 @@ class ClashLibHandler {
         'providers-path': providersPath ?? '',
       }),
     );
-    final result = decodeActionResult(
-      await invokeAction(json.encode(action)),
-    )?.toResult;
+    final result = decodeActionResult(await invokeAction(json.encode(action)))
+        ?.toResult;
     if (result == null) {
       throw 'Invalid core result';
     }
@@ -254,7 +253,7 @@ class ClashLibHandler {
     final vpnOptionsRaw = clashFFI.getAndroidVpnOptions();
     final vpnOptions = json.decode(vpnOptionsRaw.cast<Utf8>().toDartString());
     clashFFI.freeCString(vpnOptionsRaw);
-    return AndroidVpnOptions.fromJson(vpnOptions);
+    return AndroidVpnOptions.fromJson(vpnOptions as Map<String, Object?>);
   }
 
   Traffic getTraffic() {
@@ -262,7 +261,7 @@ class ClashLibHandler {
     final trafficString = trafficRaw.cast<Utf8>().toDartString();
     clashFFI.freeCString(trafficRaw);
     if (trafficString.isEmpty) return Traffic();
-    return Traffic.fromMap(json.decode(trafficString));
+    return Traffic.fromMap(json.decode(trafficString) as Map<String, dynamic>);
   }
 
   Traffic getTotalTraffic(bool value) {
@@ -270,7 +269,7 @@ class ClashLibHandler {
     final trafficString = trafficRaw.cast<Utf8>().toDartString();
     clashFFI.freeCString(trafficRaw);
     if (trafficString.isEmpty) return Traffic();
-    return Traffic.fromMap(json.decode(trafficString));
+    return Traffic.fromMap(json.decode(trafficString) as Map<String, dynamic>);
   }
 
   Future<bool> startListener() async {
@@ -336,7 +335,7 @@ class ClashLibHandler {
       if (!completer.isCompleted) {
         dynamic data = message;
         try {
-          data = json.decode(message);
+          data = json.decode(message as String);
         } catch (_) {}
         completer.complete(SetupResult.fromData(data));
         receiver.close();

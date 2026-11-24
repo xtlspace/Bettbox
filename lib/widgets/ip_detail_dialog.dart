@@ -53,13 +53,15 @@ Future<void> showIpDetailDialog(
                 )
           : null);
 
-  globalState.showAdaptiveSheet(
-    child: _IpDetailDialog(
-      ip: cleanIp,
-      preloaded: info,
-      riskView: riskView,
-      preloadedRisk: preloadedRisk,
-      persistRisk: followRiskSetting,
+  unawaited(
+    globalState.showAdaptiveSheet(
+      child: _IpDetailDialog(
+        ip: cleanIp,
+        preloaded: info,
+        riskView: riskView,
+        preloadedRisk: preloadedRisk,
+        persistRisk: followRiskSetting,
+      ),
     ),
   );
 }
@@ -200,7 +202,7 @@ class _IpDetailDialogState extends ConsumerState<_IpDetailDialog> {
               color: iconColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 14, color: iconColor),
+            child: AppIcon(icon, size: 14, color: iconColor),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -252,7 +254,11 @@ class _IpDetailDialogState extends ConsumerState<_IpDetailDialog> {
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-      icon: Icon(icon, size: 15, color: context.colorScheme.onSurfaceVariant),
+      icon: AppIcon(
+        icon,
+        size: 15,
+        color: context.colorScheme.onSurfaceVariant,
+      ),
       tooltip: tooltip,
       onPressed: onPressed,
     );
@@ -345,26 +351,31 @@ class _IpDetailDialogState extends ConsumerState<_IpDetailDialog> {
       label: appLocalizations.ipAddress,
       value: ip,
       customValue: _editing
-          ? TextField(
-              controller: _ipController,
-              autofocus: true,
-              style: valueStyle,
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: appLocalizations.ipRiskHint,
-                hintStyle: valueStyle?.copyWith(
-                  fontWeight: FontWeight.normal,
-                  color: context.colorScheme.onSurfaceVariant,
+          ? TvTextField(
+              builder: (tv) => TextField(
+                focusNode: tv.focusNode,
+                readOnly: tv.readOnly,
+                showCursor: tv.showCursor,
+                controller: _ipController,
+                autofocus: true,
+                style: valueStyle,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: appLocalizations.ipRiskHint,
+                  hintStyle: valueStyle?.copyWith(
+                    fontWeight: FontWeight.normal,
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  isCollapsed: true,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-                isCollapsed: true,
-                contentPadding: EdgeInsets.zero,
+                onSubmitted: _submitIp,
               ),
-              onSubmitted: _submitIp,
             )
           : GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -383,7 +394,7 @@ class _IpDetailDialogState extends ConsumerState<_IpDetailDialog> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(
+                  AppIcon(
                     Icons.edit_outlined,
                     size: 13,
                     color: context.colorScheme.onSurfaceVariant,
@@ -555,7 +566,10 @@ class _IpDetailDialogState extends ConsumerState<_IpDetailDialog> {
                           ),
                           TextButton.icon(
                             onPressed: () => _loadRisk(ip, force: true),
-                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            icon: const AppIcon(
+                              Icons.refresh_rounded,
+                              size: 16,
+                            ),
                             label: Text(appLocalizations.retry),
                           ),
                         ],

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
 import 'package:bett_box/models/models.dart';
@@ -26,7 +28,7 @@ bool showVpnRestartTip(WidgetRef ref) {
 
 Future<void> _handleNetworkConfigChange(WidgetRef ref) async {
   if (showVpnRestartTip(ref)) return;
-  globalState.appController.updateClashConfig();
+  unawaited(globalState.appController.updateClashConfig());
 }
 
 class VPNItem extends ConsumerWidget {
@@ -341,7 +343,7 @@ class NetworkInterfaceItem extends ConsumerWidget {
             value: interfaceName,
             textBuilder: (value) =>
                 value.isEmpty ? appLocalizations.auto : value,
-            subtitleBuilder: (value) => addresses[value] ?? '',
+            subtitleBuilder: (value) => addresses[value],
           ),
         );
         if (value == null || value == interfaceName) return;
@@ -387,44 +389,49 @@ class MtuItem extends ConsumerWidget {
               ),
             ],
             child: IdleFocusBuilder(
-              builder: (_, focusNode) => TextField(
+              builder: (_, focusNode) => TvTextField(
                 focusNode: focusNode,
-                keyboardType: TextInputType.number,
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: 'MTU',
-                  errorText: errorText,
-                  hintText: '1280-65535',
-                ),
-                onChanged: (value) {
-                  inputValue = value;
-                  // Real-time validation
-                  if (value.isEmpty) {
-                    setState(() {
-                      errorText = appLocalizations.emptyTip('MTU');
-                    });
-                  } else {
-                    final intValue = int.tryParse(value);
-                    if (intValue == null) {
+                builder: (tv) => TextField(
+                  focusNode: tv.focusNode,
+                  readOnly: tv.readOnly,
+                  showCursor: tv.showCursor,
+                  keyboardType: TextInputType.number,
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'MTU',
+                    errorText: errorText,
+                    hintText: '1280-65535',
+                  ),
+                  onChanged: (value) {
+                    inputValue = value;
+                    // Real-time validation
+                    if (value.isEmpty) {
                       setState(() {
-                        errorText = appLocalizations.numberTip('MTU');
-                      });
-                    } else if (intValue < 1280 || intValue > 65535) {
-                      setState(() {
-                        errorText = 'MTU Must be 1280-65535';
+                        errorText = appLocalizations.emptyTip('MTU');
                       });
                     } else {
-                      setState(() {
-                        errorText = null;
-                      });
+                      final intValue = int.tryParse(value);
+                      if (intValue == null) {
+                        setState(() {
+                          errorText = appLocalizations.numberTip('MTU');
+                        });
+                      } else if (intValue < 1280 || intValue > 65535) {
+                        setState(() {
+                          errorText = 'MTU Must be 1280-65535';
+                        });
+                      } else {
+                        setState(() {
+                          errorText = null;
+                        });
+                      }
                     }
-                  }
-                },
-                onSubmitted: (value) {
-                  if (errorText == null && value.isNotEmpty) {
-                    Navigator.of(context).pop(true);
-                  }
-                },
+                  },
+                  onSubmitted: (value) {
+                    if (errorText == null && value.isNotEmpty) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                ),
               ),
             ),
           );
@@ -559,7 +566,7 @@ class BypassDomainItem extends StatelessWidget {
                   await _handleNetworkConfigChange(ref);
                 },
                 tooltip: appLocalizations.reset,
-                icon: const Icon(Icons.replay),
+                icon: const AppIcon(Icons.replay),
               );
             },
           ),
@@ -621,7 +628,7 @@ class BypassPrivateRouteItem extends ConsumerWidget {
                   await _handleNetworkConfigChange(ref);
                 },
                 tooltip: appLocalizations.reset,
-                icon: const Icon(Icons.replay),
+                icon: const AppIcon(Icons.replay),
               );
             },
           ),
@@ -674,7 +681,7 @@ class BypassPrivateRouteItem extends ConsumerWidget {
                 onTap: () => _showEditPage(context, ref),
                 child: Padding(
                   padding: const EdgeInsets.all(7),
-                  child: Icon(
+                  child: AppIcon(
                     Icons.settings_outlined,
                     size: 18,
                     color: context.colorScheme.onSurfaceVariant,
@@ -734,7 +741,7 @@ class NetworkListView extends ConsumerWidget {
           if (system.isDesktop) const DnsHijackItem(),
           const EndpointIndependentNatItem(),
           if (system.isDesktop) const NetworkInterfaceItem(),
-          if (!AppIdentity.isLite) const TunStackItem(),
+          if (AppIdentity.isStandard) const TunStackItem(),
           const MtuItem(),
           if (system.isDesktop) const ProfileSwitchModeItem(),
           const BypassPrivateRouteItem(),

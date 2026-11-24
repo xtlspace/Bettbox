@@ -1,5 +1,6 @@
 import 'package:bett_box/common/common.dart';
 import 'package:bett_box/enum/enum.dart';
+
 import 'dart:async';
 
 import 'package:bett_box/models/models.dart';
@@ -14,11 +15,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'chip.dart';
 import 'text.dart';
+import 'tv_text_field.dart';
 
 typedef OnKeywordsUpdateCallback = void Function(List<String> keywords);
 
-typedef AppBarSearchStateBuilder =
-    AppBarSearchState? Function(AppBarSearchState? state);
+typedef AppBarSearchStateBuilder = AppBarSearchState? Function(
+  AppBarSearchState? state,
+);
 
 class CommonScaffold extends StatefulWidget {
   final AppBar? appBar;
@@ -190,14 +193,14 @@ class CommonScaffoldState extends State<CommonScaffold> {
     if (_isEdit) {
       return IconButton(
         onPressed: _appBarState.value.editState?.onExit,
-        icon: const Icon(Icons.close),
+        icon: Icon(context.resolveIcon(Icons.close)),
         tooltip: appLocalizations.cancel,
       );
     }
     if (_isSearch) {
       return IconButton(
         onPressed: _handleExitSearching,
-        icon: const Icon(Icons.arrow_back),
+        icon: Icon(context.resolveIcon(Icons.arrow_back)),
         tooltip: appLocalizations.back,
       );
     }
@@ -206,16 +209,21 @@ class CommonScaffoldState extends State<CommonScaffold> {
 
   Widget _buildTitle(AppBarSearchState? startState) {
     return _isSearch
-        ? TextField(
+        ? TvTextField(
             focusNode: _searchFocusNode,
-            controller: _textController,
-            style: context.textTheme.titleLarge,
-            onChanged: (value) {
-              if (startState != null) {
-                startState.onSearch(value);
-              }
-            },
-            decoration: InputDecoration(hintText: appLocalizations.search),
+            builder: (tv) => TextField(
+              focusNode: tv.focusNode,
+              readOnly: tv.readOnly,
+              showCursor: tv.showCursor,
+              controller: _textController,
+              style: context.textTheme.titleLarge,
+              onChanged: (value) {
+                if (startState != null) {
+                  startState.onSearch(value);
+                }
+              },
+              decoration: InputDecoration(hintText: appLocalizations.search),
+            ),
           )
         : !_isEdit && widget.titleWidget != null
         ? widget.titleWidget!
@@ -230,22 +238,22 @@ class CommonScaffoldState extends State<CommonScaffold> {
 
   List<Widget> _buildActions(bool hasSearch, List<Widget> actions) {
     if (_isSearch) {
-      return genActions([
+      return genActions(context, [
         IconButton(
           onPressed: _handleClear,
-          icon: const Icon(Icons.close),
+          icon: Icon(context.resolveIcon(Icons.close)),
           tooltip: appLocalizations.clear,
         ),
       ]);
     }
-    return genActions([
+    return genActions(context, [
       if (hasSearch)
         IconButton(
           onPressed: () {
             _updateSearchState((state) => state?.copyWith(query: ''));
             unawaited(_searchFocusNode.requestFocusWhenIdle());
           },
-          icon: const Icon(Icons.search),
+          icon: Icon(context.resolveIcon(Icons.search)),
           tooltip: appLocalizations.search,
         ),
       ...actions,
@@ -541,6 +549,35 @@ class _ScrollEdgeScope extends InheritedWidget {
   bool updateShouldNotify(_ScrollEdgeScope oldWidget) => false;
 }
 
+class ScrollEdgeSource extends StatelessWidget {
+  final Widget child;
+
+  const ScrollEdgeSource({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context
+        .getInheritedWidgetOfExactType<_ScrollEdgeScope>()
+        ?.state;
+    if (state == null) return child;
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (notification) => state._handleScroll(
+        notification.metrics,
+        notification.depth,
+        notification.context,
+      ),
+      child: NotificationListener<ScrollUpdateNotification>(
+        onNotification: (notification) => state._handleScroll(
+          notification.metrics,
+          notification.depth,
+          notification.context,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 class ScrollEdgeRise extends StatefulWidget {
   static const extent = 8.0;
 
@@ -682,10 +719,55 @@ class _RenderEdgeMask extends RenderProxyBox {
   }
 }
 
-List<Widget> genActions(List<Widget> actions, {double? space}) {
+Widget _resolveAction(BuildContext context, Widget action) {
+  final enabled = AppIconScope.of(context);
+  if (action is IconButton) {
+    final icon = action.icon;
+    final selectedIcon = action.selectedIcon;
+    final resolvedIcon = resolveIconWidget(icon, enabled: enabled);
+    if (!identical(icon, resolvedIcon) && resolvedIcon != null) {
+      return IconButton(
+        key: action.key,
+        iconSize: action.iconSize,
+        visualDensity: action.visualDensity,
+        padding: action.padding,
+        alignment: action.alignment,
+        splashRadius: action.splashRadius,
+        color: action.color,
+        focusColor: action.focusColor,
+        hoverColor: action.hoverColor,
+        highlightColor: action.highlightColor,
+        splashColor: action.splashColor,
+        disabledColor: action.disabledColor,
+        onPressed: action.onPressed,
+        mouseCursor: action.mouseCursor,
+        focusNode: action.focusNode,
+        autofocus: action.autofocus,
+        tooltip: action.tooltip,
+        enableFeedback: action.enableFeedback,
+        constraints: action.constraints,
+        style: action.style,
+        isSelected: action.isSelected,
+        selectedIcon: selectedIcon == null
+            ? null
+            : resolveIconWidget(selectedIcon, enabled: enabled),
+        icon: resolvedIcon,
+      );
+    }
+  }
+  return resolveIconWidget(action, enabled: enabled) ?? action;
+}
+
+List<Widget> genActions(
+  BuildContext context,
+  List<Widget> actions, {
+  double? space,
+}) {
   return <Widget>[
-    ...actions.separated(SizedBox(width: space ?? 4)),
-    SizedBox(width: 8),
+    ...actions
+        .map((action) => _resolveAction(context, action))
+        .separated(SizedBox(width: space ?? 4)),
+    const SizedBox(width: 8),
   ];
 }
 

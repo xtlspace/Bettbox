@@ -38,7 +38,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
       targetBuilder: (open) => IconButton(
         padding: EdgeInsets.zero,
         onPressed: () => open(offset: const Offset(0, 20)),
-        icon: Icon(
+        icon: AppIcon(
           size: 16.ap,
           Icons.settings_outlined,
           color: context.colorScheme.onSurfaceVariant,
@@ -82,11 +82,15 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
       valueListenable: detectionState.riskyIp,
       builder: (_, ip, child) {
         final ipText = child ?? const SizedBox();
-        if (ip == null || ip != detectionState.rawIpInfo?.ip) return ipText;
+        if (detectionState.isIpMasked ||
+            ip == null ||
+            ip != detectionState.rawIpInfo?.ip) {
+          return ipText;
+        }
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            AppIcon(
               Icons.error_rounded,
               size: 14,
               color: context.colorScheme.error,
@@ -126,7 +130,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                         fontFamilyFallback: [FontFamily.twEmoji.value],
                       ),
                 )
-              : Icon(
+              : AppIcon(
                   Icons.network_check,
                   color: context.colorScheme.onSurfaceVariant,
                 ),
@@ -181,7 +185,6 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
         valueListenable: detectionState.state,
         builder: (_, state, _) {
           final ipInfo = state.ipInfo;
-          final masked = detectionState.isIpMasked;
           final location = ipInfo == null
               ? ''
               : [
@@ -203,9 +206,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                     style: context.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.2,
-                      fontFeatures: const [
-                        FontFeature.tabularFigures(),
-                      ],
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -255,13 +256,13 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                               child: ipText,
                             ),
                           ),
-                          if (!masked && location.isNotEmpty)
+                          if (location.isNotEmpty)
                             _buildDetail(
                               context,
                               appLocalizations.countryOrRegion,
                               location,
                             ),
-                          if (!masked && operator.isNotEmpty)
+                          if (operator.isNotEmpty)
                             _buildDetail(
                               context,
                               appLocalizations.operatorOrAsn,
@@ -280,7 +281,7 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Flexible(child: ipText),
-                            if (!masked && ipInfo != null) ...[
+                            if (ipInfo != null) ...[
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -343,11 +344,11 @@ class _NetworkDetectionState extends ConsumerState<NetworkDetection> {
                                     ],
                                   ),
                             )
-                          : Icon(
+                          : AppIcon(
                               Icons.network_check,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                       const SizedBox(width: 8),
                       Flexible(
